@@ -1,0 +1,37 @@
+name: "yoloe_detector"
+platform: "onnxruntime_onnx"
+max_batch_size: 8
+
+input [
+  {
+    name: "images"
+    data_type: TYPE_FP32
+    dims: [ 3, 640, 640 ]
+  },
+  {
+    name: "text_feats"
+    data_type: TYPE_FP32
+    dims: [ -1, 512 ]
+  }
+]
+
+output [
+  {
+    name: "outputs"
+    data_type: TYPE_FP32
+    dims: [ -1, 8400 ]
+  }
+]
+
+# Dinamik batchleme (Kameralardan gelen kareleri optimize etmek için)
+dynamic_batching {
+  max_queue_delay_microseconds: 5000
+}
+
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+  }
+]

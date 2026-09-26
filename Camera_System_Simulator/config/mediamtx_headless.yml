@@ -1,0 +1,16 @@
+api: no
+metrics: no
+pprof: no
+
+rtsp: yes
+rtspAddress: :8554
+rtspTransports: [tcp]
+
+webrtc: no
+hls: no
+rtmp: no
+srt: no
+moq: no
+
+paths:
+  all_others:

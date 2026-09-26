@@ -1,0 +1,561 @@
+{
+  "cam_10_23_247_54_8894": {
+    "id": "cam_10_23_247_54_8894",
+    "ip": "10.23.247.54",
+    "port": 8894,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Güney Ofis 1",
+    "description": "Ana koridor ve acil yangın çıkış kapısı. Çıkış hattının sürekli boş tutulması esastır.",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0004",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/video1_4",
+    "snapshot_uri": "http://10.23.247.54:8894/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790362784.631572
+  },
+  "cam_10_23_247_54_8895": {
+    "id": "cam_10_23_247_54_8895",
+    "ip": "10.23.247.54",
+    "port": 8895,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Güney Ofis 2",
+    "description": "Depo sahası ve yük indirme/bindirme peronları. Baret, yelek zorunluluğu denetlenir.",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0005",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/video1_5",
+    "snapshot_uri": "http://10.23.247.54:8895/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790362784.649204
+  },
+  "cam_10_23_247_54_8896": {
+    "id": "cam_10_23_247_54_8896",
+    "ip": "10.23.247.54",
+    "port": 8896,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0006",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video_16",
+    "snapshot_uri": "http://10.23.247.54:8896/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790363759.7823768
+  },
+  "cam_10_23_247_54_8897": {
+    "id": "cam_10_23_247_54_8897",
+    "ip": "10.23.247.54",
+    "port": 8897,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0007",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video_2",
+    "snapshot_uri": "http://10.23.247.54:8897/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790363759.823046
+  },
+  "cam_10_23_247_54_8898": {
+    "id": "cam_10_23_247_54_8898",
+    "ip": "10.23.247.54",
+    "port": 8898,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0008",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video_21",
+    "snapshot_uri": "http://10.23.247.54:8898/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790363759.8646872
+  },
+  "cam_10_23_247_54_8899": {
+    "id": "cam_10_23_247_54_8899",
+    "ip": "10.23.247.54",
+    "port": 8899,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0009",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video_3",
+    "snapshot_uri": "http://10.23.247.54:8899/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790363759.9031916
+  },
+  "cam_10_23_247_54_8900": {
+    "id": "cam_10_23_247_54_8900",
+    "ip": "10.23.247.54",
+    "port": 8900,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0010",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video_4",
+    "snapshot_uri": "http://10.23.247.54:8900/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790363759.938406
+  },
+  "cam_10_23_247_54_8901": {
+    "id": "cam_10_23_247_54_8901",
+    "ip": "10.23.247.54",
+    "port": 8901,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0011",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video_6",
+    "snapshot_uri": "http://10.23.247.54:8901/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790363759.974402
+  },
+  "cam_10_23_247_54_8902": {
+    "id": "cam_10_23_247_54_8902",
+    "ip": "10.23.247.54",
+    "port": 8902,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0012",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video_8",
+    "snapshot_uri": "http://10.23.247.54:8902/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790363760.0191243
+  },
+  "cam_10_23_247_54_8903": {
+    "id": "cam_10_23_247_54_8903",
+    "ip": "10.23.247.54",
+    "port": 8903,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0013",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/video",
+    "snapshot_uri": "http://10.23.247.54:8903/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790363760.0583744
+  },
+  "cam_10_23_247_54_8891": {
+    "id": "cam_10_23_247_54_8891",
+    "ip": "10.23.247.54",
+    "port": 8891,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0001",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video20",
+    "snapshot_uri": "http://10.23.247.54:8891/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790371458.9057698
+  },
+  "cam_10_23_247_54_8892": {
+    "id": "cam_10_23_247_54_8892",
+    "ip": "10.23.247.54",
+    "port": 8892,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0002",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video_0",
+    "snapshot_uri": "http://10.23.247.54:8892/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790371458.9643998
+  },
+  "cam_10_23_247_54_8893": {
+    "id": "cam_10_23_247_54_8893",
+    "ip": "10.23.247.54",
+    "port": 8893,
+    "rtsp_port": 554,
+    "username": "admin",
+    "password": "admin123",
+    "name": "Hikvision",
+    "description": "",
+    "manufacturer": "Hikvision",
+    "model": "DS-2CD2043G2-I",
+    "firmware_version": "V5.7.1 build 220510",
+    "serial_number": "DS-2CD2043G2-I20230510AAWR0003",
+    "status": "offline",
+    "status_message": "Cihaza Erişilemedi",
+    "profiles_supported": [
+      "Profile S"
+    ],
+    "resolution": "1920x1080",
+    "encoding": "H.264",
+    "framerate": 30,
+    "stream_uri": "rtsp://admin:admin123@10.23.247.54:8554/test_video_1",
+    "snapshot_uri": "http://10.23.247.54:8893/onvif/snapshot.jpg",
+    "profiles_detail": [
+      {
+        "token": "Profile_1",
+        "name": "MainStream",
+        "encoding": "H264",
+        "width": 1920,
+        "height": 1080,
+        "framerate": 30
+      },
+      {
+        "token": "Profile_2",
+        "name": "SubStream",
+        "encoding": "H264",
+        "width": 640,
+        "height": 360,
+        "framerate": 20
+      }
+    ],
+    "last_seen": 1790371458.9985878
+  }
+}

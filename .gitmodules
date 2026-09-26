@@ -1,0 +1,3 @@
+[submodule "Anomaly_Detection"]
+	path = Anomaly_Detection
+	url = https://github.com/mevlt01001/Abnormal-Event-Detector.git

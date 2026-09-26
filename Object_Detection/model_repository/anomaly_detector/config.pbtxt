@@ -1,0 +1,31 @@
+name: "anomaly_detector"
+platform: "onnxruntime_onnx"
+max_batch_size: 16
+
+input [
+  {
+    name: "video_segment"
+    data_type: TYPE_FP32
+    dims: [ 3, 16, 224, 224 ]
+  }
+]
+
+output [
+  {
+    name: "logits"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  }
+]
+
+# Dinamik batchleme (Kameralardan gelen video kliplerini gruplamak için)
+dynamic_batching {
+  max_queue_delay_microseconds: 5000
+}
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+  }
+]

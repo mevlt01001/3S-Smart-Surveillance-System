@@ -1,0 +1,100 @@
+/* ==========================================================================
+   THEME.CSS - AegisVision Commercial Surveillance UI
+   Color Palette: Light Amber-Orange (#FF8533) + Dark Slate Glassmorphism
+   Typography: Outfit & Inter
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Primary Brand Accent - Light Amber Orange */
+  --primary: #FF8533;
+  --primary-hover: #FFA05C;
+  --primary-light: #FFB87E;
+  --primary-glow: rgba(255, 133, 51, 0.32);
+  --primary-subtle: rgba(255, 133, 51, 0.12);
+  --primary-border: rgba(255, 133, 51, 0.22);
+  --primary-border-strong: rgba(255, 133, 51, 0.55);
+
+  /* Deep Slate Backgrounds */
+  --bg-deep: #0A0D14;
+  --bg-sidebar: #0C101A;
+  --bg-surface: #101524;
+  --bg-card: rgba(16, 22, 36, 0.76);
+  --bg-card-hover: rgba(22, 30, 48, 0.85);
+  --bg-modal: rgba(12, 16, 26, 0.94);
+  --bg-input: rgba(8, 12, 20, 0.85);
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-card: rgba(255, 133, 51, 0.18);
+  --border-focus: rgba(255, 133, 51, 0.65);
+
+  /* Typography */
+  --text-main: #F3F5FA;
+  --text-secondary: #CBD5E1;
+  --text-muted: #8391A5;
+  --text-dim: #546274;
+
+  /* Status Colors */
+  --status-online: #10B981;
+  --status-online-glow: rgba(16, 185, 129, 0.4);
+  --status-warning: #F59E0B;
+  --status-warning-glow: rgba(245, 158, 11, 0.4);
+  --status-danger: #EF4444;
+  --status-danger-glow: rgba(239, 68, 68, 0.4);
+
+  /* Profile Badges */
+  --badge-profile-s: #3B82F6;
+  --badge-profile-t: #FF8533;
+  --badge-profile-g: #8B5CF6;
+
+  /* Typography */
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Shadows & Glass */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.65);
+  --shadow-orange: 0 0 24px rgba(255, 133, 51, 0.3);
+  --backdrop-blur: blur(16px);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+}
+
+/* Global Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  line-height: 1.5;
+  overflow-x: hidden;
+  height: 100vh;
+  display: flex;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 13, 20, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 133, 51, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 133, 51, 0.5);
+}

@@ -1,0 +1,339 @@
+{
+  "rule_fd117ceddf": {
+    "id": "rule_fd117ceddf",
+    "title": "Depo",
+    "scope": "camera",
+    "camera_id": "cam_10_23_247_54_8893",
+    "camera_name": "Kuzey Ofis",
+    "severity": "warning",
+    "description": "Çalışma alanı: Bolgede yelekli olmaayn çalışma arkadaşlarımız var ise tespit et.",
+    "zones": [
+      {
+        "id": "zone_1790365733654_hq51",
+        "name": "Çalışma alanı",
+        "description": "Bolgede yelekli olmaayn çalışma arkadaşlarımız var ise tespit et.",
+        "severity": "warning",
+        "actions": [],
+        "points": [
+          {
+            "x": 0.2857,
+            "y": 0.2548
+          },
+          {
+            "x": 0.2857,
+            "y": 0.2548
+          },
+          {
+            "x": 0.6111,
+            "y": 0.2548
+          },
+          {
+            "x": 0.6111,
+            "y": 0.2548
+          },
+          {
+            "x": 0.7554,
+            "y": 0.9106
+          },
+          {
+            "x": 0.7554,
+            "y": 0.9106
+          },
+          {
+            "x": 0.1048,
+            "y": 0.8986
+          },
+          {
+            "x": 0.1048,
+            "y": 0.8986
+          }
+        ],
+        "color_idx": 0
+      }
+    ],
+    "actions": [
+      "alert_screen",
+      "snapshot"
+    ],
+    "enabled": true,
+    "created_at": 1790365786.7450004,
+    "updated_at": 1790365786.7450004,
+    "assignee": {
+      "name": "Nöbetçi Güvenlik / Saha Şefi",
+      "role": "Saha Sorumlusu",
+      "phone": "Dahili 104"
+    },
+    "escalation": {
+      "supervisor_name": "İSG Müdürü",
+      "supervisor_role": "Tesis Direktörü",
+      "timeout_minutes": 5
+    }
+  },
+  "rule_196a478cd2": {
+    "id": "rule_196a478cd2",
+    "title": "Depo",
+    "scope": "camera",
+    "camera_id": "cam_10_23_247_54_8893",
+    "camera_name": "Kuzey Ofis",
+    "severity": "warning",
+    "description": "Çalışma alanı: Bolgede yelekli olmaayn çalışma arkadaşlarımız var ise tespit et. | Forklift Sürüş Alanı: Bu alan, forklift haraket alanıdır. Forklift Bu alandan dışarıya çıkamaz. Çıktığı tüm durumları tespit et.",
+    "zones": [
+      {
+        "id": "zone_1790365733654_hq51",
+        "name": "Çalışma alanı",
+        "description": "Bolgede yelekli olmaayn çalışma arkadaşlarımız var ise tespit et.",
+        "severity": "warning",
+        "actions": [],
+        "points": [
+          {
+            "x": 0.2857,
+            "y": 0.2548
+          },
+          {
+            "x": 0.2857,
+            "y": 0.2548
+          },
+          {
+            "x": 0.6111,
+            "y": 0.2548
+          },
+          {
+            "x": 0.6111,
+            "y": 0.2548
+          },
+          {
+            "x": 0.7554,
+            "y": 0.9106
+          },
+          {
+            "x": 0.7554,
+            "y": 0.9106
+          },
+          {
+            "x": 0.1048,
+            "y": 0.8986
+          },
+          {
+            "x": 0.1048,
+            "y": 0.8986
+          }
+        ],
+        "color_idx": 0
+      },
+      {
+        "id": "zone_1790365932900_x14r",
+        "name": "Forklift Sürüş Alanı",
+        "description": "Bu alan, forklift haraket alanıdır. Forklift Bu alandan dışarıya çıkamaz. Çıktığı tüm durumları tespit et.",
+        "severity": "critical",
+        "actions": [],
+        "points": [
+          {
+            "x": 0.1727,
+            "y": 0.2205
+          },
+          {
+            "x": 0.1727,
+            "y": 0.2205
+          },
+          {
+            "x": 0.2695,
+            "y": 0.2303
+          },
+          {
+            "x": 0.2695,
+            "y": 0.2303
+          },
+          {
+            "x": 0.1023,
+            "y": 0.8448
+          },
+          {
+            "x": 0.1023,
+            "y": 0.8448
+          },
+          {
+            "x": 0.0704,
+            "y": 0.9838
+          },
+          {
+            "x": 0.0704,
+            "y": 0.9838
+          },
+          {
+            "x": 0.0022,
+            "y": 0.9877
+          },
+          {
+            "x": 0.0022,
+            "y": 0.9877
+          },
+          {
+            "x": 0.011,
+            "y": 0.5454
+          },
+          {
+            "x": 0.011,
+            "y": 0.5454
+          }
+        ],
+        "color_idx": 1
+      }
+    ],
+    "actions": [
+      "alert_screen",
+      "snapshot"
+    ],
+    "enabled": true,
+    "created_at": 1790366093.3961935,
+    "updated_at": 1790366093.3961935,
+    "assignee": {
+      "name": "Nöbetçi Güvenlik / Saha Şefi",
+      "role": "Saha Sorumlusu",
+      "phone": "Dahili 104"
+    },
+    "escalation": {
+      "supervisor_name": "İSG Müdürü",
+      "supervisor_role": "Tesis Direktörü",
+      "timeout_minutes": 5
+    }
+  },
+  "rule_9eed0a2cf4": {
+    "id": "rule_9eed0a2cf4",
+    "title": "Bahçe İzleme",
+    "scope": "camera",
+    "camera_id": "cam_10_23_247_54_8895",
+    "camera_name": "Güney Ofis 2",
+    "severity": "info",
+    "description": "Sistem geneli izleme kuralı",
+    "zones": [],
+    "actions": [
+      "alert_screen",
+      "snapshot"
+    ],
+    "enabled": true,
+    "created_at": 1790366401.4616833,
+    "updated_at": 1790366401.4616833,
+    "assignee": {
+      "name": "Nöbetçi Güvenlik / Saha Şefi",
+      "role": "Saha Sorumlusu",
+      "phone": "Dahili 104"
+    },
+    "escalation": {
+      "supervisor_name": "İSG Müdürü",
+      "supervisor_role": "Tesis Direktörü",
+      "timeout_minutes": 5
+    }
+  },
+  "rule_539ef7975c": {
+    "id": "rule_539ef7975c",
+    "title": "Bahçe İzleme",
+    "scope": "camera",
+    "camera_id": "cam_10_23_247_54_8895",
+    "camera_name": "Güney Ofis 2",
+    "severity": "warning",
+    "description": "Kamera tamamı: saat 22.30-7.30 arasında yabanci insanları tepsit et",
+    "zones": [
+      {
+        "id": "zone_1790366431076_r8ys",
+        "name": "Kamera tamamı",
+        "description": "saat 22.30-7.30 arasında yabanci insanları tepsit et",
+        "severity": "warning",
+        "actions": [],
+        "points": [
+          {
+            "x": 0.0011,
+            "y": 0.0076
+          },
+          {
+            "x": 0.0011,
+            "y": 0.0076
+          },
+          {
+            "x": 0.0011,
+            "y": 0.0076
+          },
+          {
+            "x": 0.9934,
+            "y": 0.0292
+          },
+          {
+            "x": 0.9934,
+            "y": 0.0292
+          },
+          {
+            "x": 0.9934,
+            "y": 0.0292
+          },
+          {
+            "x": 0.9923,
+            "y": 0.99
+          },
+          {
+            "x": 0.9923,
+            "y": 0.99
+          },
+          {
+            "x": 0.9923,
+            "y": 0.99
+          },
+          {
+            "x": 0.011,
+            "y": 0.9724
+          },
+          {
+            "x": 0.011,
+            "y": 0.9724
+          },
+          {
+            "x": 0.011,
+            "y": 0.9724
+          }
+        ],
+        "color_idx": 0
+      }
+    ],
+    "actions": [
+      "alert_screen",
+      "snapshot"
+    ],
+    "enabled": true,
+    "created_at": 1790366475.5081403,
+    "updated_at": 1790366475.5081403,
+    "assignee": {
+      "name": "Nöbetçi Güvenlik / Saha Şefi",
+      "role": "Saha Sorumlusu",
+      "phone": "Dahili 104"
+    },
+    "escalation": {
+      "supervisor_name": "İSG Müdürü",
+      "supervisor_role": "Tesis Direktörü",
+      "timeout_minutes": 5
+    }
+  },
+  "rule_38b5fd6d9c": {
+    "id": "rule_38b5fd6d9c",
+    "title": "Bahçe İzleme",
+    "scope": "camera",
+    "camera_id": "cam_10_23_247_54_8894",
+    "camera_name": "Güney Ofis 1",
+    "severity": "info",
+    "description": "Sistem geneli izleme kuralı",
+    "zones": [],
+    "actions": [
+      "count_stats"
+    ],
+    "assignee": {
+      "name": "Ahmet Yılmaz",
+      "role": "Saha Şefi (Dahili 104)",
+      "phone": "Dahili 104"
+    },
+    "escalation": {
+      "supervisor_name": "Mehmet Kaya (İSG Müdürü)",
+      "supervisor_role": "İSG Departman Yöneticisi",
+      "timeout_minutes": 5
+    },
+    "enabled": true,
+    "created_at": 1790371506.700357,
+    "updated_at": 1790371506.700357
+  }
+}

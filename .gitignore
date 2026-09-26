@@ -1,0 +1,17 @@
+.conda/
+.data/
+*.png
+*.jpeg
+*.jpg
+*.mp4
+*.avi
+*.pkl
+*.pt
+*.onnx
+*.plan
+*.engine
+*.trt
+venv/
+*.ts
+__pycache__/
+*.pyc

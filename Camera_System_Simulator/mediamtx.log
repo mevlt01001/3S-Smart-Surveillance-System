@@ -1,0 +1,21 @@
+2026/09/24 21:19:29 INF MediaMTX v1.21.1, linux, amd64
+2026/09/24 21:19:29 INF configuration loaded from /home/n3uron/workspace/SmartSurveillanceSystem/Camera_System_Simulator/config/mediamtx.yml
+2026/09/24 21:19:29 INF [RTSP] started with listeners on :8554 (TCP/RTSP), :8002 (UDP/RTP), :8003 (UDP/RTCP)
+2026/09/24 21:19:29 INF [HLS] started with listener on :8888 (TCP/HTTP)
+2026/09/24 21:19:29 INF [WebRTC] started with listeners on :8889 (TCP/HTTP), :8189 (UDP/ICE)
+2026/09/24 21:19:29 INF [API] started with listener on :9997 (TCP/HTTP)
+2026/09/24 21:19:30 INF [RTSP] [conn 127.0.0.1:39062] opened
+2026/09/24 21:19:30 INF [RTSP] [session e677ffc2] created by 127.0.0.1:39062
+2026/09/24 21:19:30 INF [path cam1] [recorder] recording 1 track (H264)
+2026/09/24 21:19:30 INF [path cam1] stream is available and online, 1 track (H264)
+2026/09/24 21:19:30 INF [RTSP] [session e677ffc2] is publishing to path 'cam1'
+2026/09/24 21:19:30 INF [path cam1] RTP packets are too big (1446 > 1440), remuxing them into smaller ones
+2026/09/24 21:19:32 INF [WebRTC] [session 209579e0] created by 127.0.0.1:50604
+2026/09/24 21:19:32 INF shutting down gracefully
+2026/09/24 21:19:32 INF [API] closing
+2026/09/24 21:19:32 INF [WebRTC] closing
+2026/09/24 21:19:32 INF [WebRTC] [session 209579e0] closed: terminated
+2026/09/24 21:19:32 INF [HLS] closing
+2026/09/24 21:19:32 INF [RTSP] closing
+2026/09/24 21:19:32 INF [RTSP] [conn 127.0.0.1:39062] closed: terminated
+2026/09/24 21:19:32 INF [path cam1] [recorder] recording stopped

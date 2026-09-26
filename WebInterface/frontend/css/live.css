@@ -1,0 +1,193 @@
+/* ==========================================================================
+   AegisVision Live Video Wall & Multi-View Grid Stylesheet (live.css)
+   ========================================================================== */
+
+.live-toolbar-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 12px 18px;
+  margin-bottom: 18px;
+  gap: 12px;
+}
+
+.live-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-layout-selector {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 4px;
+}
+
+.btn-layout-mode {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-layout-mode:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-layout-mode.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 133, 51, 0.3);
+}
+
+.live-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Video Grid Viewport */
+.live-video-grid {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.live-video-grid.grid-1x1 {
+  grid-template-columns: 1fr;
+}
+
+.live-video-grid.grid-2x2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.live-video-grid.grid-3x2 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* Single Camera Tile */
+.live-camera-tile {
+  background: #080B14;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.live-camera-tile:hover {
+  border-color: var(--primary-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 133, 51, 0.1);
+}
+
+.live-tile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(14, 19, 32, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.8rem;
+  z-index: 5;
+}
+
+.live-tile-name {
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-tile-feed {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #04060A;
+  overflow: hidden;
+}
+
+.live-tile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.live-tile-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.live-tile-osd {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.live-rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #EF4444;
+  box-shadow: 0 0 8px #EF4444;
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.live-tile-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(14, 19, 32, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.live-tile-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

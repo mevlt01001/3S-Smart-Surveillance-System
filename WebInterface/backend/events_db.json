@@ -1,0 +1,50 @@
+{
+  "evt_f5a1517a": {
+    "id": "evt_f5a1517a",
+    "rule_id": "rule_196a478cd2",
+    "rule_title": "Depo Güvenlik ve İSG Kuralları",
+    "camera_id": "cam_10_23_247_54_8893",
+    "camera_name": "Depo Kuzey",
+    "zone_id": "zone_hq51",
+    "zone_name": "Çalışma alanı",
+    "violation_type": "İSG İhlali: Bölgede Yeleksiz Personel",
+    "description": "Çalışma alanı içinde reflektif güvenlik yeleği bulunmayan 1 personel tespit edildi.",
+    "severity": "warning",
+    "status": "resolved",
+    "assignee": {
+      "name": "Ahmet Yılmaz",
+      "role": "Saha Güvenlik Şefi",
+      "phone": "+90 532 555 1020",
+      "email": "ahmet.yilmaz@fabrika.com"
+    },
+    "escalation": {
+      "supervisor_name": "Mehmet Kaya",
+      "supervisor_role": "İş Sağlığı ve Güvenliği Müdürü",
+      "timeout_minutes": 5,
+      "email": "isg.mudurluk@fabrika.com",
+      "is_escalated": true
+    },
+    "snapshot_url": "/api/cameras/cam_10_23_247_54_8893/snapshot",
+    "created_at": 1790370885.3518126,
+    "resolved_at": 1790371381.4773095,
+    "verification_attempts": 2,
+    "history": [
+      {
+        "timestamp": 1790370885.3518126,
+        "event": "İhlal tespit edildi ve 1. Derece Sorumluya (Ahmet Yılmaz) bildirim iletildi."
+      },
+      {
+        "timestamp": 1790371369.4489717,
+        "event": "Süre aşımı (5 dk)! İhlal çözülemediği için 2. Derece Amir'e (Mehmet Kaya) eskalasyon iletildi."
+      },
+      {
+        "timestamp": 1790371375.765052,
+        "event": "Operatör (Nöbetçi İSG) olayı kapatmayı denedi. Yapay zeka teyidi olumsuz: İhlal alanda halen sürüyor."
+      },
+      {
+        "timestamp": 1790371381.4773095,
+        "event": "Olay başarıyla çözüldü (Nöbetçi İSG): [YETKİLİ AMİR ONAYI İLE KAPATILDI] Personel bizzat kontrol edildi, yeleği giydirildi."
+      }
+    ]
+  }
+}

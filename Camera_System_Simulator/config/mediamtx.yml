@@ -1,0 +1,33 @@
+# MediaMTX Configuration for AEGIS-PRO Camera Simulator
+api: yes
+apiAddress: :9997
+
+metrics: no
+pprof: no
+
+rtsp: yes
+rtspAddress: :8554
+rtpAddress: :8002
+rtcpAddress: :8003
+
+webrtc: yes
+webrtcAddress: :8889
+webrtcAllowOrigins: ['*']
+webrtcLocalUDPAddress: :8189
+webrtcIPsFromInterfaces: yes
+
+hls: yes
+hlsAddress: :8888
+hlsAllowOrigins: ['*']
+
+rtmp: no
+srt: no
+moq: no
+
+paths:
+  all_others:
+    record: yes
+    recordPath: ./recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+    recordFormat: fmp4
+    recordPartDuration: 100ms
+    recordSegmentDuration: 166ms

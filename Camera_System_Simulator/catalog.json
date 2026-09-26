@@ -1,0 +1,710 @@
+{
+  "set_1": {
+    "name": "Surveillance Set 1",
+    "camera_count": 5,
+    "min_duration": 58.2,
+    "resolution": "1280x720",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video1_1.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 58.33
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video1_2.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 29.0,
+        "codec": "mpeg4",
+        "duration": 60.34
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video1_3.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 58.47
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video1_4.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 58.2
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video1_5.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 58.3
+      }
+    ]
+  },
+  "set_2": {
+    "name": "Surveillance Set 2",
+    "camera_count": 5,
+    "min_duration": 118.43,
+    "resolution": "1280x720",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video2_1.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 118.43
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video2_2.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 118.47
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video2_3.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 118.43
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video2_4.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 118.43
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video2_5.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 118.47
+      }
+    ]
+  },
+  "set_3": {
+    "name": "Surveillance Set 3",
+    "camera_count": 5,
+    "min_duration": 118.27,
+    "resolution": "1280x720",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video3_1.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 118.47
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video3_2.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 118.4
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video3_3.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 118.37
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video3_4.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 118.27
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video3_5.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 29.0,
+        "codec": "mpeg4",
+        "duration": 122.52
+      }
+    ]
+  },
+  "set_4": {
+    "name": "Surveillance Set 4",
+    "camera_count": 5,
+    "min_duration": 238.4,
+    "resolution": "1280x720",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video4_1.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 238.47
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video4_2.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 29.0,
+        "codec": "mpeg4",
+        "duration": 246.07
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video4_3.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 238.4
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video4_4.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 30.0,
+        "codec": "mpeg4",
+        "duration": 238.43
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video4_5.avi",
+        "width": 1280,
+        "height": 720,
+        "fps": 29.0,
+        "codec": "mpeg4",
+        "duration": 246.62
+      }
+    ]
+  },
+  "set_5": {
+    "name": "Surveillance Set 5",
+    "camera_count": 6,
+    "min_duration": 40.0,
+    "resolution": "640x480",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video5_1.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video5_2.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video5_3.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video5_4.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video5_5.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam6",
+        "channel": 6,
+        "file": "video5_6.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      }
+    ]
+  },
+  "set_6": {
+    "name": "Surveillance Set 6",
+    "camera_count": 6,
+    "min_duration": 40.0,
+    "resolution": "640x480",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video6_1.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video6_2.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video6_3.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video6_4.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video6_5.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam6",
+        "channel": 6,
+        "file": "video6_6.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      }
+    ]
+  },
+  "set_7": {
+    "name": "Surveillance Set 7",
+    "camera_count": 6,
+    "min_duration": 40.0,
+    "resolution": "640x480",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video7_1.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video7_2.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video7_3.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video7_4.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video7_5.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam6",
+        "channel": 6,
+        "file": "video7_6.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      }
+    ]
+  },
+  "set_8": {
+    "name": "Surveillance Set 8",
+    "camera_count": 6,
+    "min_duration": 40.0,
+    "resolution": "640x480",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video8_1.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video8_2.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video8_3.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video8_4.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video8_5.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam6",
+        "channel": 6,
+        "file": "video8_6.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      }
+    ]
+  },
+  "set_9": {
+    "name": "Surveillance Set 9",
+    "camera_count": 6,
+    "min_duration": 30.0,
+    "resolution": "640x480",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video9_1.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 30.0
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video9_2.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video9_3.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video9_4.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video9_5.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam6",
+        "channel": 6,
+        "file": "video9_6.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      }
+    ]
+  },
+  "set_10": {
+    "name": "Surveillance Set 10",
+    "camera_count": 6,
+    "min_duration": 40.0,
+    "resolution": "640x480",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video10_1.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video10_2.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video10_3.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video10_4.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video10_5.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam6",
+        "channel": 6,
+        "file": "video10_6.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      }
+    ]
+  },
+  "set_11": {
+    "name": "Surveillance Set 11",
+    "camera_count": 6,
+    "min_duration": 40.0,
+    "resolution": "640x480",
+    "cameras": [
+      {
+        "cam_id": "cam1",
+        "channel": 1,
+        "file": "video11_1.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam2",
+        "channel": 2,
+        "file": "video11_2.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam3",
+        "channel": 3,
+        "file": "video11_3.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam4",
+        "channel": 4,
+        "file": "video11_4.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam5",
+        "channel": 5,
+        "file": "video11_5.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      },
+      {
+        "cam_id": "cam6",
+        "channel": 6,
+        "file": "video11_6.avi",
+        "width": 640,
+        "height": 480,
+        "fps": 25.0,
+        "codec": "rawvideo",
+        "duration": 40.0
+      }
+    ]
+  }
+}
