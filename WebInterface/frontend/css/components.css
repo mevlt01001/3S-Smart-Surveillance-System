@@ -309,6 +309,17 @@ details.advanced > summary {
   color: var(--info);
 }
 
+.badge.is-muted {
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+
+.badge-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .badge.is-busy::before {
   content: "";
   width: 10px;

@@ -35,17 +35,9 @@ Kod: `WebInterface/backend/anomaly_service.py`. Model: Triton üzerindeki `anoma
 Ayar adları tarihsel nedenle kafa karıştırıcıdır: `threshold_normal` "normalin bittiği yer", yani
 **uyarı** eşiğidir; `threshold_warning` "uyarının bittiği yer", yani **kritik** eşiğidir.
 
-Olayın başlığı, en yüksek skora göre seçilir (`_describe`):
-
-| En yüksek skor | Başlık |
-| :--- | :--- |
-| ≥ 80 | Kavga veya panik olabilir |
-| ≥ 60 | Koşma veya itişme olabilir |
-| ≥ 40 | Olağandışı hareket |
-| diğer | Hafif şüpheli hareket |
-
-Bu başlıklar modelin çıktısı değil, skora bağlı sabit ifadelerdir; ne olduğunu asıl anlatan, video
-karelerinden yazılan özettir.
+Model yalnızca hareketin olağandışı olduğunu bilir, ne olduğunu bilmez. Bu yüzden kayıttaki başlık
+(`anomaly_type`) her zaman **"Olağandışı hareket"**tir (`UNUSUAL_MOVEMENT`); arayüz, özet yazılır
+yazılmaz bunun yerine özetin başlığını gösterir ("Bir kişi palet arabasından koli düşürdü").
 
 ### Olay yaşam döngüsü
 
@@ -234,17 +226,30 @@ Kod: `Rule_Generator_LLM/vlm_summarizer.py`.
 2. Kareler ve kısa bir yönerge görsel dil modeline gönderilir. Yönerge şu biçimi ister:
 
    ```
-   **Özet Başlık:** Ne olduğunu anlatan tek cümle (en fazla 20 kelime).
+   **Değerlendirme:** GERÇEK, OLAĞAN ya da BELİRSİZ.
+   **Özet Başlık:** Ne olduğunu anlatan tek kısa cümle (en fazla 12 kelime).
    - En fazla 2 madde: başlıkta olmayan, karara yarayan bilgi.
    **Öneri:** Görevliye emir kipinde tek cümle (gerekmiyorsa yazılmaz).
    ```
+
+   Değerlendirme satırı modelin kendi kararıdır: GERÇEK, alarmın nedeni (kural ihlalinde kuralın
+   ihlali; olağandışı harekette kavga, düşme, kaza gibi bakılması gereken bir durum) karelerde
+   açıkça görünüyor demektir; OLAĞAN, yalnızca gündelik hareket var; BELİRSİZ, kareler yetmiyor.
 
    Kurallar: toplam 60 kelime; yalnızca karelerde görünen; tekrar, kıyafet rengi gibi önemsiz
    ayrıntı ve genel güvenlik bilgisi yok; sistem / kural / model adı ve teknik terim yok; kareler
    alarmı doğrulamıyorsa bunu başlıkta söyle.
 3. Yanıt `compact_summary` ile **zorla** bu biçime indirgenir: tek başlık, başlığı yinelemeyen en
    çok iki madde (her biri ilk cümlesiyle), tek öneri. Model yönergeye uymasa da kayda uzun metin girmez.
-4. Sonuç kayda yazılır: `ai_summary`, `ai_headline`, `ai_status: completed`.
+   Değerlendirme satırı özet metnine girmez, ayrı bir alana çevrilir.
+4. Sonuç kayda yazılır: `ai_summary`, `ai_headline`, `ai_verdict` (`confirmed` / `normal` /
+   `unclear`; model satırı yazmadıysa `null`), `ai_status: completed`.
+
+**Değerlendirme yalnızca bilgidir.** `normal` çıkan olay silinmez, gizlenmez, seviyesi düşmez;
+listede ve olay penceresinde gri bir **Olağan görünüyor** rozeti alır. Nedeni: model sekiz küçük
+kareye bakar ve gerçek bir olayı kaçırabilir (denemede, işçinin forklift önünde yere düştüğü
+bir videoya "olağan" dedi). Değerlendirmenin operatör kararlarıyla ne kadar örtüştüğü ölçülmeden
+ona dayanarak alarm bastırılmamalıdır.
 
 Özet yazılamazsa (`ai_status: fallback`) kayda tek satırlık dürüst bir not düşer: "Görüntü
 incelenemediği için özet yazılamadı (neden)". Nedenler: videodan kare alınamadı, servis

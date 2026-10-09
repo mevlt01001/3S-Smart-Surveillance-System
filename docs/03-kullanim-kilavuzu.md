@@ -68,7 +68,12 @@ fotoğraflarıyla birlikte kalıcı olarak siler (onay ister).
 ### Olay kartı
 
 Fotoğraf (video varsa oynat simgesiyle), süre, seviye rozeti, tarih-saat, başlık, kamera ve varsa
-tek satırlık özet. Altındaki **Doğru** / **Hatalı** düğmeleri olayı pencereyi açmadan işaretler;
+tek satırlık özet. Olağandışı hareket olaylarında başlık, özet yazılana kadar "Olağandışı
+hareket"tir; sonra özetin ne olduğunu anlatan cümlesi olur.
+
+Seviye rozetinin yanında gri bir **Olağan görünüyor** rozeti varsa, özet görüntüde olağandışı bir
+şey görmemiştir. Bu yalnızca bir ipucudur: özet birkaç küçük kareye bakar ve yanılabilir, bu yüzden
+olay silinmez ve seviyesi değişmez. Videoyu izleyip kararı siz verin. Altındaki **Doğru** / **Hatalı** düğmeleri olayı pencereyi açmadan işaretler;
 seçili düğmeye yeniden basmak kararı geri alır.
 
 ### Olay penceresi

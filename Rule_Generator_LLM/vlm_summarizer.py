@@ -1,6 +1,7 @@
 """
 Incident summarizer: looks at a handful of frames of a recorded incident and writes the
-short note an operator reads in the event window (one headline, a few details, one advice).
+short note an operator reads in the event window (one headline, a few details, one advice),
+together with its verdict on whether the footage shows anything that needs attention.
 
 The frame sampling helpers at the top are plain image code and need no credentials; the
 event API uses them to show the frames of a clip.
@@ -28,8 +29,13 @@ FRAME_ALIGNMENT = 32
 
 # The summary is a note for an operator, not a report
 SUMMARY_MAX_WORDS = 60
+HEADLINE_MAX_WORDS = 12   # the headline is also the title of the event in lists
 SUMMARY_MAX_DETAILS = 2
-SUMMARY_MAX_TOKENS = 220
+SUMMARY_MAX_TOKENS = 240
+
+# What the model answers on its "Değerlendirme" line -> verdict stored with the event.
+# Matched by the first letters: str.lower() does not turn "İ" into a plain "i".
+VERDICTS = {"gerç": "confirmed", "olağ": "normal", "bel": "unclear"}
 
 JpegFrame = Tuple[float, bytes]  # (capture time, JPEG bytes) as kept in the camera ring buffer
 
@@ -138,19 +144,23 @@ def _stems(value: str) -> set:
     return {word[:5] for word in re.findall(r"\w+", value.lower()) if len(word) > 3}
 
 
-def compact_summary(text: str) -> Optional[Tuple[str, str]]:
+def compact_summary(text: str) -> Optional[Tuple[str, str, Optional[str]]]:
     """
-    Reduces a model answer to the agreed note and returns (headline, note), or None when the
-    answer contains nothing usable. The prompt asks for exactly this form; the model does not
-    always obey, and a long answer is of no use to an operator.
+    Reduces a model answer to the agreed note and returns (headline, note, verdict), or None
+    when the answer contains nothing usable. The prompt asks for exactly this form; the model
+    does not always obey, and a long answer is of no use to an operator. `verdict` is one of
+    the VERDICTS values, or None when the model gave none.
     """
-    headline, details, advice = "", [], ""
+    headline, details, advice, verdict = "", [], "", None
     for raw_line in text.splitlines():
         plain = re.sub(r"[*_`#>📌]", "", raw_line).strip()
         if not plain:
             continue
         lowered = plain.lower()
-        if lowered.startswith("özet başlık:"):
+        if lowered.startswith("değerlendirme:"):
+            answer = lowered.split(":", 1)[1].strip()
+            verdict = verdict or next((value for prefix, value in VERDICTS.items() if answer.startswith(prefix)), None)
+        elif lowered.startswith("özet başlık:"):
             headline = headline or _first_sentence(plain.split(":", 1)[1])
         elif lowered.startswith("öneri:"):
             advice = advice or _first_sentence(plain.split(":", 1)[1])
@@ -169,17 +179,26 @@ def compact_summary(text: str) -> Optional[Tuple[str, str]]:
     lines = [f"**Özet Başlık:** {headline}"] + [f"- {detail}" for detail in details]
     if advice:
         lines.append(f"**Öneri:** {advice}")
-    return headline, "\n".join(lines)
+    return headline, "\n".join(lines), verdict
 
 
 def _prompt(camera_name: str, anomaly_type: str, duration_sec: float, frame_count: int, rule_context: Optional[str]) -> str:
-    reason = f"Alarmın nedeni: {rule_context}" if rule_context else f"Sistemin ilk değerlendirmesi: {anomaly_type}"
+    if rule_context:
+        reason = f"Alarmın nedeni: {rule_context}"
+        confirmed = "alarmın nedeni karelerde açıkça görünüyor"
+    else:
+        reason = "Alarmın nedeni: hareket algılayıcı olağandışı bir hareket sezdi; ne olduğunu bilmiyor."
+        confirmed = ("görevlinin bakması gereken bir durum açıkça görünüyor (kavga, saldırı, düşme, kaza, hırsızlık, "
+                     "zorla giriş, panik, hasar, yangın gibi)")
     return (
         f"Bir güvenlik kamerası olayının zaman sırasına dizilmiş {frame_count} karesini görüyorsun "
         f"('{camera_name}', yaklaşık {duration_sec:.0f} saniye).\n"
         f"{reason}\n\n"
         f"Güvenlik görevlisi bu notu bir bakışta okuyacak. Yalnızca şu biçimde, Türkçe yaz:\n\n"
-        f"**Özet Başlık:** Ne olduğunu anlatan tek cümle (en fazla 20 kelime).\n"
+        f"**Değerlendirme:** GERÇEK, OLAĞAN ya da BELİRSİZ sözcüklerinden yalnızca biri. "
+        f"GERÇEK: {confirmed}. OLAĞAN: karelerde yalnızca gündelik, sıradan bir hareket var "
+        f"(yürüyen, çalışan, konuşan insanlar gibi). BELİRSİZ: kareler karar vermeye yetmiyor.\n"
+        f"**Özet Başlık:** Ne olduğunu anlatan tek kısa cümle (en fazla {HEADLINE_MAX_WORDS} kelime).\n"
         f"- Yalnızca gerekiyorsa, en fazla {SUMMARY_MAX_DETAILS} madde: görevlinin karar vermesine yarayan ve "
         f"başlıkta olmayan bir bilgi (kaç kişi, tam olarak nerede, olay sürüyor mu). Her madde tek kısa cümle.\n"
         f"**Öneri:** Görevliye emir kipinde tek kısa cümle (örnek: 'Çalışanı baret takması için uyarın.'). "
@@ -219,8 +238,10 @@ class VLMSummarizer:
     ) -> Dict[str, Any]:
         """
         Writes the note for one incident from its clip file or from buffered camera frames.
-        Returns {"status": "completed" | "fallback", "summary", "headline", "latency_sec"};
-        "fallback" means no summary could be written and `summary` says why.
+        Returns {"status": "completed" | "fallback", "summary", "headline", "verdict", "latency_sec"};
+        "fallback" means no summary could be written and `summary` says why. `verdict` tells
+        whether the footage shows the alarm ("confirmed"), only everyday activity ("normal"),
+        or not enough to decide ("unclear"); None when the model gave none.
         """
         started = time.perf_counter()
         try:
@@ -258,11 +279,12 @@ class VLMSummarizer:
         compact = compact_summary(answer)
         if compact is None:
             return self._not_summarized(anomaly_type, "özet servisi boş yanıt verdi")
-        headline, note = compact
+        headline, note, verdict = compact
         return {
             "status": "completed",
             "summary": note,
             "headline": headline,
+            "verdict": verdict,
             "latency_sec": round(time.perf_counter() - started, 2),
         }
 
@@ -273,4 +295,4 @@ class VLMSummarizer:
             f"**Özet Başlık:** {anomaly_type}\n"
             f"- Görüntü incelenemediği için özet yazılamadı ({reason}). Videoyu izleyerek değerlendirin."
         )
-        return {"status": "fallback", "summary": note, "headline": anomaly_type, "latency_sec": 0.0}
+        return {"status": "fallback", "summary": note, "headline": anomaly_type, "verdict": None, "latency_sec": 0.0}

@@ -4,7 +4,8 @@
 
 import { clearEvents, getFleetStatus, labelEvent, listEvents, openEventStream } from "./api.js";
 import {
-  eventTitle, isRuleEvent, levelBadge, levelInfo, openEventDetail, summaryHeadline, syncEventDetail,
+  eventTitle, isRuleEvent, levelBadge, levelInfo, openEventDetail, summaryDetail, summaryHeadline, syncEventDetail,
+  verdictBadge, VERDICT_LABELS,
 } from "./event-detail.js";
 import { refreshEventsBadge, subscribeSystemStats } from "./shell.js";
 import {
@@ -58,7 +59,9 @@ function filteredEntries() {
 }
 
 /* --------------------------------------------------------------- Rendering */
-const describe = (entry) => summaryHeadline(entry) || (isRuleEvent(entry) ? entry.rule_description || "" : "");
+// The headline of the summary is the title of a movement alarm, so its description is the next line
+const describe = (entry) =>
+  (isRuleEvent(entry) ? summaryHeadline(entry) || entry.rule_description || "" : summaryDetail(entry));
 
 function durationText(entry) {
   if (entry.is_ongoing) return "Sürüyor";
@@ -83,7 +86,7 @@ function cardHTML(entry) {
         ${duration ? `<span class="event-duration">${duration}</span>` : ""}
       </button>
       <div class="event-body" data-action="open">
-        <div class="event-meta">${levelBadge(entry)}<time>${escapeHTML(entry.date_str || "")} ${escapeHTML(entry.timestamp_str || "")}</time></div>
+        <div class="event-meta"><span class="badge-group">${levelBadge(entry)}${verdictBadge(entry)}</span><time>${escapeHTML(entry.date_str || "")} ${escapeHTML(entry.timestamp_str || "")}</time></div>
         <h3 class="event-title">${escapeHTML(eventTitle(entry))}</h3>
         <p class="event-camera">${icon("camera")} ${escapeHTML(entry.camera_name || entry.camera_id)}</p>
         ${description ? `<p class="event-description">${escapeHTML(description)}</p>` : ""}
@@ -98,7 +101,7 @@ function rowHTML(entry) {
       <td><time>${escapeHTML(entry.date_str || "")} ${escapeHTML(entry.timestamp_str || "")}</time></td>
       <td>${escapeHTML(entry.camera_name || entry.camera_id)}</td>
       <td>${escapeHTML(eventTitle(entry))}<span class="cell-sub">${escapeHTML(describe(entry))}</span></td>
-      <td>${levelBadge(entry)}</td>
+      <td><span class="badge-group">${levelBadge(entry)}${verdictBadge(entry)}</span></td>
       <td>${durationText(entry)}</td>
       <td><div class="chip-row">${reviewButtons(entry)}</div></td>
     </tr>`;
@@ -282,11 +285,12 @@ function exportEvents() {
     return;
   }
   const cell = (value) => `"${String(value ?? "").replace(/"/g, '""').replace(/\s+/g, " ")}"`;
-  const lines = [["Tarih", "Saat", "Kamera", "Olay", "Seviye", "Süre (sn)", "Karar", "Özet"].map(cell).join(";")];
+  const lines = [["Tarih", "Saat", "Kamera", "Olay", "Seviye", "Süre (sn)", "Karar", "Özet", "Özetin değerlendirmesi"].map(cell).join(";")];
   rows.forEach((entry) => {
     lines.push([
       entry.date_str, entry.timestamp_str, entry.camera_name, eventTitle(entry), levelInfo(entry).text,
       entry.duration_sec ?? "", REVIEW_LABELS[entry.operator_label] || "İncelenmedi", describe(entry),
+      VERDICT_LABELS[entry.ai_verdict] || "",
     ].map(cell).join(";"));
   });
   const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");

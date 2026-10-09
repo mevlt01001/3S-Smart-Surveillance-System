@@ -89,7 +89,7 @@ kanıtlarıyla silinir.
 | `timestamp`, `timestamp_str`, `date_str` | Açılış zamanı. |
 | `camera_id`, `camera_name` | Olayın kamerası (ad, olay anındaki addır). |
 | `score`, `tier`, `label` | En yüksek skor; `warning` / `critical`; seviyenin adı. |
-| `anomaly_type` | Başlık. Kural ihlalinde `Kural İhlali: <kural adı>`. |
+| `anomaly_type` | Kural ihlalinde `Kural İhlali: <kural adı>`, olağandışı harekette her zaman `Olağandışı hareket`. Arayüz ikincisinde özetin başlığını gösterir. |
 | `rule_title`, `rule_description` | Yalnızca kural ihlalinde: kuralın adı ve ne görüldüğü. |
 | `start_time_str`, `peak_time_str`, `end_time_str`, `duration_sec` | Videonun kapsadığı aralık. |
 | `is_ongoing` | Olay sürüyor. |
@@ -97,6 +97,7 @@ kanıtlarıyla silinir.
 | `clip_expired` | Video disk kotası nedeniyle silindi. |
 | `ai_status` | `none`, `generating`, `completed`, `fallback`, `error`, `interrupted`. |
 | `ai_summary`, `ai_headline` | Özet metni ve başlığı. |
+| `ai_verdict` | Özetin görüntü hakkındaki kararı: `confirmed`, `normal`, `unclear` ya da `null`. Yalnızca bilgidir. |
 | `operator_label` | `correct`, `false_positive`, `unlabeled`; alan yoksa incelenmemiştir. |
 | `operator_notes`, `operator_name`, `operator_labeled_at` | Kararın ayrıntıları. |
 | `interrupted` | Olay sürerken sunucu yeniden başladı. |

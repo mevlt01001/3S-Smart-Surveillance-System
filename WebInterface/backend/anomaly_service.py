@@ -53,15 +53,9 @@ def _clock(timestamp: float) -> str:
     return time.strftime("%H:%M:%S", time.localtime(timestamp))
 
 
-def _describe(score: float) -> str:
-    """Short, plain description of an incident for the operator, by how strong the movement was."""
-    if score >= 80:
-        return "Kavga veya panik olabilir"
-    if score >= 60:
-        return "Koşma veya itişme olabilir"
-    if score >= 40:
-        return "Olağandışı hareket"
-    return "Hafif şüpheli hareket"
+# Title of a movement alarm. The detector only knows that the movement is unusual, not what
+# it is: the interface shows the headline of the summary instead as soon as there is one.
+UNUSUAL_MOVEMENT = "Olağandışı hareket"
 
 
 class AnomalyService:
@@ -250,7 +244,7 @@ class AnomalyService:
             return
 
         if incident is None:
-            entry = self._new_entry("anom", camera_id, camera_name, now, score, tier, label, _describe(score), is_ongoing=True, end_time_str="")
+            entry = self._new_entry("anom", camera_id, camera_name, now, score, tier, label, UNUSUAL_MOVEMENT, is_ongoing=True, end_time_str="")
             event_journal.add(entry, self.max_stored_clips)
             self._incidents[camera_id] = {
                 "id": entry["id"], "camera_name": camera_name, "start_ts": now, "last_active_ts": now,
@@ -280,13 +274,11 @@ class AnomalyService:
         frames = (camera_service.get_camera_clip_frames_range(camera_id, start_ts=clip_start, end_ts=clip_end)
                   or camera_service.get_camera_clip_frames(camera_id, duration_sec=duration_sec))
         has_clip = self._worth_a_clip(frames)
-        anomaly_type = _describe(incident["peak_score"])
 
         changes = {
             "score": round(incident["peak_score"], 1),
             "tier": incident["peak_tier"],
             "label": incident["label"],
-            "anomaly_type": anomaly_type,
             "start_time_str": _clock(clip_start),
             "peak_time_str": _clock(incident["peak_ts"]),
             "end_time_str": _clock(clip_end),
@@ -294,7 +286,6 @@ class AnomalyService:
             "clip_url": evidence_store.clip_url(entry_id) if has_clip else None,
             "is_ongoing": False,
             "ai_status": "generating" if (self.summarizer and frames) else "none",
-            "message": f"{incident['camera_name']}: {anomaly_type}",
         }
         # The snapshot taken at the start is replaced by the frame of the peak moment
         peak_snapshot = evidence_store.save_snapshot(
@@ -383,7 +374,8 @@ class AnomalyService:
             logger.error("Summary of %s failed: %s", entry_id, exc)
             event_journal.update(entry_id, ai_status="error")
             return
-        changes = {"ai_summary": result["summary"], "ai_headline": result["headline"], "ai_status": result["status"]}
+        changes = {"ai_summary": result["summary"], "ai_headline": result["headline"],
+                   "ai_verdict": result["verdict"], "ai_status": result["status"]}
         if result["status"] == "completed":
             changes["message"] = f"{entry.get('camera_name', '')}: {result['headline']}"
         event_journal.update(entry_id, **changes)

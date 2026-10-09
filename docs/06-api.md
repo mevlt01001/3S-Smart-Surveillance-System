@@ -249,13 +249,14 @@ En yeniden eskiye olaylar ve sayaçlar. `limit` en çok 2000.
    "timestamp": 1791525040.45, "timestamp_str": "08:50:40", "date_str": "09.10.2026",
    "camera_id": "cam_192_168_1_100_8892", "camera_name": "Depo",
    "score": 99.3, "tier": "critical", "label": "Kritik Anomali",
-   "anomaly_type": "Kavga veya panik olabilir",
+   "anomaly_type": "Olağandışı hareket",
    "start_time_str": "08:50:39", "peak_time_str": "08:50:43", "end_time_str": "08:50:46",
    "duration_sec": 6.8, "is_ongoing": false,
    "snapshot_url": "/api/anomaly/snapshots/snap_anom_58361cda.jpg?v=1791525043",
    "clip_url": "/api/anomaly/clips/clip_anom_58361cda.mp4",
    "ai_status": "completed",
    "ai_headline": "Bir kişi, palet arabasıyla bir nesneyi düşürdü.",
+   "ai_verdict": "confirmed",
    "ai_summary": "**Özet Başlık:** Bir kişi, palet arabasıyla bir nesneyi düşürdü.\n- …\n**Öneri:** …",
    "message": "Depo: Bir kişi, palet arabasıyla bir nesneyi düşürdü."
  }]}

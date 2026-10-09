@@ -609,6 +609,27 @@ def test_shutdown_and_single_instance(srv):
     check("immediate restart acquires the data directory and serves again", startup < 30, f"{startup:.1f}s to ready")
 
 
+def test_summary_shaping():
+    print("\n[12] Incident summary shaping (no model needed)")
+    sys.path.insert(0, PROJECT_ROOT)
+    from Rule_Generator_LLM.vlm_summarizer import compact_summary
+
+    answer = ("**Değerlendirme:** BELİRSİZ\n**Özet Başlık:** Bir kişi koridorda yere düştü. Sonra kalktı.\n"
+              "- Kişi koridorda yere düştü.\n- Yanında başka kimse yok. Kapı açık.\n- Üçüncü madde.\n- Dördüncü madde.\n"
+              "**Öneri:** Kişinin durumunu kontrol edin.")
+    headline, note, verdict = compact_summary(answer)
+    check("summary keeps one headline sentence", headline == "Bir kişi koridorda yere düştü.", headline)
+    check("summary drops the detail that repeats the headline and keeps at most two",
+          note.count("\n- ") == 2 and "Kişi koridorda" not in note.split("\n", 1)[1], note)
+    check("verdict is read (also with a dotted capital I) and kept out of the note",
+          verdict == "unclear" and "Değerlendirme" not in note, f"{verdict} / {note}")
+    verdicts = [compact_summary(f"**Değerlendirme:** {word}\n**Özet Başlık:** Koridor boş.")[2]
+                for word in ("GERÇEK", "Olağan.", "bilmiyorum")]
+    check("verdict words map to confirmed / normal, an unknown word to none",
+          verdicts == ["confirmed", "normal", None], str(verdicts))
+    check("an answer without a headline is rejected", compact_summary("**Değerlendirme:** OLAĞAN\n") is None)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sim-ip", default=os.environ.get("SIM_IP", ""), help="IP the camera simulator advertises (default: auto-detect)")
@@ -643,6 +664,7 @@ def main():
             test_load(c, srv)
             test_persistence_and_cleanup(c, srv, eid)
             test_shutdown_and_single_instance(srv)
+            test_summary_shaping()
     except Exception as e:  # a crash of the harness is a failure, never a silent pass
         import traceback
         traceback.print_exc()

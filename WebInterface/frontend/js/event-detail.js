@@ -24,12 +24,12 @@ let wired = false;
 export const isRuleEvent = (entry) =>
   String(entry.id).startsWith("rule_") || String(entry.anomaly_type || "").startsWith("Kural");
 
-/** Short title of an event: the broken rule, or the kind of unusual movement. */
+/** Short title of an event: the broken rule, or what the summary says happened. */
 export function eventTitle(entry) {
   if (isRuleEvent(entry)) {
     return entry.rule_title || String(entry.anomaly_type || "").replace("Kural İhlali:", "").trim() || "Kural ihlali";
   }
-  return entry.anomaly_type || "Olağandışı hareket";
+  return summaryHeadline(entry).replace(/[.!]+$/, "") || entry.anomaly_type || "Olağandışı hareket";
 }
 
 /** Text and colour class of the badge that tells how serious an event is. */
@@ -43,23 +43,45 @@ export function levelBadge(entry) {
   return `<span class="${info.className}">${info.text}</span>`;
 }
 
-/** First sentence of the written summary, used as a one-line description in lists. */
+/** What the summary concluded about the footage, in the words used in lists and exports. */
+export const VERDICT_LABELS = { confirmed: "Doğrulandı", normal: "Olağan görünüyor", unclear: "Belirsiz" };
+const ORDINARY_NOTE = "Özete göre görüntüde olağandışı bir şey görünmüyor. Videoyu izleyip kendiniz karar verin.";
+
+/** Muted badge for an alarm whose footage looked ordinary to the summary; "" for every other event. */
+export function verdictBadge(entry) {
+  return entry.ai_verdict === "normal"
+    ? `<span class="badge is-muted" title="${ORDINARY_NOTE}">${VERDICT_LABELS.normal}</span>`
+    : "";
+}
+
+/** First sentence of the written summary: the title of a movement alarm, the description of a rule violation. */
 export function summaryHeadline(entry) {
   const match = /\*\*Özet Başlık:\*\*\s*(.+)/.exec(entry.ai_summary || "");
   return match ? match[1].replace(/\*\*/g, "").trim() : "";
 }
 
+/** First detail line of the written summary, or "". */
+export function summaryDetail(entry) {
+  const match = /^[-•]\s+(.+)$/m.exec(entry.ai_summary || "");
+  return match ? match[1].trim() : "";
+}
+
 const inlineMarkup = (text) => escapeHTML(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
-/** Turns the summary text (paragraphs, "- " bullets, **bold**) into safe HTML. */
-function formatSummary(text) {
+/**
+ * Turns the summary text (paragraphs, "- " bullets, **bold**) into safe HTML. The headline is
+ * left out when it is already shown as the title of the event and the note says more than that.
+ */
+function formatSummary(text, headlineIsTitle = false) {
+  let lines = String(text || "").trim().split("\n");
+  if (headlineIsTitle && lines.length > 1) lines = lines.filter((line) => !line.startsWith("**Özet Başlık:**"));
   let html = "";
   let listOpen = false;
   const closeList = () => {
     if (listOpen) html += "</ul>";
     listOpen = false;
   };
-  String(text || "").trim().split("\n").forEach((rawLine) => {
+  lines.forEach((rawLine) => {
     const line = rawLine.trim();
     if (!line) {
       closeList();
@@ -107,7 +129,7 @@ function renderSummary(entry) {
   if (entry.ai_status === "generating") {
     text.innerHTML = `<div class="loading"><div class="spinner"></div><span>Video inceleniyor, özet birazdan burada görünecek…</span></div>`;
   } else if (entry.ai_summary) {
-    text.innerHTML = formatSummary(entry.ai_summary);
+    text.innerHTML = formatSummary(entry.ai_summary, !isRuleEvent(entry));
   } else {
     let reason = "Bu olay için henüz özet yazılmadı.";
     if (entry.is_ongoing) reason = "Olay sürüyor. Özet, olay bittikten sonra yazılır.";
@@ -154,6 +176,7 @@ function render(entry) {
   const badge = $("#event-level");
   badge.className = info.className;
   badge.textContent = info.text;
+  $("#event-verdict").hidden = entry.ai_verdict !== "normal";
   $("#event-title").textContent = eventTitle(entry);
   $("#event-when").textContent = `${entry.date_str || ""} ${entry.timestamp_str || ""}`.trim();
   renderFacts(entry);

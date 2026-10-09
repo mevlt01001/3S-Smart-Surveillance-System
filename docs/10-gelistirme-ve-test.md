@@ -25,7 +25,7 @@ izlenmez; sunucuyu elle yeniden başlatın.
 ```
 
 Betik kendi portunda, **geçici bir veri dizininde**, dış servis çağrıları kapalı ayrı bir sunucu
-başlatır; 99 denetim yapar; arkasını temizler. Çalışan sisteme dokunmaz. Yaklaşık iki dakika sürer.
+başlatır; 104 denetim yapar; arkasını temizler. Çalışan sisteme dokunmaz. Yaklaşık iki dakika sürer.
 Çıkış kodu yalnızca bütün denetimler geçtiyse `0`'dır. `--keep` geçici dizini silmez.
 
 | Bölüm | Neyi doğrular |
@@ -57,9 +57,9 @@ bölüme bir `check(...)` satırı ekleyin.
 3. Sistem testini koşar.
 
 GitHub'ın makinelerinde ekran kartı, analiz sunucusu ve kamera yoktur. Sistem testi bunu kendisi
-fark eder: canlı video isteyen 8. bölümü `SKIP` olarak raporlar, geri kalan **80 denetimi** koşar
+fark eder: canlı video isteyen 8. bölümü `SKIP` olarak raporlar, geri kalan **85 denetimi** koşar
 (arayüz dosyaları, ayarlar, kamera kaydı, kurallar, olay günlüğü, canlı bildirim, yük, kalıcılık,
-kapanma). Canlı video, anomali ve engel bölgesi denetimleri (19 denetim) yalnızca simülatör ve Triton
+kapanma, özet metninin biçimlenmesi). Canlı video, anomali ve engel bölgesi denetimleri (19 denetim) yalnızca simülatör ve Triton
 çalışan bir makinede koşar; bu yüzden **birleştirmeden önce tam testi geliştirme makinesinde elle
 koşmak hâlâ gereklidir.**
 
