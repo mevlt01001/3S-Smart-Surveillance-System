@@ -36,6 +36,8 @@ WebInterface/backend/static/
 *.png
 *.jpg
 *.jpeg
+# Belgelerde kullanılan ekran görüntüleri depoya girer
+!docs/images/*
 
 # ------------------------------------------------- Simülatör çıktıları, günlükler
 Camera_System_Simulator/recordings/

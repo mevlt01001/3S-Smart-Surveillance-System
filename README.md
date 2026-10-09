@@ -10,6 +10,25 @@ ihlallerini yakalayıp videosu, fotoğrafı ve birkaç cümlelik özetiyle kayde
 - **Engel izleme:** acil çıkış, yangın dolabı gibi boş kalması gereken yerler.
 - **Olay kaydı:** olay boyunca tek video, olay anı fotoğrafı, yazılı özet, operatör kararı.
 
+## Arayüz
+
+| Canlı izleme | Olaylar |
+| --- | --- |
+| ![Canlı izleme duvarı](docs/images/canli-izleme.jpg) | ![Olay listesi](docs/images/olaylar.jpg) |
+| Kamera duvarı; düzen, bölge ve tespit katmanları üst çubuktan seçilir. | Kaydedilen olaylar; arama, süzme ve tek tıkla doğru / hatalı kararı. |
+
+| Olay penceresi | Kural düzenleyici |
+| --- | --- |
+| ![Olay penceresi](docs/images/olay-penceresi.jpg) | ![Kural düzenleyici](docs/images/kural-duzenleyici.jpg) |
+| Olay videosu, kısa yazılı özet ve operatör kararı. | Görüntüde bölge çizilir, ne olunca haber verileceği düz cümleyle yazılır. |
+
+| Kameralar | Ayarlar |
+| --- | --- |
+| ![Kameralar](docs/images/kameralar.jpg) | ![Ayarlar](docs/images/ayarlar.jpg) |
+| Ağda kamera arama, elle ekleme, durum ve düzenleme. | Algılama hassasiyeti, kayıt süresi ve depolama alanı. |
+
+Görüntüler `Camera_System_Simulator` ile oynatılan test videolarından alınmıştır.
+
 ## Hızlı başlangıç
 
 Gereksinimler: Linux, NVIDIA ekran kartı, Docker + NVIDIA Container Toolkit, Python 3.10, ffmpeg.
