@@ -24,8 +24,6 @@ jobs:
     name: Sistem testi
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      TMPDIR: ${{ runner.temp }}
     steps:
       # Alt modül (Anomaly_Detection) çalışan sistemin parçası değildir; indirilmez.
       - uses: actions/checkout@v4
@@ -53,8 +51,9 @@ jobs:
             node --input-type=module --check < "$file" || { echo "::error file=$file::Sözdizimi hatası"; exit 1; }
           done
 
+      # Test, sunucu günlüğünü geçici dizinde tutar; --keep ile silinmez ki aşağıdaki adım okuyabilsin.
       - name: Sistem testi
-        run: python WebInterface/tests/system_check.py --keep
+        run: TMPDIR="$RUNNER_TEMP" python WebInterface/tests/system_check.py --keep
 
       - name: Sunucu günlüğü (test başarısızsa)
         if: failure()
