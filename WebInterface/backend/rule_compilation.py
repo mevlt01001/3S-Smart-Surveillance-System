@@ -10,6 +10,8 @@ import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
+from Rule_Generator_LLM import manual as manual_rules, schedule as rule_schedule
+
 from .camera_service import camera_service
 from .rules_service import rules_service
 
@@ -47,6 +49,35 @@ def zone_needs_plan(zone: Dict[str, Any]) -> bool:
     return zone.get("zone_type", "detection") != "change_detection"
 
 
+def apply_manual_plans(zones: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Gives every zone that was defined by form choices (`manual`) its plan, here and now: no
+    language model is involved. The sentence that says what the plan does becomes the zone's
+    description. Raises ValueError (a message for the user) for an impossible choice.
+    """
+    result = []
+    for zone in zones:
+        if zone_needs_plan(zone) and isinstance(zone.get("manual"), dict):
+            plan = manual_rules.build_plan(zone["manual"])
+            zone = dict(zone, description=plan.source_prompt, detection_plan=plan.model_dump(),
+                        compile_meta={"status": "manual", "compiled_at": plan.compiled_at})
+            zone.pop("compile_logs", None)
+            zone.pop("raw_llm_response", None)
+        result.append(zone)
+    return result
+
+
+def compiled_changes(rule: Dict[str, Any], zones: List[Dict[str, Any]], plans: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    What to store after a compilation: the zones and, unless the user set the working hours
+    in the form, the hours the model read from the sentences (none read = always).
+    """
+    changes: Dict[str, Any] = {"zones": zones}
+    if (rule.get("schedule") or {}).get("source") != "user":
+        changes["schedule"] = next((plan.schedule for plan in plans.values() if plan.schedule), None)
+    return changes
+
+
 def _with_plan(zone: Dict[str, Any], plan: Any) -> Dict[str, Any]:
     compiled = dict(zone)
     compiled["detection_plan"] = plan.model_dump()
@@ -63,11 +94,12 @@ def _with_plan(zone: Dict[str, Any], plan: Any) -> Dict[str, Any]:
 
 def _compile_zones(zones: List[Dict[str, Any]], force: bool) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
-    Compiles the zones that lack a plan (every detection zone when `force`).
+    Compiles the zones described by a sentence that lack a plan (all of them when `force`).
     Blocking (language-model round trips): never call from the event loop.
     Returns (zones, plans by zone id).
     """
-    targets = [z for z in zones if zone_needs_plan(z) and (force or not z.get("detection_plan"))]
+    targets = [z for z in zones
+               if zone_needs_plan(z) and not z.get("manual") and (force or not z.get("detection_plan"))]
     if not targets:
         return zones, {}
     plans = _compiler.compile_batch(targets)
@@ -92,6 +124,7 @@ def keep_unchanged_plans(old_zones: List[Dict[str, Any]], new_zones: List[Any]) 
             and zone_needs_plan(zone)
             and old.get("detection_plan")
             and not zone.get("detection_plan")
+            and not zone.get("manual") and not old.get("manual")
             and (old.get("description") or "").strip() == (zone.get("description") or "").strip()
             and old.get("zone_type", "detection") == zone.get("zone_type", "detection")
         )
@@ -121,7 +154,7 @@ def start(rule_id: str) -> bool:
             current = rules_service.get_by_id(rule_id)
             # Discard the result if the rule was edited or deleted while the model was working
             if current and current.get("updated_at") == version:
-                rules_service.update_rule(rule_id, {"zones": compiled})
+                rules_service.update_rule(rule_id, compiled_changes(current, compiled, plans))
                 logger.info("Rule '%s' compiled (%d zones).", rule.get("title", ""), len(plans))
             with _jobs_lock:
                 if _jobs.get(rule_id, {}).get("token") == token:
@@ -173,6 +206,9 @@ def rule_view(rule: Dict[str, Any], slim: bool = False) -> Dict[str, Any]:
     """API representation of a rule. `slim` replaces the bulky plan data by a short summary (list views)."""
     view = dict(rule)
     view["compile_status"] = status_of(rule)
+    view["schedule_text"] = rule_schedule.describe(rule.get("schedule"))
+    # False while the rule is switched on but outside its working hours
+    view["active_now"] = bool(rule.get("enabled", True)) and rule_schedule.is_active(rule.get("schedule"))
     # Why the request cannot be turned into a rule, in words for the operator
     view["compile_note"] = error_of(rule.get("id", "")) if view["compile_status"] == "unsupported" else None
     view["camera_missing"] = bool(
@@ -191,6 +227,8 @@ def rule_view(rule: Dict[str, Any], slim: bool = False) -> Dict[str, Any]:
                 "classes": plan.get("model_classes") or plan.get("yoloe_classes") or [],
                 "conditions": [condition.get("type") for condition in plan.get("conditions", [])],
                 "status": (zone.get("compile_meta") or {}).get("status") or plan.get("status"),
+                # What the plan does, in one sentence for the operator
+                "text": manual_rules.describe_plan(plan),
                 # Set when the rule is only the closest thing to what was asked
                 "note": plan.get("user_note"),
             }

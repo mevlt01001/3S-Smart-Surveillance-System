@@ -31,6 +31,12 @@ _CLASS_LABELS = {
     "vehicle": "araç",
     "car": "araba",
     "truck": "kamyon",
+    "bus": "otobüs",
+    "motorcycle": "motosiklet",
+    "bicycle": "bisiklet",
+    "backpack": "sırt çantası",
+    "suitcase": "bavul",
+    "handbag": "çanta",
     "forklift": "forklift",
 }
 

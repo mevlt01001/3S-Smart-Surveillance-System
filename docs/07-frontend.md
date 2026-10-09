@@ -10,7 +10,7 @@ frontend/
 │   ├── base.css          Renk ve ölçü değişkenleri, sıfırlama, yazı
 │   ├── components.css    Düğme, form, rozet, kart, tablo, pencere, bildirim…
 │   ├── layout.css        Kenar çubuğu, üst çubuk, içerik alanı, duyarlı düzen
-│   └── live.css  events.css  rules.css  cameras.css  settings.css     Sayfaya özgü stiller
+│   └── live.css  events.css  rules.css  reports.css  cameras.css  settings.css     Sayfaya özgü stiller
 └── js/
     ├── main.js           Giriş noktası: ortak parçaları başlatır, sayfaları kaydeder
     ├── router.js         Adres çubuğuna bağlı sayfa geçişi
@@ -25,6 +25,7 @@ frontend/
     ├── event-detail.js   Olay penceresi
     ├── rules.js          Kurallar sayfası (liste + form)
     ├── zone-editor.js    Çokgen çizim aracı
+    ├── reports.js        Raporlar sayfası (sayılar, grafik, tablolar, yazdırma)
     ├── cameras.js        Kameralar sayfası ve pencereleri
     └── settings.js       Ayarlar sayfası
 ```

@@ -47,7 +47,7 @@
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #f65f5f;
+  filter: brightness(1.1);
 }
 
 .btn-sm {
@@ -222,7 +222,7 @@ input[type="range"] {
 
 .switch:checked::after {
   background: #fff;
-  transform: translateX(16px);
+  transform: translateX(var(--switch-travel, 16px));
 }
 
 .switch:disabled {
@@ -852,4 +852,48 @@ details.advanced > summary {
   font-size: 13.5px;
   font-weight: 500;
   text-align: center;
+}
+
+/* ------------------------------------------------------------ Touch screens */
+/* A fingertip needs a larger target than a mouse pointer. */
+@media (pointer: coarse) {
+  .btn-sm {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .btn-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .chip {
+    height: 34px;
+    padding: 0 13px;
+    border-radius: 17px;
+    font-size: 13px;
+  }
+
+  .segmented > button {
+    min-width: 42px;
+    height: 36px;
+  }
+
+  .switch {
+    --switch-travel: 20px;
+    width: 46px;
+    height: 26px;
+    border-radius: 13px;
+  }
+
+  .switch::after {
+    width: 20px;
+    height: 20px;
+  }
+
+  input[type="checkbox"]:not(.switch) {
+    width: 20px;
+    height: 20px;
+  }
 }

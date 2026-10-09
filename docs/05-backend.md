@@ -210,8 +210,16 @@ Tekil `change_detector`. Bölgenin referans görüntüsünü `change_refs/` alt�
 | `start(kural_id)` | Planı eksik bölgeleri arka planda derler. Kural bu sırada değiştiyse sonuç atılır. |
 | `recompile(bölgeler)` | Bütün bölgeleri yeniden derler (engelleyen çağrı). |
 | `keep_unchanged_plans(eski, yeni)` | Açıklaması değişmeyen bölgenin planını korur. |
-| `status_of(kural)` | `compiling`, `error`, `not_required`, `compiled`, `fallback`, `pending`, `unavailable`. |
-| `rule_view(kural, slim)` | API gösterimi; `slim` planın yerine kısa `plan_summary` koyar. |
+| `apply_manual_plans(bölgeler)` | Listeden tanımlanan (`manual`) bölgelerin planını hemen kurar; geçersiz seçimde `ValueError`. |
+| `compiled_changes(kural, bölgeler, planlar)` | Derleme sonrası saklanacaklar: bölgeler ve (kullanıcı formdan saat vermediyse) cümleden okunan çalışma saatleri. |
+| `status_of(kural)` | `compiling`, `error`, `unsupported`, `not_required`, `compiled`, `fallback`, `pending`, `unavailable`. |
+| `rule_view(kural, slim)` | API gösterimi (`schedule_text`, `active_now` dahil); `slim` planın yerine kısa `plan_summary` koyar. |
+
+## `reports.py`
+
+`build_report(olaylar, gün, now, capacity)`: olay günlüğünden rapor sayılarını hesaplayan saf işlev
+(durum, dosya ya da servis içe aktarması yok; bu yüzden çalışan sistem olmadan sınanabilir). Uç
+noktası `api/reports.py`. Alanlar bölüm 06'dadır.
 
 ## `rules_service.py`, `settings_service.py`
 

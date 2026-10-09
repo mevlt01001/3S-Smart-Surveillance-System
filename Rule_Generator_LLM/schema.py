@@ -189,6 +189,10 @@ class DetectionPlan(BaseModel):
         default=None,
         description="For a partial plan: what could not be done and what the rule does instead, in the operator's words."
     )
+    schedule: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Working hours read from the sentence: {'start': 'HH:MM', 'end': 'HH:MM', 'days': [0-6]}; None = always."
+    )
     compile_logs: Optional[List[Dict[str, Any]]] = Field(
         default=None,
         description="Step-by-step compilation trace logs for developer inspection."

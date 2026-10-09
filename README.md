@@ -6,9 +6,11 @@ ihlallerini yakalayıp videosu, fotoğrafı ve birkaç cümlelik özetiyle kayde
 - **Canlı izleme:** 1 / 4 / 6 / 12'li kamera duvarı; alarm veren kamera vurgulanır.
 - **Olağandışı hareket algılama:** kural tanımlamadan çalışır (kavga, panik, koşma…).
 - **Kural bölgeleri:** görüntüde bölge çizin, ne olunca haber almak istediğinizi yazın
-  ("Baret takmayan biri girerse", "Bir kişi 30 saniyeden uzun beklerse").
+  ("Baret takmayan biri girerse", "Gece 22:00 ile 06:00 arasında biri girerse") ya da listeden seçin.
+  Sistem yapamadığı bir isteği söyler; kurallar yalnızca belirlediğiniz saatlerde çalışabilir.
 - **Engel izleme:** acil çıkış, yangın dolabı gibi boş kalması gereken yerler.
 - **Olay kaydı:** olay boyunca tek video, olay anı fotoğrafı, yazılı özet, operatör kararı.
+- **Raporlar:** güne, kurala ve kameraya göre olay sayıları, hatalı alarm oranı; yazdırılabilir.
 
 ## Arayüz
 
@@ -99,11 +101,11 @@ olay ──► event_journal (kayıt) + evidence_store (video, fotoğraf) + vlm_
 .conda/bin/python WebInterface/tests/system_check.py --sim-ip <bu makinenin IP adresi>
 ```
 
-Kendi portunda, geçici veriyle ayrı bir sunucu başlatır ve arayüzle API'nin tamamını sınar (118
+Kendi portunda, geçici veriyle ayrı bir sunucu başlatır ve arayüzle API'nin tamamını sınar (134
 denetim); çalışan sisteme dokunmaz. Her değişiklikten sonra koşulmalıdır.
 
 Aynı test her push'ta GitHub Actions üzerinde de koşar (`.github/workflows/ci.yml`); orada kamera ve
-ekran kartı olmadığı için canlı video bölümü atlanır, kalan 96 denetim çalışır.
+ekran kartı olmadığı için canlı video bölümü atlanır, kalan 112 denetim çalışır.
 
 `Object_Detection/run_tests.py` model yükler ve birkaç GB bellek ister; canlı sistem çalışırken koşmayın.
 

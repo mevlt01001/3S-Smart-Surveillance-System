@@ -14,6 +14,7 @@ from typing import Dict, List, Optional, Any, Tuple
 
 from Object_Detection import YOLODetector
 from Rule_Generator_LLM.evaluator import ConditionEvaluator
+from Rule_Generator_LLM.schedule import is_active as in_working_hours
 from Rule_Generator_LLM.schema import DetectionPlan
 from Rule_Generator_LLM.tracker import ObjectTracker
 from WebInterface.backend.camera_service import camera_service
@@ -232,7 +233,9 @@ class LiveDetectionService:
                     cam_id = cam.get("id")
                     if not cam_id:
                         continue
-                    cam_rules = rules_service.get_all(camera_id=cam_id, enabled_only=True)
+                    # A rule outside its working hours is treated like one that is switched off
+                    cam_rules = [rule for rule in rules_service.get_all(camera_id=cam_id, enabled_only=True)
+                                 if in_working_hours(rule.get("schedule"))]
                     if cam_rules:
                         active.append((cam, cam_rules))
                     else:

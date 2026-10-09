@@ -5,6 +5,8 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
+from Rule_Generator_LLM import schedule as rule_schedule
+
 from .. import rule_compilation
 from ..camera_service import camera_service
 from ..change_detector import change_detector
@@ -35,6 +37,14 @@ async def list_rules(camera_id: Optional[str] = None, full: bool = False):
     }
 
 
+def _with_manual_plans(zones: list) -> list:
+    """Builds the plan of the zones defined by form choices; a bad choice is the client's mistake."""
+    try:
+        return rule_compilation.apply_manual_plans(zones)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
 @router.post("")
 async def create_rule(req: CreateRuleRequest):
     """Stores a rule; the descriptions of its zones are compiled in the background."""
@@ -43,6 +53,7 @@ async def create_rule(req: CreateRuleRequest):
     if req.scope != "system" and not (req.camera_id and camera_service.get_by_id(req.camera_id)):
         raise HTTPException(status_code=422, detail="Kuralın uygulanacağı kamera bulunamadı.")
 
+    zones = _with_manual_plans([zone for zone in (req.zones or []) if isinstance(zone, dict)])
     rule = rules_service.create_rule(
         title=req.title,
         scope=req.scope,
@@ -50,8 +61,9 @@ async def create_rule(req: CreateRuleRequest):
         camera_name=req.camera_name,
         severity=req.severity,
         description=req.description,
-        zones=[zone for zone in (req.zones or []) if isinstance(zone, dict)],
+        zones=zones,
         actions=req.actions,
+        schedule=rule_schedule.normalize(req.schedule, source="user"),
     )
     rule_compilation.start(rule["id"])
     return {"success": True, "rule": rule_compilation.rule_view(rule, slim=True)}
@@ -84,7 +96,11 @@ async def update_rule(rule_id: str, req: UpdateRuleRequest):
         )
 
     if "zones" in updates:
-        updates["zones"] = rule_compilation.keep_unchanged_plans(existing.get("zones", []), updates["zones"])
+        updates["zones"] = _with_manual_plans(
+            rule_compilation.keep_unchanged_plans(existing.get("zones", []), updates["zones"]))
+    if "schedule" in updates:
+        # Set in the form: it now outranks whatever the sentence says about hours
+        updates["schedule"] = rule_schedule.normalize(updates["schedule"], source="user") or {"source": "user"}
 
     updated = rules_service.update_rule(rule_id, updates)
     if not updated:
@@ -160,5 +176,5 @@ async def recompile_rule(rule_id: str):
     current = _require_rule(rule_id)
     if current.get("updated_at") != version:
         raise HTTPException(status_code=409, detail="Kural hazırlanırken değiştirildi. Lütfen yeniden deneyin.")
-    rules_service.update_rule(rule_id, {"zones": compiled_zones})
+    rules_service.update_rule(rule_id, rule_compilation.compiled_changes(current, compiled_zones, plans))
     return {"success": True, "plans_count": len(plans)}

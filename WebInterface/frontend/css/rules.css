@@ -123,6 +123,44 @@
   color: var(--danger);
 }
 
+.rule-hours {
+  display: block;
+  margin-top: 3px;
+}
+
+.schedule-fields {
+  margin: -4px 0 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.schedule-fields .hint {
+  margin: 10px 0 0;
+}
+
+.time-range {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.time-range .input {
+  width: auto;
+}
+
+@media (pointer: coarse) {
+  .zone-chip-remove {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+  }
+}
+
 @media (max-width: 980px) {
   .rule-editor {
     grid-template-columns: 1fr;
@@ -142,4 +180,43 @@
   width: 13px;
   height: 13px;
   margin-top: 2px;
+}
+
+/* On a phone a rule is a small card: what it does on top, then camera, switch and buttons */
+@media (max-width: 640px) {
+  #rules-list .table,
+  #rules-list tbody {
+    display: block;
+  }
+
+  #rules-list thead {
+    display: none;
+  }
+
+  #rules-list tr {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #rules-list tr:last-child {
+    border-bottom: 0;
+  }
+
+  #rules-list td {
+    padding: 0;
+    border: 0;
+  }
+
+  #rules-list td:first-child {
+    grid-column: 1 / -1;
+  }
+
+  #rules-list td:nth-child(2) {
+    color: var(--text-2);
+    font-size: 13px;
+  }
 }

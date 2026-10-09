@@ -282,6 +282,26 @@ def test_rules(c, dead_cam_id):
     check("without LLM access a detection rule is reported as not compiled (never silently 'active')",
           rule2["compile_status"] in ("unavailable", "compiling", "fallback", "compiled"), rule2["compile_status"])
 
+    # -- a rule defined by choices from lists needs no language model, and working hours
+    chosen = dict(zone, id="zone_t3", name="Koridor", description="", zone_type="detection",
+                  manual={"subject": "person", "condition": "waiting", "value": 20})
+    r3 = c.post("/api/rules", json={"title": "Bekleme", "scope": "camera", "camera_id": dead_cam_id, "zones": [chosen],
+                                    "schedule": {"start": "22:00", "end": "06:00", "days": [0, 1, 2, 3, 4]}})
+    rule3 = r3.json().get("rule", {})
+    summary3 = (rule3.get("zones") or [{}])[0].get("plan_summary") or {}
+    check("a rule chosen from lists is ready at once, without the language model",
+          r3.status_code == 200 and rule3.get("compile_status") == "compiled"
+          and summary3.get("text") == "Kişi bölgede 20 saniyeden uzun kalınca", f"{rule3.get('compile_status')} / {summary3.get('text')}")
+    check("working hours are stored and described",
+          rule3.get("schedule", {}).get("source") == "user" and rule3.get("schedule_text") == "22:00–06:00 · Hafta içi"
+          and isinstance(rule3.get("active_now"), bool), f"{rule3.get('schedule')} / {rule3.get('schedule_text')}")
+    cleared = c.put(f"/api/rules/{rule3['id']}", json={"schedule": {}}).json()["rule"]
+    check("working hours can be set back to 'always'", cleared["schedule_text"] == "" and cleared["active_now"] is True, str(cleared.get("schedule")))
+    incomplete = dict(chosen, id="zone_t4", manual={"subject": "person", "condition": "more_than", "value": None})
+    check("a list rule without its number is rejected (422)",
+          c.post("/api/rules", json={"title": "Eksik", "scope": "camera", "camera_id": dead_cam_id, "zones": [incomplete]}).status_code == 422)
+    c.delete(f"/api/rules/{rule3['id']}")
+
     listing = c.get("/api/rules").json()
     blob = json.dumps(listing)
     check("rule list is slim (no compile logs / raw LLM output)", "compile_logs" not in blob and "raw_llm_response" not in blob)
@@ -322,6 +342,13 @@ def test_journal(c, srv, dead_cam_id):
     st = c.get("/api/anomaly/storage").json()
     check("storage statistics are reported",
           st["journal_entries"] >= 1 and "orphan_clip_count" in st and "orphan_snapshot_count" in st, json.dumps(st))
+    report = c.get("/api/reports/summary", params={"days": 1}).json()["report"]
+    check("the report counts real events by hour, camera and decision and leaves out demonstration events",
+          len(report["buckets"]) == 24 and report["totals"]["events"] == 0 and report["by_camera"] == []
+          and report["totals"]["false_alarm_pct"] is None, json.dumps(report["totals"]))
+    check("a report period outside 1-90 days is rejected (422)",
+          c.get("/api/reports/summary", params={"days": 0}).status_code == 422
+          and c.get("/api/reports/summary", params={"days": 91}).status_code == 422)
     with open(os.path.join(srv.data_dir, "anomaly_journal.json"), encoding="utf-8") as f:
         on_disk = json.load(f)
     check("journal is persisted to the isolated data directory", any(e["id"] == eid for e in on_disk))
@@ -657,7 +684,7 @@ def test_summary_shaping():
 
 
 def test_tracking_and_rule_logic():
-    print("\n[13] Object tracking, rule logic and compiler answers (no model needed)")
+    print("\n[13] Tracking, rule logic, schedules, reports and compiler answers (no model needed)")
     sys.path.insert(0, PROJECT_ROOT)
     from Rule_Generator_LLM.compiler import RuleCompiler, UnsupportedRule
     from Rule_Generator_LLM.evaluator import ConditionEvaluator, DetectionBox
@@ -703,6 +730,57 @@ def test_tracking_and_rule_logic():
           first_alarm(lambda now: [person(100)] if abs(now - 3.0) < 0.05 else [], presence) is None)
     real = first_alarm(lambda now: [person(100)] if now >= 3.0 else [], presence)
     check("a real object raises the alarm on its second frame", real is not None and real <= 3.2, f"{real}s")
+
+    from datetime import datetime
+    from Rule_Generator_LLM import schedule as rule_schedule
+    from Rule_Generator_LLM.manual import build_plan, describe_plan
+    night = rule_schedule.normalize({"start": "22:00", "end": "6.00", "days": [4, 9]}, source="text")  # Friday night
+    at = lambda text: datetime.strptime(text, "%Y-%m-%d %H:%M")  # noqa: E731  (2026-10-09 is a Friday)
+    check("a schedule is cleaned up (time format, impossible day)",
+          night == {"source": "text", "start": "22:00", "end": "06:00", "days": [4]}, str(night))
+    check("a window past midnight belongs to the day it starts on",
+          [rule_schedule.is_active(night, at(moment)) for moment in
+           ("2026-10-09 21:59", "2026-10-09 22:00", "2026-10-10 05:59", "2026-10-10 06:00", "2026-10-10 23:00")]
+          == [False, True, True, False, False])
+    check("no schedule, or one without hours, means always",
+          rule_schedule.is_active(None) and rule_schedule.is_active({"source": "user"})
+          and rule_schedule.normalize({"start": "25:00", "end": "x"}) is None)
+    check("the whole day written as 00:00-23:59 is understood",
+          rule_schedule.describe(rule_schedule.normalize({"start": "00:00", "end": "23:59", "days": [5, 6]})) == "Tüm gün · Hafta sonu")
+    sentences = [build_plan({"subject": subject, "condition": condition, "value": value}).source_prompt
+                 for subject, condition, value in (("person", "more_than", 3), ("vehicle", "presence", None),
+                                                   ("person", "absence", 120), ("forklift", "waiting", 40))]
+    check("list choices become a plan and a sentence that says what it does",
+          sentences == ["Bölgede 3'ten fazla kişi olunca", "Araç bölgede görülünce",
+                        "Bölgede 2 dakika boyunca hiç kişi yokken", "Forklift bölgede 40 saniyeden uzun kalınca"], str(sentences))
+    check("an equipment plan is described as what is missing on the person",
+          describe_plan({"conditions": [{"type": "zone_absence", "subject": "Person", "required": ["Hardhat"]}]})
+          == "Bölgedeki kişi üzerinde baret yoksa")
+
+    from WebInterface.backend.reports import build_report
+    day = 86400.0
+    now = at("2026-10-09 12:00").timestamp()
+    journal = [
+        {"id": "rule_a", "timestamp": now - 3600, "camera_name": "Depo", "rule_title": "Baret", "incident_sec": 600,
+         "operator_label": "correct", "ai_verdict": "confirmed"},
+        {"id": "rule_b", "timestamp": now - 2 * day, "camera_name": "Depo", "rule_title": "Baret", "incident_sec": 60,
+         "operator_label": "false_positive", "ai_verdict": "confirmed"},
+        {"id": "anom_c", "timestamp": now - 2 * day, "camera_name": "Ofis", "operator_label": "false_positive", "ai_verdict": "normal"},
+        {"id": "anom_d", "timestamp": now - 20 * day, "camera_name": "Ofis"},
+        {"id": "sim_e", "timestamp": now - 60, "camera_name": "Ofis"},
+    ]
+    week = build_report(journal, 7, now=now)
+    check("the weekly report has one bar per day and counts each event once",
+          len(week["buckets"]) == 7 and week["buckets"][-1] == {"label": "09.10", "rule": 1, "movement": 0}
+          and week["buckets"][-3] == {"label": "07.10", "rule": 1, "movement": 1} and week["totals"]["events"] == 3,
+          json.dumps(week["buckets"]))
+    check("it reports the false alarm rate of the reviewed events and how long each rule was violated",
+          week["totals"]["false_alarm_pct"] == 66.7 and week["by_rule"][0]["name"] == "Baret" and week["by_rule"][0]["total_sec"] == 660.0,
+          f"{week['totals']} / {week['by_rule']}")
+    check("it says how often the summary's verdict matched the operator",
+          week["summary_verdict"] == {"compared": 3, "agreed": 2}, str(week["summary_verdict"]))
+    check("a full journal whose oldest event is inside the period is reported as incomplete",
+          build_report(journal[:3], 7, now=now, capacity=3)["incomplete"] and not week["incomplete"])
 
     compiler = RuleCompiler.__new__(RuleCompiler)  # parsing needs no connection to the language model
     answer = {"selected_model": "coco_detector", "detection_targets": [{"class_name": "person", "role": "forbidden"}],

@@ -63,6 +63,7 @@ Kural kimliğinden kayda sözlük.
 | `scope`, `camera_id`, `camera_name` | `camera` ya da `system`. |
 | `description` | Bölge açıklamalarının birleşimi (bilgi amaçlı). |
 | `severity` | `warning` / `critical`; ihlal kaydının seviyesini belirler. Arayüz her zaman `warning` gönderir. |
+| `schedule` | Çalışma saatleri: `{start, end, days, source}`. `source`: `user` (formdan) ya da `text` (cümleden okundu). Alan yoksa ya da saat içermiyorsa kural her zaman çalışır; `{"source": "user"}` "kullanıcı bilerek her zaman dedi" demektir ve cümledeki saatlerin önüne geçer. |
 | `zones[]` | Aşağıdaki tablo. |
 | `created_at`, `updated_at` | Zaman damgaları. `updated_at` plan önbelleğinin anahtarıdır. |
 
@@ -72,7 +73,8 @@ Bölge (`zones[]`):
 | :--- | :--- |
 | `id`, `name`, `color_idx` | Kimlik, ad, arayüzdeki renk sırası. |
 | `zone_type` | `detection` / `change_detection`. |
-| `description` | Düz cümle (yalnızca `detection`). |
+| `description` | Düz cümle (yalnızca `detection`). Listeden tanımlanan bölgede sunucunun yazdığı cümle. |
+| `manual` | Yalnızca listeden tanımlanan bölgede: `{subject, condition, value}`; plan bundan kurulur, dil modeli kullanılmaz. |
 | `points[]` | `{x, y}`, 0–1 aralığında köşeler. |
 | `detection_plan`, `compile_meta`, `compile_logs`, `raw_llm_response` | Derleme çıktısı (bkz. bölüm 08). |
 

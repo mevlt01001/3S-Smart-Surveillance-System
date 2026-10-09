@@ -1,29 +1,31 @@
 /* Design tokens, reset and typography. Every other stylesheet builds on these variables. */
 
 :root {
-  --bg: #0b0e14;
-  --surface: #131822;
-  --surface-2: #1a2130;
-  --surface-3: #232c3e;
-  --border: #252d3d;
-  --border-strong: #37435a;
+  /* A soft dark theme: dark grey instead of black, off-white instead of white and muted
+     signal colours, so that a screen watched for hours does not glare. */
+  --bg: #161a21;
+  --surface: #1c212a;
+  --surface-2: #232934;
+  --surface-3: #2c3340;
+  --border: #2d3541;
+  --border-strong: #3d4755;
 
-  --text: #e6eaf2;
-  --text-2: #a7b1c4;
-  --text-3: #74809a;
+  --text: #d2d7df;
+  --text-2: #a1aab8;
+  --text-3: #7d8797;
 
-  --accent: #ff8533;
-  --accent-hover: #ff9a57;
-  --accent-soft: rgba(255, 133, 51, 0.14);
+  --accent: #e38b52;
+  --accent-hover: #eb9b68;
+  --accent-soft: rgba(227, 139, 82, 0.15);
 
-  --ok: #2fbf71;
-  --ok-soft: rgba(47, 191, 113, 0.14);
-  --warn: #f5a524;
-  --warn-soft: rgba(245, 165, 36, 0.15);
-  --danger: #ef4444;
-  --danger-soft: rgba(239, 68, 68, 0.15);
-  --info: #4aa3ff;
-  --info-soft: rgba(74, 163, 255, 0.14);
+  --ok: #4fae7f;
+  --ok-soft: rgba(79, 174, 127, 0.15);
+  --warn: #d8a548;
+  --warn-soft: rgba(216, 165, 72, 0.15);
+  --danger: #db6262;
+  --danger-soft: rgba(219, 98, 98, 0.16);
+  --info: #629fdc;
+  --info-soft: rgba(98, 159, 220, 0.15);
 
   --radius: 10px;
   --radius-sm: 6px;

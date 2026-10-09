@@ -21,9 +21,10 @@ izleyip "doğru alarm" ya da "hatalı alarm" olarak işaretler.
 | Canlı izleme | 1 / 4 / 6 / 12'li kamera duvarı; kameranın kendi kare hızında, gecikmesiz. |
 | Alarm vurgusu | Alarm veren kameranın çerçevesi renklenir, köşesinde nedeni yazar. |
 | Olağandışı hareket | Kural tanımlamadan çalışır; hassasiyeti iki eşikle ayarlanır. |
-| Kural bölgeleri | Çokgen bölge + düz cümle; iki tür: kişi / nesne kuralı ve engel / değişiklik izleme. |
+| Kural bölgeleri | Çokgen bölge + düz cümle ya da listeden seçim; kişi / nesne kuralı ve engel / değişiklik izleme. Kurala çalışma saati verilebilir; sistem yapamadığı isteği söyler. |
 | Olay kaydı | Olay boyunca tek video, olay anı fotoğrafı, yazılı özet, operatör kararı. |
 | Dışa aktarma | Süzülmüş olay listesi CSV olarak indirilir. |
+| Raporlar | Güne, kurala ve kameraya göre olay sayıları, hatalı alarm oranı, ihlallerin toplam süresi; yazdırılabilir. |
 | Disk yönetimi | Kayıtlar için kota; dolunca en eski videolar silinir. |
 
 ## Parçalar

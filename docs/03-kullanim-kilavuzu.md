@@ -121,16 +121,30 @@ Rozet yoksa kural hazırdır. Satırdaki anahtar kuralı açıp kapatır; kalem 
 
 1. **Yeni kural**'a basın.
 2. Kuralın geçerli olacağı yeri seçin: **Tek kamera** (ve kamerayı) ya da **Tüm kameralar**.
-3. Görüntüye tıklayarak bölgenin köşelerini işaretleyin. Bölgeyi kapatmak için ilk noktaya tıklayın,
-   çift tıklayın ya da `Enter`'a basın. `Backspace` son noktayı geri alır, `Esc` çizimi iptal eder.
+3. Görüntüye tıklayarak (telefonda dokunarak) bölgenin köşelerini işaretleyin, sonra **Bölgeyi
+   tamamla**'ya basın. İlk noktaya tıklamak, çift tıklamak ya da `Enter` de bölgeyi kapatır.
+   `Backspace` ve **Geri al** son noktayı geri alır, `Esc` çizimi iptal eder.
    Bölgenin kenarları birbirini kesemez; kesecek bir köşe kabul edilmez.
    Bir kuralda birden çok bölge olabilir; her biri "Bölgeler" satırında bir etiket olur.
 4. Seçili bölge için **Ne izlensin?** sorusunu yanıtlayın:
-   - **Kişi ve nesneler:** bölgede ne olunca haber verileceğini kendi cümlenizle yazın.
+   - **Kişi ve nesneler, kendi cümlenizle:** bölgede ne olunca haber verileceğini yazın.
      Altındaki hazır cümlelerden biriyle başlayabilirsiniz.
+   - **Kişi ve nesneler, listeden:** ne aranacağını (kişi, araç, baretsiz kişi, yeleksiz kişi,
+     forklift, çanta) ve ne zaman haber verileceğini (görülünce, belirli süreden uzun kalınca,
+     belirli süre hiç yokken, sayı bir sınırı geçince ya da altına inince) seçin; gerekiyorsa süreyi
+     ya da sayıyı yazın. Bu yol dil servisine ihtiyaç duymaz ve kural kaydedilir kaydedilmez çalışır.
    - **Engel veya değişiklik:** açıklama gerekmez (acil çıkış önü, yangın dolabı gibi boş kalması
      gereken yerler için).
-5. Kurala bir ad verip **Kaydet**'e basın.
+5. **Kural ne zaman çalışsın?** Varsayılan "Her zaman"dır. "Yalnızca belirli saatlerde" seçerseniz
+   bir saat aralığı ve günleri belirlersiniz; bitiş saati başlangıçtan önceyse aralık gece yarısını
+   geçer (22:00 ile 06:00 arası). Cümlenizde saat geçiyorsa ("gece 23:00 ile 05:00 arasında…") bu
+   alanı elle doldurmanız gerekmez: sistem saatleri cümleden okur ve kural listesinde gösterir.
+   Formdan seçtiğiniz saatler, cümledekilerin önüne geçer.
+6. Kurala bir ad verip **Kaydet**'e basın.
+
+Kural listesinde her bölgenin altında sistemin **ne anladığı** yazar ("Kişi bölgede 20 saniyeden
+uzun kalınca"), varsa çalışma saatleri de. Kural açık ama saatinin dışındaysa **Saat dışında**
+rozeti görünür; o sırada denetlenmez.
 
 ### İyi açıklama yazmak
 
@@ -145,8 +159,9 @@ Tek bir koşul, somut bir nesne ve gerekiyorsa bir sayı ya da süre içeren cü
 
 Sistemin kurallarla **yapamadıkları:** kişileri tanımak (ad, görev, yetkili / yetkisiz), plaka ve
 yazı okumak, davranış tanımak (koşma, sigara içme; kavga ve düşme gibi olağandışı hareketler kural
-yazmadan ayrıca izlenir), yön ve çizgi geçişi, giren-çıkan saymak, mesafe ölçmek, saat koşulu
-("mesai dışında") ve ses. Böyle bir şey yazarsanız sistem ya en yakın kuralı kurup farkı söyler ya
+yazmadan ayrıca izlenir), yön ve çizgi geçişi, giren-çıkan saymak, mesafe ölçmek, belirli bir
+tarih ya da tatil günü ve ses. "Mesai dışında" gibi belirsiz bir zaman yazarsanız sistem makul
+saatleri varsayar ve hangilerini seçtiğini söyler. Yapamadığı bir şey yazarsanız sistem ya en yakın kuralı kurup farkı söyler ya
 da yapamadığını açıklar.
 Desteklenen koşullar [08 — Kurallar ve analiz](08-kurallar-ve-analiz.md) bölümündedir.
 
@@ -156,6 +171,26 @@ Bu tür bir kuralı kaydettikten sonra bölge, boş hâlini bilmediği için bek
 **Canlı İzleme**'de o kameranın karosundaki **Referans al** düğmesine bir kez basın. Bundan sonra
 bölgeye bir şey konduğunda alarm verilir. Kamera yerinden oynar ya da ışık kalıcı olarak değişirse
 referansı yeniden alın.
+
+---
+
+## Raporlar
+
+Seçtiğiniz dönemde (**Bugün**, **7 gün**, **30 gün**) neler olduğunu özetler.
+
+- **Üstteki sayılar:** toplam olay, kural ihlali, olağandışı hareket, incelenmeyi bekleyen olay ve
+  **hatalı alarm oranı** ("Hatalı" işaretledikleriniz, incelediğiniz olayların yüzde kaçı).
+- **Grafik:** günlere (Bugün seçiliyse saatlere) göre olay sayısı; mavi kural ihlali, turuncu
+  olağandışı hareket. Bir sütunun üstüne gelince sayıları gösterir. **Tablo olarak göster** aynı
+  veriyi tablo yapar.
+- **Kurallara göre:** her kuralın kaç kez ihlal edildiği, ihlallerin **toplam süresi** ve kararlarınız.
+- **Kameralara göre:** her kameradaki olaylar ve kararlarınız. Altında, olay özetlerinin kendi
+  değerlendirmesinin sizin kararlarınızla ne kadar örtüştüğü yazar.
+
+**Yazdır / PDF**, raporu yazıcıya gönderir; yazıcı yerine "PDF olarak kaydet" seçerseniz dosya olur.
+Oranlar, olayları **Doğru** / **Hatalı** diye işaretledikçe anlam kazanır. Olay günlüğü sınırlı
+sayıda olay tutar (Ayarlar → Kayıt); günlük dolduysa uzun dönemlerde eski olaylar eksik kalır ve
+sayfa bunu söyler.
 
 ---
 

@@ -311,3 +311,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* There is no hover on a touch screen: the tile buttons are always visible and finger-sized */
+@media (pointer: coarse) {
+  .tile-actions {
+    opacity: 1;
+  }
+
+  .tile-button {
+    min-width: 38px;
+    height: 38px;
+  }
+}

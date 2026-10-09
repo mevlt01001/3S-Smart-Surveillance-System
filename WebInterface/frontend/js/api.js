@@ -112,6 +112,9 @@ export const getEventFrames = (eventId) => request(`/api/anomaly/${id(eventId)}/
 export const clearEvents = () => request("/api/anomaly/clear", { method: "POST" });
 export const openEventStream = () => new EventSource("/api/anomaly/events-stream");
 
+/* ----------------------------------------------------------------- Reports */
+export const getReport = async (days) => (await request(`/api/reports/summary?days=${Number(days)}`)).report;
+
 /* ----------------------------------------------------------------- Storage */
 export const getStorage = () => request("/api/anomaly/storage");
 export const cleanOrphanClips = () => request("/api/anomaly/storage/cleanup-orphans", { method: "POST" });

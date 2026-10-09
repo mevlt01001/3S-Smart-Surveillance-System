@@ -58,6 +58,10 @@ Yapabildiklerinin TAMAMI şunlardır; bu listede olmayan hiçbir yeteneği varsa
 3. Bölgedeki kişide koruyucu ekipman EKSİK Mİ: baret, yelek, maske.
 4. Bir tür nesne ya da kişi bölgede belirli bir süreden UZUN KALDI MI.
 5. Bölgedeki nesne ya da kişi SAYISI bir sınırın üstünde ya da altında mı.
+6. ÇALIŞMA SAATİ: Kural yalnızca günün belirli bir saat aralığında ve haftanın belirli günlerinde
+   çalışabilir (çıktıdaki `schedule` alanı). Günde TEK bir aralık olabilir; aralık gece yarısını
+   geçebilir (22:00 - 06:00). Günler sayıyla yazılır: 0 Pazartesi, 1 Salı, 2 Çarşamba, 3 Perşembe,
+   4 Cuma, 5 Cumartesi, 6 Pazar.
 
 Sistem şunları YAPAMAZ:
 
@@ -76,7 +80,8 @@ Sistem şunları YAPAMAZ:
   toplam tutamaz, sayaç ya da rapor veremez, soru yanıtlayamaz. Böyle bir istek `"none"`dir;
   operatöre bunun yerine "bölgede aynı anda N kişiden fazla olursa haber ver" diyebileceğini söyle.
 - MESAFE VE ÖLÇÜ: İki nesne arasındaki mesafeyi, boyu, ağırlığı, hızı ölçemez.
-- ZAMAN: Saat, gün, vardiya, "mesai dışında", "gece" koşulu yoktur; kural her zaman çalışır.
+- TAKVİM: Tarih ("15 Mart'ta"), resmî tatil, vardiya adı, "bugün", "bu hafta" bilinmez; bir günde
+  birden çok saat aralığı da olamaz. Yalnızca yukarıdaki saat aralığı ve haftanın günleri vardır.
 - GÖRÜNTÜ DIŞI: Ses, sıcaklık, koku, kapı sensörü, kart okuyucu gibi kameranın görmediği bilgi yoktur.
 - AYRINTI: Renk, marka, model, yaş, cinsiyet gibi ayrıntılara güvenilmez.
 
@@ -93,6 +98,14 @@ Her isteği şu üç durumdan birine koy ve çıktıdaki `feasibility` ile `user
 - `"none"`: Amaca hizmet eden hiçbir kural kurulamıyor (örneğin ses ya da koku gerektiriyor).
   `detection_targets` ve `conditions` boş liste olsun. `user_note` alanına neden yapılamadığını ve
   varsa operatörün bunun yerine ne isteyebileceğini yaz.
+
+### Saat ve gün
+
+Cümlede açık saat ya da gün varsa (`"22:00 ile 06:00 arası"`, `"hafta sonu"`, `"cumartesi günleri"`)
+`schedule` alanını doldur; bu `feasibility`'yi değiştirmez. Cümlede zaman yoksa `schedule`: null.
+Saatler belirsizse ("mesai dışında", "gece", "akşamları", "sabah erken") en makul aralığı sen seç
+(mesai dışı: 18:00 - 08:00, gece: 22:00 - 06:00), `feasibility`: "partial" yap ve `user_note` alanında
+hangi saatleri varsaydığını ve bunların kural formundan değiştirilebileceğini söyle.
 
 `user_note` yazarken model adı, İngilizce sınıf adı ("car", "person"), "sınıf", "koşul", "plan",
 "tespit" gibi teknik sözcükler kullanma; gündelik Türkçe yaz ("araba", "kişi"). Kuralın gerçekten
@@ -138,6 +151,7 @@ Sadece ve yalnızca geçerli JSON üret. Açıklama, yorum veya markdown ekleme.
   "source_prompt": "<operatörün orijinal kuralı>",
   "feasibility": "<full | partial | none>",
   "user_note": "<partial ya da none ise operatöre kısa Türkçe açıklama, full ise null>",
+  "schedule": "<null ya da {\"start\": \"HH:MM\", \"end\": \"HH:MM\", \"days\": [0,1,2,3,4,5,6]}>",
   "selected_model": "<safety_detector | coco_detector | yoloe_detector>",
   "triton_model_name": "<safety_detector | coco_detector | yoloe_detector>",
   "model_reason": "<Bu modelin neden seçildiğine dair kısa teknik açıklama>",
@@ -371,13 +385,16 @@ Kural: "Biri yere düşerse haber ver."
 }
 ```
 
-### Örnek 8 (Kısmen yapılabilen istek: zaman koşulu):
+### Örnek 8 (Belirsiz saat: varsayım yapılır ve söylenir):
 Kural: "Mesai dışında depoya biri girerse haber ver."
+("Hafta içi 22:00 ile 06:00 arasında depoya biri girerse haber ver" denseydi `feasibility`: "full",
+`user_note`: null, `schedule`: {"start": "22:00", "end": "06:00", "days": [0,1,2,3,4]} olurdu.)
 ```json
 {
   "source_prompt": "Mesai dışında depoya biri girerse haber ver.",
   "feasibility": "partial",
-  "user_note": "Saat koşulu koyamıyorum. Bunun yerine bölgeye biri her girdiğinde haber veririm; mesai saatlerinde de alarm oluşur.",
+  "user_note": "Mesai saatlerinizi bilmediğim için kuralı her gün 18:00 ile 08:00 arasında çalışacak şekilde ayarladım; saatleri kural formundan değiştirebilirsiniz.",
+  "schedule": {"start": "18:00", "end": "08:00", "days": [0, 1, 2, 3, 4, 5, 6]},
   "selected_model": "coco_detector",
   "triton_model_name": "coco_detector",
   "model_reason": "Kişi girişi standart person sınıfıyla izlenir.",

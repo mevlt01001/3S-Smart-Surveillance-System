@@ -5,7 +5,7 @@
 
 import { createRule, deleteRule, listCameras, listRules, recompileRule, snapshotUrl, updateRule } from "./api.js";
 import { describePlan } from "./labels.js";
-import { $, bindSegmented, confirmDialog, escapeHTML, icon, isAnyModalOpen, setHTML, showError, showToast, withBusy } from "./ui.js";
+import { $, $$, bindSegmented, confirmDialog, escapeHTML, icon, isAnyModalOpen, setHTML, showError, showToast, withBusy } from "./ui.js";
 import { ZONE_COLORS, createZoneEditor } from "./zone-editor.js";
 
 const PREPARING_REFRESH_MS = 1500;
@@ -38,6 +38,8 @@ let editor = null;
 let mounted = false;
 let refreshTimer = null;
 let setActiveScope = () => {};
+// Working hours as shown in the form; `touched` tells whether the user changed them here
+let schedule = { window: false, start: "18:00", end: "08:00", days: [0, 1, 2, 3, 4, 5, 6], touched: false };
 
 const isEditorOpen = () => !$("#rule-editor-panel").hidden;
 const hasChangeZone = (zones) => (zones || []).some((zone) => zone.zone_type === "change_detection");
@@ -47,9 +49,10 @@ function zoneSummaryHTML(rule) {
   const zones = rule.zones || [];
   if (!zones.length) return `<span class="cell-sub">${escapeHTML(rule.description || "")}</span>`;
   return zones.map((zone, index) => {
+    const summary = zone.plan_summary || {};
     const what = zone.zone_type === "change_detection"
       ? "Engel veya değişiklik izleniyor"
-      : describePlan(zone.plan_summary) || zone.description || "";
+      : summary.text || describePlan(zone.plan_summary) || zone.description || "";
     // Shown when the rule is only the closest thing to what was asked for
     const note = zone.plan_summary && zone.plan_summary.note
       ? `<span class="cell-sub rule-note">${icon("info")} ${escapeHTML(zone.plan_summary.note)}</span>` : "";
@@ -65,12 +68,17 @@ function rowHTML(rule) {
   } else if (status) {
     badges.push(`<span class="badge ${status.className}" title="${escapeHTML(status.hint)}">${status.text}</span>`);
   }
+  if (rule.enabled !== false && rule.active_now === false) {
+    badges.push(`<span class="badge is-muted" title="Kural açık, ancak şu an çalışma saatlerinin dışında olduğu için denetlenmiyor.">Saat dışında</span>`);
+  }
+  const hours = rule.schedule_text ? `<span class="cell-sub rule-hours">Çalışma saatleri: ${escapeHTML(rule.schedule_text)}</span>` : "";
   const where = rule.scope === "system" ? "Tüm kameralar" : rule.camera_name || "Kamera";
   return `
     <tr data-rule="${escapeHTML(rule.id)}">
       <td>
         <strong>${escapeHTML(rule.title)}</strong> ${badges.join(" ")}
         ${zoneSummaryHTML(rule)}
+        ${hours}
       </td>
       <td>${escapeHTML(where)}</td>
       <td><input type="checkbox" class="switch" data-action="toggle" ${rule.enabled !== false ? "checked" : ""} aria-label="Kural açık" title="Kuralı aç veya kapat"></td>
@@ -134,6 +142,7 @@ function announceSavedRule() {
   const notes = (rule.zones || []).map((zone) => zone.plan_summary && zone.plan_summary.note).filter(Boolean);
   if (status) showToast(`“${rule.title}”: ${status.hint}`, "warning", 12000);
   else if (notes.length) showToast(`“${rule.title}” çalışıyor, ancak istediğinizden farklı: ${notes.join(" ")}`, "warning", 15000);
+  else if (rule.enabled !== false && rule.active_now === false) showToast(`“${rule.title}” hazır; çalışma saatleri (${rule.schedule_text}) gelince denetlenmeye başlar.`, "info", 8000);
   else if (rule.enabled !== false) showToast(`“${rule.title}” çalışıyor.`, "success");
 }
 
@@ -203,9 +212,11 @@ function renderZoneFields() {
     : `<span class="hint">Henüz bölge çizilmedi. Soldaki görüntüye tıklayarak başlayın.</span>`);
 
   $("#zone-fields").disabled = !selected;
-  const isChange = Boolean(selected && selected.zone_type === "change_detection");
-  $("#zone-detection-fields").hidden = isChange;
-  $("#zone-change-hint").hidden = !isChange;
+  const mode = selected ? zoneMode(selected) : "detection";
+  $("#zone-detection-fields").hidden = mode !== "detection";
+  $("#zone-manual-fields").hidden = mode !== "manual";
+  $("#zone-change-hint").hidden = mode !== "change_detection";
+  if (mode === "manual") renderManualFields(selected.manual);
   // Do not overwrite the field the user is typing in
   const assign = (selector, value) => {
     const field = $(selector);
@@ -213,17 +224,73 @@ function renderZoneFields() {
   };
   assign("#zone-name", selected ? selected.name : "");
   assign("#zone-description", selected ? selected.description || "" : "");
-  $("#zone-type").value = selected ? selected.zone_type || "detection" : "detection";
+  $("#zone-type").value = mode;
 
   const points = editor.draftPoints();
+  $("#zone-finish").hidden = points < 3;
   let status = "Bölge çizmek için görüntüye tıklayın";
   if (scope === "camera" && !cameraId) status = "Önce bir kamera ekleyin";
-  else if (points >= 3) status = "Bölgeyi kapatmak için ilk noktaya tıklayın";
+  else if (points >= 3) status = "Bitince “Bölgeyi tamamla”ya basın";
   else if (points > 0) status = `En az ${3 - points} nokta daha işaretleyin`;
   else if (zones.length) status = "";
   const statusBox = $("#zone-canvas-status");
   statusBox.hidden = !status;
   statusBox.textContent = status;
+}
+
+/** How a zone is defined: by a sentence, by choices from lists, or as an obstacle zone. */
+const zoneMode = (zone) => (zone.zone_type === "change_detection" ? "change_detection" : zone.manual ? "manual" : "detection");
+
+/** What the number of a list-defined rule means, by the chosen condition (none: no number needed). */
+const MANUAL_VALUES = {
+  waiting: { label: "Kaç saniyeden uzun kalınca?", fallback: 30 },
+  absence: { label: "Kaç saniye boyunca yokken?", fallback: 10 },
+  more_than: { label: "Kaçtan fazla olunca?", fallback: 3 },
+  fewer_than: { label: "Kaçtan az olunca?", fallback: 1 },
+};
+
+function renderManualFields(manual) {
+  $("#manual-subject").value = manual.subject;
+  $("#manual-condition").value = manual.condition;
+  const value = MANUAL_VALUES[manual.condition];
+  $("#manual-value-field").hidden = !value;
+  if (!value) return;
+  $("#manual-value-label").textContent = value.label;
+  const field = $("#manual-value");
+  if (document.activeElement !== field) field.value = manual.value ?? "";
+}
+
+/** Reads the list choices of the selected zone back from the form. */
+function readManualFields() {
+  const condition = $("#manual-condition").value;
+  const needsValue = MANUAL_VALUES[condition];
+  const selected = editor.getSelected();
+  const previous = selected && selected.manual;
+  let value = null;
+  if (needsValue) {
+    // Switching to a condition with a number starts from a sensible one
+    const typed = previous && previous.condition === condition ? $("#manual-value").value : "";
+    value = typed === "" ? (previous && previous.condition === condition ? null : needsValue.fallback) : Number(typed);
+  }
+  editor.updateSelected({ manual: { subject: $("#manual-subject").value, condition, value } });
+}
+
+/* ---------------------------------------------------------- Working hours */
+function renderSchedule() {
+  $("#rule-schedule-mode").value = schedule.window ? "window" : "always";
+  $("#rule-schedule-fields").hidden = !schedule.window;
+  $("#rule-schedule-start").value = schedule.start;
+  $("#rule-schedule-end").value = schedule.end;
+  $$("#rule-schedule-days [data-day]").forEach((chip) => {
+    chip.classList.toggle("is-active", schedule.days.includes(Number(chip.dataset.day)));
+    chip.setAttribute("aria-pressed", String(schedule.days.includes(Number(chip.dataset.day))));
+  });
+}
+
+function changeSchedule(changes) {
+  schedule = { ...schedule, ...changes, touched: true };
+  dirty = true;
+  renderSchedule();
 }
 
 function showCameraPicture() {
@@ -283,9 +350,19 @@ async function openEditor(rule) {
     name: zone.name || `Bölge ${index + 1}`,
     description: zone.description || "",
     zone_type: zone.zone_type || "detection",
+    manual: zone.manual || null,
     points: (zone.points || []).map((point) => ({ x: point.x, y: point.y })),
     colorIndex: zone.color_idx,
   })));
+  const stored = (rule && rule.schedule) || {};
+  schedule = {
+    window: Boolean(stored.start && stored.end),
+    start: stored.start || "18:00",
+    end: stored.end || "08:00",
+    days: stored.days && stored.days.length ? [...stored.days] : [0, 1, 2, 3, 4, 5, 6],
+    touched: false,
+  };
+  renderSchedule();
   setScope(rule && rule.scope === "system" ? "system" : "camera");
   dirty = false;
   $("#rule-title").focus();
@@ -330,7 +407,19 @@ function buildRule() {
     showToast("Görüntü üzerinde en az bir bölge çizin.", "warning");
     return null;
   }
-  const undescribed = zones.find((zone) => zone.zone_type !== "change_detection" && !(zone.description || "").trim());
+  const unfinished = zones.find((zone) => zoneMode(zone) === "manual" && MANUAL_VALUES[zone.manual.condition]
+    && !(Number(zone.manual.value) >= 0 && zone.manual.value !== null && zone.manual.value !== ""));
+  if (unfinished) {
+    editor.select(unfinished.id);
+    showToast(`“${unfinished.name}” bölgesi için süreyi ya da sayıyı yazın.`, "warning");
+    $("#manual-value").focus();
+    return null;
+  }
+  if (schedule.window && !schedule.days.length) {
+    showToast("Kuralın çalışacağı en az bir gün seçin.", "warning");
+    return null;
+  }
+  const undescribed = zones.find((zone) => zoneMode(zone) === "detection" && !(zone.description || "").trim());
   if (undescribed) {
     editor.select(undescribed.id);
     showToast(`“${undescribed.name}” bölgesinde ne olunca haber verileceğini yazın.`, "warning");
@@ -342,7 +431,9 @@ function buildRule() {
   const zoneBodies = zones.map((zone, index) => ({
     id: zone.id,
     name: zone.name || `Bölge ${index + 1}`,
-    description: (zone.description || "").trim(),
+    // The server writes the description of a list-defined zone from its choices
+    description: zone.manual ? "" : (zone.description || "").trim(),
+    ...(zone.manual ? { manual: zone.manual } : {}),
     severity: "warning",
     zone_type: zone.zone_type || "detection",
     actions: DEFAULT_ACTIONS,
@@ -358,6 +449,10 @@ function buildRule() {
     description: zoneBodies.map((zone) => `${zone.name}: ${zone.description}`).join(" | ") || "Tüm kameralarda geçerli kural",
     zones: zoneBodies,
     actions: DEFAULT_ACTIONS,
+    // Sent only when set here: hours the sentence mentions are otherwise read by the server
+    ...(schedule.window
+      ? { schedule: { start: schedule.start, end: schedule.end, days: schedule.days } }
+      : editingId && schedule.touched ? { schedule: {} } : {}),
   };
 }
 
@@ -405,6 +500,7 @@ function wireEditor() {
   $("#rule-title").addEventListener("input", () => {
     dirty = true;
   });
+  $("#zone-finish").addEventListener("click", () => editor.finishDrawing());
   $("#zone-undo").addEventListener("click", () => editor.undo());
   $("#zone-clear").addEventListener("click", async () => {
     if (!editor.getZones().length && !editor.draftPoints()) return;
@@ -421,7 +517,24 @@ function wireEditor() {
   });
   $("#zone-name").addEventListener("input", (event) => editor.updateSelected({ name: event.target.value.trim() || "Bölge" }));
   $("#zone-description").addEventListener("input", (event) => editor.updateSelected({ description: event.target.value }));
-  $("#zone-type").addEventListener("change", (event) => editor.updateSelected({ zone_type: event.target.value }));
+  $("#zone-type").addEventListener("change", (event) => {
+    const mode = event.target.value;
+    const selected = editor.getSelected();
+    editor.updateSelected({
+      zone_type: mode === "change_detection" ? "change_detection" : "detection",
+      manual: mode === "manual" ? (selected && selected.manual) || { subject: "person", condition: "presence", value: null } : null,
+    });
+  });
+  $("#zone-manual-fields").addEventListener("input", readManualFields);
+  $("#rule-schedule-mode").addEventListener("change", (event) => changeSchedule({ window: event.target.value === "window" }));
+  $("#rule-schedule-start").addEventListener("change", (event) => changeSchedule({ start: event.target.value || schedule.start }));
+  $("#rule-schedule-end").addEventListener("change", (event) => changeSchedule({ end: event.target.value || schedule.end }));
+  $("#rule-schedule-days").addEventListener("click", (event) => {
+    const chip = event.target.closest("[data-day]");
+    if (!chip) return;
+    const day = Number(chip.dataset.day);
+    changeSchedule({ days: schedule.days.includes(day) ? schedule.days.filter((item) => item !== day) : [...schedule.days, day].sort() });
+  });
   $("#zone-detection-fields").addEventListener("click", (event) => {
     const chip = event.target.closest("[data-template]");
     if (!chip) return;

@@ -90,9 +90,9 @@ yönerge: `Rule_Generator_LLM/prompts.py`.
    (`fallback`): kural çalışır ama açıklamayı tam karşılamayabilir.
 
 **Yetenek sınırları.** Yönerge, sistemin neleri yapabildiğini (bölgede belirli türde nesne var mı,
-bölge boş mu kaldı, donanım eksik mi, bekleme süresi, sayı sınırı) ve neleri yapamadığını (kişi
-tanıma, yazı okuma, davranış tanıma, yön / çizgi geçişi, sayaç ve rapor, mesafe, saat koşulu, ses
-gibi görüntü dışı bilgi, renk gibi ayrıntı) tek tek sayar. Model her isteği üç durumdan birine
+bölge boş mu kaldı, donanım eksik mi, bekleme süresi, sayı sınırı, çalışma saati) ve neleri
+yapamadığını (kişi tanıma, yazı okuma, davranış tanıma, yön / çizgi geçişi, sayaç ve rapor, mesafe,
+tarih ve tatil, ses gibi görüntü dışı bilgi, renk gibi ayrıntı) tek tek sayar. Model her isteği üç durumdan birine
 koyar ve yanıtına yazar:
 
 | `feasibility` | Ne olur |
@@ -101,8 +101,27 @@ koyar ve yanıtına yazar:
 | `partial` | İsteğin bir bölümü yapılamıyor; amaca en yakın plan derlenir ve `user_note` alanına operatör için bir not yazılır: ne yapılamadı, kural bunun yerine ne yapıyor. Örnek: "Kişileri adıyla ayırt edemem. Bunun yerine bölgede kimse kalmadığında haber veririm; Ahmet'in yerine başka biri gelirse haber vermem." Not, kural listesinde bölgenin altında ve kaydetme bildiriminde gösterilir. |
 | `none` | Amaca hizmet eden hiçbir kural kurulamıyor (örneğin ses gerektiriyor). Derleyici `UnsupportedRule` fırlatır: yeniden denenmez, yedek plana da düşülmez; kural `unsupported` durumunda kalır ve modelin açıklaması operatöre gösterilir. |
 
-Sisteme yeni bir yetenek eklendiğinde (örneğin saat koşulu) yönergedeki bu liste de güncellenmelidir;
-yoksa derleyici o isteği "yapılamıyor" diye yanıtlamayı sürdürür.
+Sisteme yeni bir yetenek eklendiğinde yönergedeki bu liste de güncellenmelidir; yoksa derleyici o
+isteği "yapılamıyor" diye yanıtlamayı sürdürür.
+
+**Çalışma saatleri** (`Rule_Generator_LLM/schedule.py`). Bir kural günde tek bir saat aralığında ve
+seçilen günlerde çalışabilir: `{"start": "22:00", "end": "06:00", "days": [0-6]}` (0 Pazartesi).
+Bitiş başlangıçtan sonra değilse aralık gece yarısını geçer ve **başladığı güne** aittir (Cuma
+22:00–06:00, Cumartesi sabahını kapsar). Saatler iki yerden gelir:
+
+- **Formdan** (`source: user`): kullanıcının seçtiği her zaman geçerlidir.
+- **Cümleden** (`source: text`): model açık saat ve günleri planın `schedule` alanına yazar;
+  `compiled_changes` bunu kurala taşır. "Mesai dışında" gibi belirsiz bir ifade için model makul
+  saatleri varsayar, `feasibility: partial` yapar ve notta hangi saatleri seçtiğini söyler.
+
+Kural döngüsü, saatinin dışındaki kuralı kapalı kural gibi atlar (`is_active`); süren bir ihlal
+olayı 10 saniye sonra kendiliğinden kapanır.
+
+**Listeden tanımlanan kurallar** (`Rule_Generator_LLM/manual.py`). Bölgede `manual` seçimi varsa
+plan `build_plan` ile doğrudan kurulur: dil modeline gidilmez, kural hemen çalışır ve servis
+olmadan da tanımlanabilir. `describe_plan`, ister model ister form üretmiş olsun her planı tek
+cümleyle anlatır ("Bölgede 3'ten fazla kişi olunca"); kural listesinde gösterilen budur, yani
+kullanıcı sistemin **ne anladığını** her zaman görür.
 
 Bir bölgenin açıklaması değişmediyse (yalnızca adı, köşeleri ya da kuralın başlığı değiştiyse)
 plan korunur ve yeniden derleme yapılmaz.

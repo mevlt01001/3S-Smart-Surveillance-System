@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional
 
 from openai import OpenAI
 
-from . import llm_config
+from . import llm_config, schedule as rule_schedule
 from .prompts import COMPILER_SYSTEM_PROMPT, COMPILER_USER_TEMPLATE
 from .schema import (
     AlertLogic,
@@ -407,6 +407,10 @@ class RuleCompiler:
             raise UnsupportedRule(note or "Bu istek kameradan anlaşılabilecek bir duruma çevrilemedi.")
         data["feasibility"] = "partial" if feasibility == "partial" and note else "full"
         data["user_note"] = note if data["feasibility"] == "partial" else None
+
+        data["schedule"] = rule_schedule.normalize(data.get("schedule"), source="text")
+        if not rule_schedule.has_window(data["schedule"]):
+            data["schedule"] = None
 
         data["source_prompt"] = source_prompt
         data = self._normalize_plan_data(data, source_prompt=source_prompt)

@@ -213,7 +213,21 @@ Referansı siler; yenisi alınana kadar bölge değerlendirilmez.
 ```
 Kuralı kaydeder ve bölge açıklamalarını **arka planda** derlemeye başlar; yanıt hemen döner ve
 `compile_status` `compiling` olur. Sonucu görmek için listeyi yeniden isteyin. Hatalar: `422`
-(başlık boş, kamera yok).
+(başlık boş, kamera yok, listeden tanımlanan bölgede eksik ya da geçersiz seçim).
+
+İsteğe bağlı alanlar:
+
+- Bölgede `"manual": {"subject": "person", "condition": "waiting", "value": 20}`: bölge cümleyle
+  değil seçimle tanımlanır; planı sunucu hemen kurar (dil modeli kullanılmaz), `description`'ı da
+  sunucu yazar. `subject`: `person`, `vehicle`, `no_hardhat`, `no_vest`, `forklift`, `bag`.
+  `condition`: `presence`, `waiting` (saniye), `absence` (saniye), `more_than` (sayı), `fewer_than` (sayı).
+- Kuralda `"schedule": {"start": "22:00", "end": "06:00", "days": [0, 1, 2, 3, 4]}`: çalışma
+  saatleri (`days`: 0 Pazartesi … 6 Pazar; bitiş başlangıçtan önceyse gece yarısını geçer).
+  Verilmezse saatler bölge cümlelerinden okunur, orada da yoksa kural her zaman çalışır.
+
+Yanıttaki kuralda ayrıca `schedule_text` ("22:00–06:00 · Hafta içi", saat yoksa boş), `active_now`
+(açık **ve** çalışma saati içinde mi) ve her bölgenin `plan_summary.text` alanı (planın ne yaptığı,
+tek cümle) bulunur.
 
 ### `GET /api/rules/{id}`
 Tek kural, planlarıyla birlikte.
@@ -233,6 +247,32 @@ Hatalar: `503`, `409`.
 ### `GET /api/rules/{id}/plan`
 Tanılama: her bölgenin derlenmiş planı, derleme günlüğü ve modelin ham yanıtı.
 `{"compile_status", "compile_error", "plans": [{"zone_id", "zone_name", "detection_plan", "compile_logs", "compile_meta", "raw_llm_response"}]}`
+
+---
+
+## Raporlar
+
+### `GET /api/reports/summary?days=7`
+Son `days` takvim gününün (1–90; 1 = bugün gece yarısından beri) özeti. Deneme olayları (`sim_…`) sayılmaz.
+
+```json
+{"success": true, "report": {
+  "days": 7, "from_text": "03.10.2026", "to_text": "09.10.2026 21:30",
+  "totals": {"events": 51, "rule": 32, "movement": 19, "correct": 30, "false_positive": 4,
+             "unreviewed": 17, "false_alarm_pct": 11.8},
+  "buckets": [{"label": "03.10", "rule": 9, "movement": 5}, "…"],
+  "by_rule": [{"name": "Gece girişi", "events": 14, "total_sec": 9004.0, "ongoing": 0,
+               "correct": 6, "false_positive": 2, "unreviewed": 6}],
+  "by_camera": [{"name": "Depo", "events": 20, "rule": 12, "correct": 9, "false_positive": 1, "unreviewed": 10}],
+  "summary_verdict": {"compared": 34, "agreed": 27},
+  "incomplete": false}}
+```
+
+- `buckets`: `days` 1 ise saat başına (24 tane), değilse gün başına bir satır.
+- `false_alarm_pct`: `false_positive / (correct + false_positive)`; incelenen olay yoksa `null`.
+- `total_sec`: ihlallerin toplam süresi (süren ihlal şu ana kadar sayılır).
+- `summary_verdict`: operatör kararı olan ve özeti `confirmed` / `normal` diyen olaylarda ikisinin örtüşme sayısı.
+- `incomplete`: olay günlüğü dolu ve en eski olay dönemin içinde, yani daha eskileri silinmiş olabilir.
 
 ---
 

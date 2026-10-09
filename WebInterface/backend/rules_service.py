@@ -104,6 +104,7 @@ class RulesService:
         description: str = "",
         zones: Optional[List[Dict[str, Any]]] = None,
         actions: Optional[List[str]] = None,
+        schedule: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Creates a new rule with per-zone rules (single source of truth in zones)."""
         rule_id = f"rule_{uuid.uuid4().hex[:10]}"
@@ -125,6 +126,7 @@ class RulesService:
             "description": description.strip(),
             "zones": zones_list,
             "actions": actions or ["alert_screen", "snapshot"],
+            "schedule": schedule,
             "enabled": True,
             "created_at": now,
             "updated_at": now
@@ -141,7 +143,7 @@ class RulesService:
             return None
 
         for k, v in updates.items():
-            if k in ["title", "severity", "description", "zones", "actions", "enabled", "camera_id", "camera_name", "scope", "assignee", "escalation"]:
+            if k in ["title", "severity", "description", "zones", "actions", "enabled", "camera_id", "camera_name", "scope", "schedule", "assignee", "escalation"]:
                 rule[k] = v
 
         rule["updated_at"] = time.time()

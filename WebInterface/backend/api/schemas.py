@@ -26,8 +26,9 @@ class CreateRuleRequest(BaseModel):
     camera_name: Optional[str] = None
     severity: str = "warning"
     description: str = ""
-    zones: Optional[list] = Field(default_factory=list, description="[{id, name, description, zone_type, points}]")
+    zones: Optional[list] = Field(default_factory=list, description="[{id, name, description, zone_type, points, manual?}]")
     actions: Optional[list] = Field(default_factory=list)
+    schedule: Optional[dict] = Field(None, description="{start: 'HH:MM', end: 'HH:MM', days: [0-6]}; omitted = always")
 
 
 class UpdateRuleRequest(BaseModel):
@@ -42,6 +43,7 @@ class UpdateRuleRequest(BaseModel):
     description: Optional[str] = None
     zones: Optional[list] = None
     actions: Optional[list] = None
+    schedule: Optional[dict] = Field(None, description="Working hours; {} = always. Omitted = unchanged")
 
 
 class SimulateAnomalyRequest(BaseModel):
