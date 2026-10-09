@@ -4,7 +4,9 @@ pprof: no
 
 rtsp: yes
 rtspAddress: :8554
-rtspTransports: [tcp]
+rtpAddress: :8556
+rtcpAddress: :8557
+rtspTransports: [tcp, udp, multicast]
 
 webrtc: no
 hls: no

@@ -209,7 +209,9 @@ pprof: no
 
 rtsp: yes
 rtspAddress: :{self.rtsp_port}
-rtspTransports: [tcp]
+rtpAddress: :8556
+rtcpAddress: :8557
+rtspTransports: [tcp, udp, multicast]
 
 webrtc: no
 hls: no
@@ -232,93 +234,98 @@ paths:
         )
         time.sleep(0.8)
 
+    def start_single_camera_stream(self, cam_file: Path):
+        """Starts a single dual-output FFmpeg streaming process."""
+        cam_name = cam_file.stem
+        cam_dir = self.output_dir / cam_name
+        cam_dir.mkdir(parents=True, exist_ok=True)
+
+        rtsp_target = f"rtsp://127.0.0.1:{self.rtsp_port}/{cam_name}"
+
+        if self.naming_format == "timestamp":
+            seg_pattern = str(cam_dir / "%Y-%m-%d_%H-%M-%S.mp4")
+            segment_args = [
+                "-f", "segment",
+                "-segment_time", str(self.segment_seconds),
+                "-strftime", "1",
+                "-reset_timestamps", "1",
+                seg_pattern
+            ]
+        else:
+            seg_pattern = str(cam_dir / "%d.mp4")
+            segment_args = [
+                "-f", "segment",
+                "-segment_time", str(self.segment_seconds),
+                "-segment_start_number", "1",
+                "-reset_timestamps", "1",
+                seg_pattern
+            ]
+
+        if cam_file.suffix.lower() == ".mp4":
+            cmd = [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel", "error",
+                "-stream_loop", "-1",
+                "-re",
+                "-i", str(cam_file),
+                "-c:v", "copy",
+                "-an",
+                "-f", "rtsp",
+                "-rtsp_transport", "tcp",
+                rtsp_target,
+                "-c:v", "copy",
+                "-an",
+                *segment_args
+            ]
+        else:
+            cmd = [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel", "error",
+                "-stream_loop", "-1",
+                "-re",
+                "-i", str(cam_file),
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-tune", "zerolatency",
+                "-profile:v", "baseline",
+                "-level", "3.1",
+                "-pix_fmt", "yuv420p",
+                "-b:v", "2000k",
+                "-g", "5",
+                "-an",
+                "-f", "rtsp",
+                "-rtsp_transport", "tcp",
+                rtsp_target,
+                "-c:v", "copy",
+                "-an",
+                *segment_args
+            ]
+
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            preexec_fn=os.setsid
+        )
+        self.camera_procs[cam_name] = proc
+
     def start_camera_streams(self):
         """Starts continuous dual-output FFmpeg processes for all discovered cameras."""
         logger.info(f"Starting {len(self.camera_files)} camera streams with dual RTSP + segmented recording...")
+        for cam_file in self.camera_files:
+            self.start_single_camera_stream(cam_file)
+
+    def check_and_restart_dead_processes(self):
+        """Monitors and revives MediaMTX or camera FFmpeg streams if they crash."""
+        if self.mediamtx_proc and self.mediamtx_proc.poll() is not None:
+            self.start_mediamtx()
 
         for cam_file in self.camera_files:
-            cam_name = cam_file.stem
-            cam_dir = self.output_dir / cam_name
-            cam_dir.mkdir(parents=True, exist_ok=True)
-
-            rtsp_target = f"rtsp://127.0.0.1:{self.rtsp_port}/{cam_name}"
-
-            # Naming format: sequential (1.mp4, 2.mp4...) vs timestamp (2026-09-24_18-00-00.mp4)
-            if self.naming_format == "timestamp":
-                seg_pattern = str(cam_dir / "%Y-%m-%d_%H-%M-%S.mp4")
-                segment_args = [
-                    "-f", "segment",
-                    "-segment_time", str(self.segment_seconds),
-                    "-strftime", "1",
-                    "-reset_timestamps", "1",
-                    seg_pattern
-                ]
-            else:
-                seg_pattern = str(cam_dir / "%d.mp4")
-                segment_args = [
-                    "-f", "segment",
-                    "-segment_time", str(self.segment_seconds),
-                    "-segment_start_number", "1",
-                    "-reset_timestamps", "1",
-                    seg_pattern
-                ]
-
-            # Choose optimal codec pipeline:
-            # If source is MP4 (already H.264), use direct stream copy (zero CPU!)
-            if cam_file.suffix.lower() == ".mp4":
-                cmd = [
-                    "ffmpeg",
-                    "-hide_banner",
-                    "-loglevel", "error",
-                    "-stream_loop", "-1",           # Endless loop back to beginning
-                    "-re",                          # Real-time pacing
-                    "-i", str(cam_file),
-                    # Output 1: Real-time RTSP stream
-                    "-c:v", "copy",
-                    "-an",
-                    "-f", "rtsp",
-                    "-rtsp_transport", "tcp",
-                    rtsp_target,
-                    # Output 2: Segmented local NVR recording
-                    "-c:v", "copy",
-                    "-an",
-                    *segment_args
-                ]
-            else:
-                # Source is AVI or non-H264: encode to H.264 baseline once with 5-frame GOP
-                cmd = [
-                    "ffmpeg",
-                    "-hide_banner",
-                    "-loglevel", "error",
-                    "-stream_loop", "-1",
-                    "-re",
-                    "-i", str(cam_file),
-                    # Output 1: RTSP stream
-                    "-c:v", "libx264",
-                    "-preset", "ultrafast",
-                    "-tune", "zerolatency",
-                    "-profile:v", "baseline",
-                    "-level", "3.1",
-                    "-pix_fmt", "yuv420p",
-                    "-b:v", "2000k",
-                    "-g", "5",
-                    "-an",
-                    "-f", "rtsp",
-                    "-rtsp_transport", "tcp",
-                    rtsp_target,
-                    # Output 2: Segmented local NVR recording
-                    "-c:v", "copy",
-                    "-an",
-                    *segment_args
-                ]
-
-            proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                preexec_fn=os.setsid
-            )
-            self.camera_procs[cam_name] = proc
+            proc = self.camera_procs.get(cam_file.stem)
+            if proc is None or proc.poll() is not None:
+                self.start_single_camera_stream(cam_file)
 
     def render_dashboard(self):
         """Renders clean real-time status dashboard on the terminal."""
@@ -391,6 +398,9 @@ paths:
             while self.is_running:
                 # 1. Check storage quota and purge oldest if exceeded
                 purged = self.storage_mgr.purge_if_needed()
+
+                # Revive any dead camera streams or RTSP server
+                self.check_and_restart_dead_processes()
 
                 # 2. Render live terminal dashboard
                 self.render_dashboard()

@@ -93,6 +93,7 @@ class HikvisionDeviceConfig:
         self.media_xaddr = f"http://{host_ip}:{onvif_port}/onvif/media_service"
         self.rtsp_url = f"rtsp://{host_ip}:{rtsp_port}/{rtsp_path}"
         self.snapshot_cache: Optional[bytes] = None
+        self._last_snap_time: float = 0.0
 
         self._generate_initial_snapshot()
 
@@ -111,9 +112,33 @@ class HikvisionDeviceConfig:
             subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4)
             if out_snap.exists():
                 self.snapshot_cache = out_snap.read_bytes()
+                self._last_snap_time = time.time()
                 out_snap.unlink(missing_ok=True)
         except Exception:
             pass
+
+    def get_live_snapshot(self) -> Optional[bytes]:
+        """Returns fresh snapshot from RTSP stream or calculated elapsed video position."""
+        now = time.time()
+        if self.snapshot_cache and (now - self._last_snap_time < 0.6):
+            return self.snapshot_cache
+
+        try:
+            import cv2
+            os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|stimeout;1000000"
+            cap = cv2.VideoCapture(self.rtsp_url, cv2.CAP_FFMPEG)
+            ret, frame = cap.read()
+            cap.release()
+            if ret and frame is not None and frame.size > 0:
+                success, buf = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+                if success:
+                    self.snapshot_cache = buf.tobytes()
+                    self._last_snap_time = now
+                    return self.snapshot_cache
+        except Exception:
+            pass
+
+        return self.snapshot_cache
 
 
 class ONVIFSOAPHandler(BaseHTTPRequestHandler):
@@ -219,10 +244,8 @@ class ONVIFSOAPHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path.endswith("/snapshot.jpg") or parsed.path == "/onvif/snapshot":
             # Return live snapshot
-            data = self.device_config.snapshot_cache
+            data = self.device_config.get_live_snapshot()
             if not data:
-                # Fallback generate 1x1 black pixel or reload
-                self.device_config._generate_initial_snapshot()
                 data = self.device_config.snapshot_cache
 
             if data:
