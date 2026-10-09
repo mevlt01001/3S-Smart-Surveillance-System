@@ -1,0 +1,61 @@
+# Her push ve pull request'te çalışır: sözdizimi denetimi + uçtan uca sistem testi.
+#
+# GitHub'ın makinelerinde ekran kartı, analiz sunucusu (Triton) ve kamera yoktur. Sistem testi
+# bunu kendisi fark eder: canlı video isteyen denetimleri SKIP olarak raporlar, geri kalanını
+# (API, arayüz dosyaları, ayarlar, kurallar, olay günlüğü, canlı bildirim, kalıcılık, kapanma)
+# koşar. Tam test, simülatör ve Triton çalışan geliştirme makinesinde elle koşulur.
+# Ayrıntı: docs/10-gelistirme-ve-test.md
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Sistem testi
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TMPDIR: ${{ runner.temp }}
+    steps:
+      # Alt modül (Anomaly_Detection) çalışan sistemin parçası değildir; indirilmez.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Sistem paketleri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg libgl1 libglib2.0-0
+
+      - name: Python bağımlılıkları
+        run: pip install -r requirements.txt
+
+      - name: Python sözdizimi
+        run: python -m compileall -q WebInterface Rule_Generator_LLM Object_Detection
+
+      - name: Arayüz betikleri sözdizimi
+        run: |
+          node --version
+          for file in WebInterface/frontend/js/*.js; do
+            node --input-type=module --check < "$file" || { echo "::error file=$file::Sözdizimi hatası"; exit 1; }
+          done
+
+      - name: Sistem testi
+        run: python WebInterface/tests/system_check.py --keep
+
+      - name: Sunucu günlüğü (test başarısızsa)
+        if: failure()
+        run: cat "$RUNNER_TEMP"/aegis_syscheck_*/server.log || true
