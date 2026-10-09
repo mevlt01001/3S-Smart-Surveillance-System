@@ -1,17 +1,55 @@
+# ---------------------------------------------------------------- Python
 .conda/
-.data/
-*.png
-*.jpeg
-*.jpg
-*.mp4
-*.avi
-*.pkl
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# ------------------------------------------- Yerel ayarlar ve gizli bilgiler
+# Erişim anahtarları yalnızca .env içinde durur (şablon: .env.example)
+.env
+
+# --------------------------------------------- Web sisteminin çalışma verisi
+# Çalışırken oluşur; cameras_db.json kamera şifrelerini düz metin olarak içerir.
+WebInterface/backend/*.json
+WebInterface/backend/recordings/
+WebInterface/backend/change_refs/
+WebInterface/backend/static/
+.aegis.lock
+*.tmp
+
+# ----------------------------------------------------- Model ağırlıkları
+# Triton model deposunda yalnızca config.pbtxt dosyaları tutulur.
 *.pt
 *.onnx
 *.plan
 *.engine
 *.trt
-venv/
 *.ts
-__pycache__/
-*.pyc
+*.pkl
+.text_feat_cache/
+.data/
+
+# ------------------------------------------------------- Video ve görseller
+*.mp4
+*.avi
+*.png
+*.jpg
+*.jpeg
+
+# ------------------------------------------------- Simülatör çıktıları, günlükler
+Camera_System_Simulator/recordings/
+*.log
+
+# -------------------------------------------------------- Editör / işletim sistemi
+.vscode/
+.idea/
+.DS_Store
+
+# ---------------------------------------------------------------- Kişisel notlar
+# Depo köküne bırakılmış çalışma notları. Depoya girmesini istiyorsanız
+# ilgili satırı silin.
+/131 Numaral*
+/kapsam_belirleme.md
+/konusma_metni.txt
+/nedne_hangarbigg_beklentiler_neler.txt
