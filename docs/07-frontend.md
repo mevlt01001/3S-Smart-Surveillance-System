@@ -12,6 +12,7 @@ frontend/
 │   ├── layout.css        Kenar çubuğu, üst çubuk, içerik alanı, duyarlı düzen
 │   └── live.css  events.css  rules.css  reports.css  cameras.css  settings.css     Sayfaya özgü stiller
 └── js/
+    ├── theme.js          Tema seçimi; stillerden önce yüklenen düz betik
     ├── main.js           Giriş noktası: ortak parçaları başlatır, sayfaları kaydeder
     ├── router.js         Adres çubuğuna bağlı sayfa geçişi
     ├── shell.js          Saat, sistem durumu satırı, olay rozeti, bağlantı uyarısı
@@ -183,9 +184,27 @@ eklenmelidir (aynı sözlüğün sunucu tarafı: `Rule_Generator_LLM/evaluator.p
 
 ## Stil sistemi
 
-- Renk, köşe yarıçapı, yazı ve temel ölçüler `base.css`'teki değişkenlerdedir
-  (`--bg`, `--surface`, `--accent`, `--ok`, `--warn`, `--danger`, `--radius`…). Yeni bir stil sabit
-  renk yazmaz, değişken kullanır.
+- Renk, köşe yarıçapı, yazı ve temel ölçüler `base.css`'teki değişkenlerdedir. Yeni bir stil sabit
+  renk yazmaz, değişken kullanır. Tek istisna, video üstündeki yazı ve düğmelerdir (siyah zemin,
+  beyaz yazı): onlar temadan bağımsızdır.
+- **Renk rolleri.** Her tema aynı değişkenleri tanımlar; bir stil rengi rolüne göre seçer:
+
+  | Değişken | Rolü |
+  | :--- | :--- |
+  | `--bg`, `--surface`, `--surface-2`, `--surface-3`, `--border`, `--border-strong` | Zeminler ve çizgiler |
+  | `--text`, `--text-2`, `--text-3` | Yazı: asıl, ikincil, silik |
+  | `--primary`, `--primary-hover`, `--primary-soft`, `--on-primary` | **Eylem ve denetim rengi:** ana düğme, anahtar, kaydırıcı, odak çerçevesi, seçili etiket |
+  | `--accent`, `--accent-soft`, `--accent-ink`, `--on-accent` | **Marka vurgusu (açık turuncu):** logo, etkin menü öğesi, "buraya bak" vurguları. `--accent-ink` aynı tonun yazı olarak okunabilen koyusudur |
+  | `--ok`, `--warn`, `--danger`, `--info` (+ `-soft`) | Durum renkleri; yazı olarak okunabilir koyulukta |
+  | `--warn-solid`, `--on-warn-solid` | Uyarının dolgu ya da kenarlık hâli (parlak kehribar) ve üstündeki yazı |
+  | `--series-rule`, `--series-movement` | Rapor grafiğinin iki serisi; her temanın zemini için renk körlüğü ayrımı ve kontrastı ölçülmüştür |
+
+- **Temalar.** `<html data-theme="light | navy | dark">`; varsayılan `light` (`:root`'taki değerler).
+  `js/theme.js` sayfanın başında, stillerden önce yüklenen düz bir betiktir (modül değildir): seçimi
+  `localStorage`'dan okur ve ilk karede uygular, `window.aegisTheme.get()` / `.set(ad)` sunar.
+  Açık temada menü laciverttir: `base.css`, `.sidebar` içinde zemin ve yazı değişkenlerini yeniden
+  tanımlar. Yeni tema eklemek: `base.css`'e bir `:root[data-theme="ad"]` bloğu, `theme.js`'teki
+  listeye bir satır ve Ayarlar'daki seçiciye bir düğme.
 - Ortak parçalar `components.css`'tedir: `.btn` (`.btn-primary`, `.btn-danger`, `.btn-sm`),
   `.btn-icon`, `.input`, `.select`, `.textarea`, `.field`, `.switch`, `.check`, `.badge`, `.chip`,
   `.segmented`, `.card`, `.toolbar`, `.empty`, `.notice`, `.table`, `.modal`, `.toast`.
@@ -209,4 +228,5 @@ eklenmelidir (aynı sözlüğün sunucu tarafı: `Rule_Generator_LLM/evaluator.p
 | :--- | :--- |
 | `aegis.events.layout` | Olaylar: `cards` / `table` |
 | `aegis.cameras.layout` | Kameralar: `grid` / `list` |
+| `aegis-theme` | Tema: `light` / `navy` / `dark` |
 | `aegis-ui-refreshed` (oturum) | Eski önbellekten yenileme döngüsünü önleyen zaman damgası |

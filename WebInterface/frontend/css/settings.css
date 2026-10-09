@@ -119,7 +119,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px 10px 16px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--primary);
   border-radius: var(--radius);
   background: var(--surface-2);
   box-shadow: var(--shadow);
@@ -137,3 +137,67 @@
     left: 12px;
   }
 }
+
+/* ---------------------------------------------------------------- Appearance */
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.theme-option:hover {
+  border-color: var(--primary);
+}
+
+.theme-option[aria-checked="true"] {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+  color: var(--text);
+}
+
+/* Four stripes: menu, page, control and accent colour of the theme */
+.theme-swatch {
+  display: flex;
+  height: 34px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.theme-swatch > i {
+  flex: 1;
+}
+
+.theme-swatch > i:last-child {
+  flex: 0.6;
+}
+
+.theme-swatch.is-light > i:nth-child(1) { background: #14233a; }
+.theme-swatch.is-light > i:nth-child(2) { background: #ffffff; }
+.theme-swatch.is-light > i:nth-child(3) { background: #1d5fae; }
+.theme-swatch.is-light > i:nth-child(4) { background: #f59a45; }
+
+.theme-swatch.is-navy > i:nth-child(1) { background: #0e1a2b; }
+.theme-swatch.is-navy > i:nth-child(2) { background: #14233a; }
+.theme-swatch.is-navy > i:nth-child(3) { background: #233a5a; }
+.theme-swatch.is-navy > i:nth-child(4) { background: #f3a45f; }
+
+.theme-swatch.is-dark > i:nth-child(1) { background: #161a21; }
+.theme-swatch.is-dark > i:nth-child(2) { background: #1c212a; }
+.theme-swatch.is-dark > i:nth-child(3) { background: #2c3340; }
+.theme-swatch.is-dark > i:nth-child(4) { background: #e38b52; }

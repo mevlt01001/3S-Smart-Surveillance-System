@@ -137,21 +137,21 @@
 
 .tile-button.has-text {
   padding: 0 8px;
-  background: var(--warn);
-  color: #1a1203;
+  background: var(--warn-solid);
+  color: var(--on-warn-solid);
   font-size: 12px;
   font-weight: 600;
 }
 
 .tile-button:hover:not(:disabled) {
   background: var(--accent);
-  color: #1a0f05;
+  color: var(--on-accent);
 }
 
 /* ------------------------------------------------------------- Tile states */
 .tile.is-warn .tile-badge {
-  background: var(--warn);
-  color: #1a1203;
+  background: var(--warn-solid);
+  color: var(--on-warn-solid);
 }
 
 .tile.is-danger .tile-badge {
@@ -159,7 +159,7 @@
 }
 
 .has-alarm-borders .tile.is-warn {
-  border-color: var(--warn);
+  border-color: var(--warn-solid);
 }
 
 .has-alarm-borders .tile.is-danger {
@@ -218,7 +218,7 @@
 }
 
 .legend-swatch.is-warn {
-  background: var(--warn);
+  background: var(--warn-solid);
 }
 
 .legend-swatch.is-danger {
@@ -241,7 +241,7 @@
 }
 
 .timeline-segment.is-warn {
-  background: var(--warn);
+  background: var(--warn-solid);
 }
 
 .timeline-segment.is-danger {

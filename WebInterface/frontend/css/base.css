@@ -1,8 +1,126 @@
 /* Design tokens, reset and typography. Every other stylesheet builds on these variables. */
 
 :root {
-  /* A soft dark theme: dark grey instead of black, off-white instead of white and muted
-     signal colours, so that a screen watched for hours does not glare. */
+  /*
+   * Colour roles (every theme defines all of them):
+   *   --primary   the colour of actions and controls: main buttons, switches, sliders, focus
+   *   --accent    the brand colour, light orange: logo, current page, "look here" highlights;
+   *               --accent-ink is the same hue dark enough to be read as text
+   *   --ok / --warn / --danger / --info   states; --warn-solid is a warning as a filled label
+   *   --series-*  the two series of the report chart (checked for colour-blind separation)
+   * Themes are chosen with <html data-theme="...">; see js/theme.js.
+   *
+   * "Açık" (default): light surfaces, navy blue as the colour of trust, orange as the accent.
+   */
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #f1f4f8;
+  --surface-3: #e4e9f0;
+  --border: #dfe4ec;
+  --border-strong: #c2cbd8;
+
+  --text: #1b2633;
+  --text-2: #4a586a;
+  --text-3: #647286;
+
+  --primary: #1d5fae;
+  --primary-hover: #174e91;
+  --primary-soft: rgba(29, 95, 174, 0.1);
+  --on-primary: #ffffff;
+
+  --accent: #f59a45;
+  --accent-hover: #f7a95f;
+  --accent-soft: rgba(245, 154, 69, 0.18);
+  --accent-ink: #b4570e;
+  --on-accent: #2a1704;
+
+  --ok: #1a7f4f;
+  --ok-soft: rgba(26, 127, 79, 0.12);
+  --warn: #946000;
+  --warn-soft: rgba(214, 150, 20, 0.18);
+  --warn-solid: #f3b33d;
+  --on-warn-solid: #2b1d02;
+  --danger: #c5383b;
+  --danger-soft: rgba(197, 56, 59, 0.1);
+  --info: #1d6fb8;
+  --info-soft: rgba(29, 111, 184, 0.1);
+
+  --series-rule: #2a78d6;
+  --series-movement: #eb6834;
+
+  --shadow: 0 12px 36px rgba(23, 35, 55, 0.16);
+  color-scheme: light;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --sidebar-width: 208px;
+  --topbar-height: 56px;
+}
+
+/* In the light theme the menu is navy: the brand colours sit on it, and orange reads well there */
+:root:not([data-theme]) .sidebar,
+:root[data-theme="light"] .sidebar {
+  --surface: #14233a;
+  --surface-2: #1d3150;
+  --border: #14233a;
+  --text: #e7edf6;
+  --text-2: #b6c3d6;
+  --text-3: #8fa0b8;
+  --accent-ink: #f7a95f;
+  --accent-soft: rgba(245, 154, 69, 0.18);
+  --ok: #54b585;
+  --danger: #e36d6d;
+}
+
+/* "Lacivert": a dark theme on navy, with the orange doing the work of the action colour too */
+:root[data-theme="navy"] {
+  --bg: #0e1a2b;
+  --surface: #14233a;
+  --surface-2: #1a2c47;
+  --surface-3: #233a5a;
+  --border: #223654;
+  --border-strong: #34507a;
+
+  --text: #dce5f1;
+  --text-2: #a5b4c9;
+  --text-3: #8092ab;
+
+  --primary: #f3a45f;
+  --primary-hover: #f6b479;
+  --primary-soft: rgba(243, 164, 95, 0.16);
+  --on-primary: #24140a;
+
+  --accent: #f3a45f;
+  --accent-hover: #f6b479;
+  --accent-soft: rgba(243, 164, 95, 0.16);
+  --accent-ink: #f3a45f;
+  --on-accent: #24140a;
+
+  --ok: #54b585;
+  --ok-soft: rgba(84, 181, 133, 0.16);
+  --warn: #dcb14e;
+  --warn-soft: rgba(220, 177, 78, 0.16);
+  --warn-solid: #dcb14e;
+  --on-warn-solid: #241a03;
+  --danger: #e36d6d;
+  --danger-soft: rgba(227, 109, 109, 0.16);
+  --info: #6daae8;
+  --info-soft: rgba(109, 170, 232, 0.16);
+
+  --series-rule: #3987e5;
+  --series-movement: #d95926;
+
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+/* "Koyu": neutral dark grey; off-white text and muted signal colours so it does not glare */
+:root[data-theme="dark"] {
   --bg: #161a21;
   --surface: #1c212a;
   --surface-2: #232934;
@@ -14,29 +132,32 @@
   --text-2: #a1aab8;
   --text-3: #7d8797;
 
+  --primary: #e38b52;
+  --primary-hover: #eb9b68;
+  --primary-soft: rgba(227, 139, 82, 0.15);
+  --on-primary: #1a0f05;
+
   --accent: #e38b52;
   --accent-hover: #eb9b68;
   --accent-soft: rgba(227, 139, 82, 0.15);
+  --accent-ink: #e38b52;
+  --on-accent: #1a0f05;
 
   --ok: #4fae7f;
   --ok-soft: rgba(79, 174, 127, 0.15);
   --warn: #d8a548;
   --warn-soft: rgba(216, 165, 72, 0.15);
+  --warn-solid: #d8a548;
+  --on-warn-solid: #1a1203;
   --danger: #db6262;
   --danger-soft: rgba(219, 98, 98, 0.16);
   --info: #629fdc;
   --info-soft: rgba(98, 159, 220, 0.15);
 
-  --radius: 10px;
-  --radius-sm: 6px;
+  --series-rule: #3987e5;
+  --series-movement: #d95926;
+
   --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-  --sidebar-width: 208px;
-  --topbar-height: 56px;
-
   color-scheme: dark;
 }
 
@@ -115,12 +236,12 @@ kbd {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: var(--accent-soft);
+  background: var(--primary-soft);
 }
 
 * {

@@ -17,7 +17,7 @@
 }
 
 .event-card.is-warning {
-  border-left-color: var(--warn);
+  border-left-color: var(--warn-solid);
 }
 
 .event-card.is-critical {

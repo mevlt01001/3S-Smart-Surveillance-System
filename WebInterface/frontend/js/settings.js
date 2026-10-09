@@ -194,11 +194,26 @@ function wire() {
   $("#settings-discard").addEventListener("click", () => fill(saved));
   $("#settings-reset").addEventListener("click", reset);
   $("#storage-clean").addEventListener("click", cleanStorage);
+  // The theme is this device's own choice: it applies at once and is not part of the saved settings
+  $("#theme-options").addEventListener("click", (event) => {
+    const option = event.target.closest("[data-theme-name]");
+    if (!option) return;
+    window.aegisTheme.set(option.dataset.themeName);
+    renderTheme();
+  });
+}
+
+function renderTheme() {
+  const current = window.aegisTheme.get();
+  $$("#theme-options [data-theme-name]").forEach((option) => {
+    option.setAttribute("aria-checked", String(option.dataset.themeName === current));
+  });
 }
 
 /* --------------------------------------------------------------- Lifecycle */
 export async function mount() {
   if (!wired) wire();
+  renderTheme();
   unsubscribeStats = unsubscribeStats || subscribeSystemStats(renderSystemInfo);
   loadStorage();
   // Coming back with unsaved edits keeps them; otherwise show what the server has now

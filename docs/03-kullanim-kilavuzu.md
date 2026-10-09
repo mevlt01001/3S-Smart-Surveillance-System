@@ -220,6 +220,17 @@ sayfa bunu söyler.
 Bir değeri değiştirince sağ altta "Kaydedilmemiş değişiklikler var" çubuğu çıkar. **Kaydet** değişikliği
 hemen uygular; sunucuyu yeniden başlatmak gerekmez. Kaydetmeden sayfadan çıkmak isterseniz sistem sorar.
 
+### Görünüm
+
+Üç tema vardır; seçim **yalnızca o cihazda** geçerlidir (telefon açık, kontrol odasındaki ekran koyu
+olabilir) ve anında uygulanır, kaydetmek gerekmez.
+
+| Tema | Nasıl görünür |
+| :--- | :--- |
+| Açık (varsayılan) | Açık zemin, lacivert menü; düğmeler mavi, vurgular açık turuncu. |
+| Lacivert | Koyu lacivert zemin; düğmeler ve vurgular açık turuncu. |
+| Koyu | Nötr koyu gri zemin, turuncu vurgu. |
+
 ### Algılama
 
 | Ayar | Etkisi |

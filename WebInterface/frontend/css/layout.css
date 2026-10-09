@@ -13,6 +13,8 @@
   min-width: 0;
   border-right: 1px solid var(--border);
   background: var(--surface);
+  /* Set here, not inherited: a theme may give the menu its own colours */
+  color: var(--text);
 }
 
 .brand {
@@ -68,7 +70,7 @@
 
 .nav-item.is-active {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .nav-badge {
@@ -77,8 +79,8 @@
   margin-left: auto;
   padding: 0 6px;
   border-radius: 10px;
-  background: var(--warn);
-  color: #1a1203;
+  background: var(--warn-solid);
+  color: var(--on-warn-solid);
   font-size: 11.5px;
   font-weight: 700;
   line-height: 20px;

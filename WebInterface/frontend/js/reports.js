@@ -50,7 +50,7 @@ function renderChart(report) {
   const labelEvery = Math.ceil(buckets.length / MAX_AXIS_LABELS);
   setHTML($("#report-axis"), `<span>${number(top)}</span><span>${number(top / 2)}</span><span>0</span>`);
   setHTML($("#report-plot"), buckets.map((bucket, index) => {
-    const segment = (count, kind) => (count ? `<span class="bar-segment is-${kind}" style="height: ${(count / top) * 100}%"></span>` : "");
+    const segment = (count, kind) => (count ? `<span class="bar-segment is-${kind}" style="--size: ${(count / top) * 100}%"></span>` : "");
     return `
       <div class="bar-column" tabindex="0" data-index="${index}"
            aria-label="${escapeHTML(bucket.label)}: ${bucket.rule} kural ihlali, ${bucket.movement} ${escapeHTML(report.movement_label.toLocaleLowerCase("tr"))}">
@@ -76,8 +76,8 @@ function showTooltip(column) {
   const chart = $("#report-bars").getBoundingClientRect();
   const box = column.getBoundingClientRect();
   const left = box.left + box.width / 2 - chart.left;
-  // Kept inside the chart: flipped to the other side near the right edge
-  tooltip.style.left = `${Math.min(Math.max(left, 80), chart.width - 80)}px`;
+  // Centred on the bar, but kept inside the chart at its edges
+  tooltip.style.setProperty("--x", `${Math.min(Math.max(left, 80), chart.width - 80)}px`);
 }
 
 /* ----------------------------------------------------------------- Tables */
