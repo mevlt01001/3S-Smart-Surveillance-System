@@ -150,6 +150,8 @@ Canlı duvarın tek sorgusu.
 - `analyzed`: kameranın 10 saniyeden taze bir skoru var mı.
 - `thresholds.normal` uyarı seviyesi, `thresholds.warning` kritik seviyesidir.
 - `bbox_normalized`: `[x1, y1, x2, y2]`, 0–1 aralığında.
+- `track_id`: nesnenin bu kameradaki kimliği; aynı nesne kareler boyunca aynı numarayı taşır.
+- `alarm`: bir kural en az 1 saniyedir kesintisiz ihlal ediliyor.
 
 ### `GET /api/anomaly/status`
 Yalnızca `fleet` bölümü.
@@ -196,7 +198,9 @@ Referansı siler; yenisi alınana kadar bölge değerlendirilmez.
 
 - `scope`: `camera` (tek kamera) | `system` (bütün kameralar; `camera_id` `null`).
 - `zone_type`: `detection` (kişi / nesne kuralı) | `change_detection` (engel / değişiklik).
-- `compile_status`: `compiling` | `compiled` | `fallback` | `pending` | `unavailable` | `error` | `not_required`.
+- `compile_status`: `compiling` | `compiled` | `fallback` | `pending` | `unavailable` | `error` | `unsupported` | `not_required`.
+- `compile_note`: yalnızca `unsupported` durumunda, isteğin neden kurala çevrilemediği (operatör için yazılmış cümle).
+- `plan_summary.note`: kural istenenin yalnızca en yakını ise, neyin yapılamadığı ve kuralın bunun yerine ne yaptığı; değilse `null`.
 - `camera_missing`: kuralın kamerası silinmiş.
 - `full=true`, `plan_summary` yerine planın tamamını (`detection_plan`, `compile_logs`,
   `raw_llm_response`) döndürür.

@@ -152,7 +152,10 @@ async def recompile_rule(rule_id: str):
 
     version = rule.get("updated_at")
     # Language-model round trips take seconds: keep them off the event loop
-    compiled_zones, plans = await asyncio.to_thread(rule_compilation.recompile, zones)
+    try:
+        compiled_zones, plans = await asyncio.to_thread(rule_compilation.recompile, zones)
+    except rule_compilation.UnsupportedRule as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
     current = _require_rule(rule_id)
     if current.get("updated_at") != version:

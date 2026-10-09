@@ -69,6 +69,8 @@ function renderStatus(stats) {
   dot.className = `status-dot ${state}`;
   text.textContent = label;
   box.title = detail;
+  // Said on every page as well: a rule that is not being checked looks like any other rule
+  document.getElementById("analysis-notice").hidden = !stats || state === "is-ok";
 }
 
 /** Updates the number next to "Olaylar": events nobody has reviewed yet. */

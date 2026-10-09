@@ -73,7 +73,7 @@ Arayüzde: **Kameralar → Ağda kamera ara → Tümünü ekle**, sonra **Canlı
 | Dizin | İçerik |
 | :--- | :--- |
 | `WebInterface/` | **Ürün:** web sunucusu (`backend/`), arayüz (`frontend/`), sistem testi (`tests/`). |
-| `Rule_Generator_LLM/` | Kural derleyici, koşul değerlendirici, olay özetleyici, dil modeli servis ayarları. |
+| `Rule_Generator_LLM/` | Kural derleyici, nesne takibi, koşul değerlendirici, olay özetleyici, dil modeli servis ayarları. |
 | `Object_Detection/` | Nesne tespiti kitaplığı ve Triton model deposu. |
 | `Anomaly_Detection/` | Anomali modelinin eğitim kodu (git alt modülü; çalışan sistemin parçası değil). |
 | `Camera_System_Simulator/` | Geliştirme için sahte kameralar (RTSP + ONVIF). |
@@ -99,11 +99,11 @@ olay ──► event_journal (kayıt) + evidence_store (video, fotoğraf) + vlm_
 .conda/bin/python WebInterface/tests/system_check.py --sim-ip <bu makinenin IP adresi>
 ```
 
-Kendi portunda, geçici veriyle ayrı bir sunucu başlatır ve arayüzle API'nin tamamını sınar (104
+Kendi portunda, geçici veriyle ayrı bir sunucu başlatır ve arayüzle API'nin tamamını sınar (118
 denetim); çalışan sisteme dokunmaz. Her değişiklikten sonra koşulmalıdır.
 
 Aynı test her push'ta GitHub Actions üzerinde de koşar (`.github/workflows/ci.yml`); orada kamera ve
-ekran kartı olmadığı için canlı video bölümü atlanır, kalan 85 denetim çalışır.
+ekran kartı olmadığı için canlı video bölümü atlanır, kalan 96 denetim çalışır.
 
 `Object_Detection/run_tests.py` model yükler ve birkaç GB bellek ister; canlı sistem çalışırken koşmayın.
 

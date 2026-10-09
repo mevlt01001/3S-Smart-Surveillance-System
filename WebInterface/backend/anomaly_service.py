@@ -44,6 +44,7 @@ CYCLE_SEC = 0.25                # every camera is scored about four times per se
 SCORE_FRESH_SEC = 10.0          # an older score is not shown: the engine stopped refreshing it
 RULE_CLIP_SEC = 5.0             # footage kept before a rule violation
 RULE_VIOLATION_SCORE = 75.0
+RULE_QUIET_SEC = 10.0           # a rule violation is over when the rule was not violated for this long
 CLIP_WAIT_SEC = 4.0             # a manual summary waits this long for a clip that is still encoding
 
 Incident = Dict[str, Any]
@@ -73,6 +74,9 @@ class AnomalyService:
         self._load_settings()
         self.camera_scores: Dict[str, Dict[str, Any]] = {}   # camera id -> latest score
         self._incidents: Dict[str, Incident] = {}            # camera id -> incident in progress
+        # (camera id, rule id) -> rule violation in progress; written by the rule engine's thread
+        self._rule_incidents: Dict[Tuple[str, str], Incident] = {}
+        self._rule_lock = threading.Lock()
         self._scored_frame: Dict[str, int] = {}              # camera id -> last frame number scored
         self._batch: Optional[np.ndarray] = None
 
@@ -263,6 +267,17 @@ class AnomalyService:
         for camera_id, incident in list(self._incidents.items()):
             if now - incident["last_active_ts"] > self.tolerance_sec + 0.5:
                 self._close_incident(camera_id)
+        with self._rule_lock:
+            finished = [key for key, incident in self._rule_incidents.items()
+                        if now - incident["last_active_ts"] > RULE_QUIET_SEC]
+            closed = [self._rule_incidents.pop(key) for key in finished]
+        for incident in closed:
+            event_journal.update(
+                incident["id"],
+                is_ongoing=False,
+                end_time_str=_clock(incident["last_active_ts"]),
+                incident_sec=round(incident["last_active_ts"] - incident["start_ts"], 1),
+            )
 
     def _close_incident(self, camera_id: str) -> None:
         """Completes the event of a finished incident: final times, peak snapshot, clip and summary."""
@@ -381,8 +396,30 @@ class AnomalyService:
         event_journal.update(entry_id, **changes)
 
     # ------------------------------------------------------- recording events
-    def record_rule_violation(self, camera_id: str, rule_title: str, message: str, severity: str = "warning") -> Dict[str, Any]:
-        """Records a rule violation with the last seconds of footage before it as evidence."""
+    def rule_violated(self, camera_id: str, rule_id: str, rule_title: str, message: str, severity: str = "warning") -> None:
+        """
+        Called by the rule engine for every frame on which a rule is violated. The first call
+        opens an event; the following ones only keep it running, so a violation that lasts an
+        hour is one event with a start and an end, not one event every few seconds. The event
+        is closed by `_close_silent_incidents` once the rule stayed quiet for RULE_QUIET_SEC.
+        """
+        now = time.time()
+        with self._rule_lock:
+            incident = self._rule_incidents.get((camera_id, rule_id))
+            if incident:
+                incident["last_active_ts"] = now
+                return
+            # Reserved before the slow part below, so that the next frame does not open a second event
+            incident = self._rule_incidents[(camera_id, rule_id)] = {"id": None, "start_ts": now, "last_active_ts": now}
+        try:
+            incident["id"] = self._open_rule_event(camera_id, rule_title, message, severity)["id"]
+        except Exception:
+            with self._rule_lock:
+                self._rule_incidents.pop((camera_id, rule_id), None)
+            raise
+
+    def _open_rule_event(self, camera_id: str, rule_title: str, message: str, severity: str) -> Dict[str, Any]:
+        """Records the start of a rule violation with the last seconds of footage before it as evidence."""
         now = time.time()
         camera = camera_service.get_by_id(camera_id)
         camera_name = (camera or {}).get("name") or camera_id
@@ -397,6 +434,8 @@ class AnomalyService:
             f"Kural İhlali: {rule_title}",
             rule_title=rule_title,
             rule_description=message,
+            is_ongoing=True,
+            end_time_str="",
             ai_status="generating" if (self.summarizer and frames) else "none",
             message=f"{camera_name}: {rule_title} - {message}",
         )
@@ -454,6 +493,8 @@ class AnomalyService:
         """Deletes every event together with its clip and snapshot."""
         removed = event_journal.clear()
         self._incidents.clear()  # running incidents would update events that no longer exist
+        with self._rule_lock:
+            self._rule_incidents.clear()
         for entry in removed:
             evidence_store.delete_files_of(entry)
         # With an empty journal no snapshot is referenced any more. Clips that never belonged

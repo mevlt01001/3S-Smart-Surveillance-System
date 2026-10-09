@@ -129,7 +129,7 @@ Tekil `anomaly_service`. Dosyanın başındaki sabitler:
 | `_apply_score` | Skoru yumuşatır (yalnızca eşiğin altında), sınıflar, `_track_incident`'e verir. |
 | `_track_incident`, `_close_incident` | Olayı açar, sürdürür, kapatır (bkz. bölüm 08). |
 | `_process_evidence` | Video kodlama ve özet iş parçacıklarını başlatır. |
-| `record_rule_violation(kamera, başlık, ileti, önem)` | Kural döngüsünün çağırdığı giriş noktası. |
+| `rule_violated(kamera, kural, başlık, ileti, önem)` | Kural döngüsünün her ihlal karesinde çağırdığı giriş noktası: olayı açar ya da açık tutar; `_close_silent_incidents` kapatır (bkz. bölüm 08, B.6). |
 | `simulate_anomaly(kamera, skor)` | Deneme olayı kaydeder (API: `/api/anomaly/simulate`). |
 | `summarize_entry(id)`, `get_entry_frames(id)` | Özeti yeniden yazdırır; videodan kare döndürür. |
 | `clear_events()` | Bütün olayları kanıtlarıyla siler. |
@@ -184,10 +184,12 @@ Tekil `live_detection_service`. Döngü, etkin kuralı olan ve yeni kare getiren
 - `_get_plan(kural, bölge)`: saklanan planı doğrular ve `(kural, bölge, updated_at)` anahtarıyla
   önbelleğe alır. Yalnızca "kişi" arayan planlar `coco_detector`'a yönlendirilir.
 - `_process_camera(kamera)`: bölge türüne göre `change_detector.check_frame` ya da tespit +
-  `ConditionEvaluator.evaluate`. Aynı karede aynı model ve sınıflar için tespit bir kez yapılır.
+  nesne takibi (`ObjectTracker`, kamera ve model başına bir tane) + `ConditionEvaluator.evaluate`.
+  Aynı karede aynı model ve sınıflar için tespit ve takip bir kez yapılır. Bir kural ancak
+  `RULE_CONFIRM_SEC` boyunca kesintisiz ihlal edildiyse alarm sayılır ve `rule_violated` çağrılır.
 - `get_detections(camera_id=None)`: son durum — `alarm`, `alarm_text`, `detections`
-  (`class_name`, `confidence`, `bbox_normalized`, `in_zone`, `is_violation`), `change_results`.
-- Sabitler: `MIN_CYCLE_SEC` 0.08, `IDLE_SLEEP_SEC` 0.5, `RULE_LOG_COOLDOWN_SEC` 30.
+  (`track_id`, `class_name`, `confidence`, `bbox_normalized`, `in_zone`, `is_violation`), `change_results`.
+- Sabitler: `MIN_CYCLE_SEC` 0.08, `IDLE_SLEEP_SEC` 0.5, `RULE_CONFIRM_SEC` 1.0, `TRACKER_IDLE_SEC` 60.
 
 ## `change_detector.py`
 

@@ -29,6 +29,11 @@ export const $$ = (selector, root = document) => Array.from(root.querySelectorAl
 export function formatDuration(seconds) {
   const total = Math.round(Number(seconds) || 0);
   if (total < 60) return `${total} sn`;
+  if (total >= 3600) {
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.round((total % 3600) / 60);
+    return minutes ? `${hours} sa ${minutes} dk` : `${hours} sa`;
+  }
   const minutes = Math.floor(total / 60);
   const rest = total % 60;
   return rest ? `${minutes} dk ${rest} sn` : `${minutes} dk`;

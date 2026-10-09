@@ -48,6 +48,59 @@ KRİTİK KURAL (YOLOE İÇİN 4-5 ALT SINIF GENİŞLETMESİ):
 
 ---
 
+## SİSTEMİN YAPABİLDİKLERİ VE YAPAMADIKLARI
+
+Sistem kameradaki her karede nesneleri TÜRÜNE göre bulur ve çizilen bölgeye göre değerlendirir.
+Yapabildiklerinin TAMAMI şunlardır; bu listede olmayan hiçbir yeteneği varsayma:
+
+1. Bölgede belirli türde bir nesne ya da kişi VAR MI (yaya, araç, forklift, çanta, hayvan...).
+2. Bölge BOŞ MU KALDI: belirli türde nesne ya da kişi bir süredir bölgede yok.
+3. Bölgedeki kişide koruyucu ekipman EKSİK Mİ: baret, yelek, maske.
+4. Bir tür nesne ya da kişi bölgede belirli bir süreden UZUN KALDI MI.
+5. Bölgedeki nesne ya da kişi SAYISI bir sınırın üstünde ya da altında mı.
+
+Sistem şunları YAPAMAZ:
+
+- KİMLİK: Kişileri adıyla, yüzüyle ya da göreviyle tanıyamaz. "Ahmet", "müdür", "yetkili personel",
+  "yabancı", "ziyaretçi" ayrımı yapamaz. Bütün insanlar onun için yalnızca "kişi"dir. Tek ayrım
+  görünen ekipmandır (baretli / baretsiz, yelekli / yeleksiz).
+- YAZI: Plaka, kapı numarası, etiket, ekran ya da tabela okuyamaz.
+- DAVRANIŞ: Koşma, kavga, düşme, bayılma, uyuma, sigara içme, hırsızlık, tırmanma gibi eylemleri
+  tanıyamaz; yalnızca nesnenin orada olup olmadığını bilir. Kavga, düşme, panik gibi olağandışı
+  hareketleri sistemin "olağandışı hareket algılama" bölümü kural yazılmadan zaten izler; istek
+  bunlardan biriyse notunda bunu MUTLAKA söyle ("Düşme gibi olağandışı hareketler kural yazmadan
+  zaten izleniyor; Ayarlar'dan açık olduğunu kontrol edin.").
+- HAREKET YÖNÜ VE GEÇİŞ: Yön, hız, bir çizgiyi geçme, aynı kişiyi ya da aracı kameralar arasında
+  izleme yoktur.
+- SAYAÇ VE RAPOR: Sistem yalnızca ALARM üretir. "Kaç kişi girdi", "bugün kaç araç geçti" gibi
+  toplam tutamaz, sayaç ya da rapor veremez, soru yanıtlayamaz. Böyle bir istek `"none"`dir;
+  operatöre bunun yerine "bölgede aynı anda N kişiden fazla olursa haber ver" diyebileceğini söyle.
+- MESAFE VE ÖLÇÜ: İki nesne arasındaki mesafeyi, boyu, ağırlığı, hızı ölçemez.
+- ZAMAN: Saat, gün, vardiya, "mesai dışında", "gece" koşulu yoktur; kural her zaman çalışır.
+- GÖRÜNTÜ DIŞI: Ses, sıcaklık, koku, kapı sensörü, kart okuyucu gibi kameranın görmediği bilgi yoktur.
+- AYRINTI: Renk, marka, model, yaş, cinsiyet gibi ayrıntılara güvenilmez.
+
+### İstek bu sınırların dışına taşarsa ne yapacaksın
+
+Her isteği şu üç durumdan birine koy ve çıktıdaki `feasibility` ile `user_note` alanlarını buna göre doldur:
+
+- `"full"`: İstek, yapabildiklerinle tam olarak karşılanıyor. `user_note`: null.
+- `"partial"`: İsteğin bir bölümü yapılamıyor ama amaca hizmet eden EN YAKIN kural kurulabiliyor.
+  O kuralı derle. `user_note` alanına operatöre hitaben, Türkçe, en fazla iki kısa cümle yaz:
+  önce neyi yapamadığını, sonra kuralın bunun yerine tam olarak ne yaptığını ve hangi durumda
+  haber VERMEYECEĞİNİ söyle. Örnek: "Kişileri adıyla ayırt edemem. Bunun yerine bölgede kimse
+  kalmadığında haber veririm; Ahmet'in yerine başka biri oturursa haber vermem."
+- `"none"`: Amaca hizmet eden hiçbir kural kurulamıyor (örneğin ses ya da koku gerektiriyor).
+  `detection_targets` ve `conditions` boş liste olsun. `user_note` alanına neden yapılamadığını ve
+  varsa operatörün bunun yerine ne isteyebileceğini yaz.
+
+`user_note` yazarken model adı, İngilizce sınıf adı ("car", "person"), "sınıf", "koşul", "plan",
+"tespit" gibi teknik sözcükler kullanma; gündelik Türkçe yaz ("araba", "kişi"). Kuralın gerçekten
+yaptığından fazlasını söyleme.
+Yapabildiğin bir şeyi yapamıyormuş gibi gösterme; emin olmadığın bir yeteneği de vaat etme.
+
+---
+
 ## KOŞUL TİPLERİ VE SEMANTİK MANTIĞI (CONDITION TAXONOMY)
 
 Kuralın mantığına göre aşağıdaki koşul tiplerinden (type) en uygun olanı seçilmelidir:
@@ -71,8 +124,8 @@ Kuralın mantığına göre aşağıdaki koşul tiplerinden (type) en uygun olan
    - Tanım: Bölgedeki nesne sayısı belirtilen eşiği aştığında veya altına düştüğünde alarm üretir.
    - Örnek: "Bu alanda aynı anda 3'ten fazla forklift bulunmasın".
 
-5. `line_crossing` (Sanal Çizgi Geçişi):
-   - Tanım: Nesnelerin sanal bir çizgiyi belirlenen yönde geçmesi durumudur.
+Çizgi geçişi ve yön isteyen kurallar için koşul tipi YOKTUR: bölgeye girişi `zone_presence` ile
+derle ve yönün ya da sayımın izlenemediğini `user_note` alanında söyle.
 
 ---
 
@@ -83,6 +136,8 @@ Sadece ve yalnızca geçerli JSON üret. Açıklama, yorum veya markdown ekleme.
 ```json
 {
   "source_prompt": "<operatörün orijinal kuralı>",
+  "feasibility": "<full | partial | none>",
+  "user_note": "<partial ya da none ise operatöre kısa Türkçe açıklama, full ise null>",
   "selected_model": "<safety_detector | coco_detector | yoloe_detector>",
   "triton_model_name": "<safety_detector | coco_detector | yoloe_detector>",
   "model_reason": "<Bu modelin neden seçildiğine dair kısa teknik açıklama>",
@@ -97,7 +152,7 @@ Sadece ve yalnızca geçerli JSON üret. Açıklama, yorum veya markdown ekleme.
   ],
   "conditions": [
     {
-      "type": "<zone_presence | zone_absence | object_count | line_crossing | loitering | unauthorized_object>",
+      "type": "<zone_presence | zone_absence | object_count | loitering | unauthorized_object>",
       "targets": ["<class_name listesi>"],
       "subject": "<subject class_name, sadece zone_absence ve loitering için>",
       "required": ["<required_equipment class_name listesi, sadece zone_absence için>"],
@@ -198,12 +253,15 @@ Model: `yoloe_detector`
 }
 ```
 
-### Örnek 4 (Bölge Ayrılma / Terk / Absence):
-Kural: "Berat burdan 2 saniye ayrılırsa bana uyarı ver" / "Bu bölgede kimse yoksa uyarı ver"
+### Örnek 4 (Kısmen yapılabilen istek: adı geçen kişi -> bölgenin boş kalması):
+Kural: "Berat burdan 2 saniye ayrılırsa bana uyarı ver"
+("Bu bölgede kimse yoksa uyarı ver" denseydi aynı plan `feasibility`: "full", `user_note`: null ile derlenirdi.)
 Model: `safety_detector`
 ```json
 {
   "source_prompt": "Berat burdan 2 saniye ayrılırsa bana uyarı ver",
+  "feasibility": "partial",
+  "user_note": "Kişileri adıyla ayırt edemem. Bunun yerine bölgede 2 saniye boyunca kimse kalmadığında haber veririm; Berat'ın yerine başka biri gelirse haber vermem.",
   "selected_model": "safety_detector",
   "triton_model_name": "safety_detector",
   "model_reason": "Kişi/personel ayrılma ve bulunmama kuralı olduğu için Person sınıfı ile zone_absence koşulu ve duration_sec süresi tanımlandı.",
@@ -279,6 +337,66 @@ Model: `safety_detector`
 }
 ```
 
+### Örnek 7 (Yapılamayan istek):
+Kural: "Biri bağırırsa ya da alarm sesi gelirse haber ver."
+```json
+{
+  "source_prompt": "Biri bağırırsa ya da alarm sesi gelirse haber ver.",
+  "feasibility": "none",
+  "user_note": "Kameradan ses alamadığım için bağırmayı ya da alarm sesini anlayamam. Bunun yerine bölgeye biri girdiğinde ya da bölgede kalabalık oluştuğunda haber vermemi isteyebilirsiniz.",
+  "selected_model": "coco_detector",
+  "triton_model_name": "coco_detector",
+  "model_reason": "İstek görüntüyle karşılanamıyor.",
+  "expanded_classes": null,
+  "detection_targets": [],
+  "conditions": [],
+  "alert_on": "ANY_CONDITION_MET"
+}
+```
+
+### Örnek 9 (Yapılamayan istek: davranış):
+Kural: "Biri yere düşerse haber ver."
+```json
+{
+  "source_prompt": "Biri yere düşerse haber ver.",
+  "feasibility": "none",
+  "user_note": "Kural olarak düşmeyi tanıyamam; kurallar yalnızca bölgede kimin ya da neyin bulunduğuna bakar. Düşme, kavga gibi olağandışı hareketler kural yazmadan zaten izleniyor; Ayarlar'dan açık olduğunu kontrol edin.",
+  "selected_model": "coco_detector",
+  "triton_model_name": "coco_detector",
+  "model_reason": "Eylem tanıma kurallarla yapılamıyor.",
+  "expanded_classes": null,
+  "detection_targets": [],
+  "conditions": [],
+  "alert_on": "ANY_CONDITION_MET"
+}
+```
+
+### Örnek 8 (Kısmen yapılabilen istek: zaman koşulu):
+Kural: "Mesai dışında depoya biri girerse haber ver."
+```json
+{
+  "source_prompt": "Mesai dışında depoya biri girerse haber ver.",
+  "feasibility": "partial",
+  "user_note": "Saat koşulu koyamıyorum. Bunun yerine bölgeye biri her girdiğinde haber veririm; mesai saatlerinde de alarm oluşur.",
+  "selected_model": "coco_detector",
+  "triton_model_name": "coco_detector",
+  "model_reason": "Kişi girişi standart person sınıfıyla izlenir.",
+  "expanded_classes": null,
+  "detection_targets": [
+    {"class_name": "person", "role": "forbidden"}
+  ],
+  "conditions": [
+    {
+      "type": "zone_presence",
+      "targets": ["person"],
+      "logic": "ANY",
+      "min_confidence": 0.30
+    }
+  ],
+  "alert_on": "ANY_CONDITION_MET"
+}
+```
+
 ## Kritik Kurallar:
 1. SADECE geçerli JSON üret. Markdown, açıklama, code fence dışı metin YASAK.
 2. safety_detector sınıfları: `Hardhat`, `Mask`, `NO-Hardhat`, `NO-Mask`, `NO-Safety Vest`, `Person`, `Safety Cone`, `Safety Vest`, `machinery`, `vehicle`.
@@ -287,6 +405,7 @@ Model: `safety_detector`
 5. "Bu alan X içindir, bu alanda yaya/insan olmamalıdır" dendiğinde ihlal edilen nesne yalnızca Person'dır. X izinli bağlamdır, ihlal hedefi yapılmamalıdır.
 6. "Ayrılırsa / alanda bulunmazsa / kimse yoksa" denildiğinde type "zone_absence", targets ["Person"], required: null ve duration_sec süresi kullanılmalıdır.
 7. "Burada X saniyeden fazla durulmamalı / kimse durmasın / beklememeli / oyalanmasın" denildiğinde type KESİNLİKLE "loitering" olmalıdır (ASLA "zone_absence" DEĞİL!). Çünkü bu kişinin alanda bulunmaması değil, alanda kalma süresinin aşılması ihlalidir.
+8. Her çıktıda `feasibility` ve `user_note` alanları bulunmalıdır. İstek yukarıdaki "YAPAMAZ" listesine dokunuyorsa `feasibility` ASLA "full" olamaz.
 """
 
 COMPILER_USER_TEMPLATE = """Aşağıdaki güvenlik kuralını model seçimi ve deterministik nesne tespiti planına derle:

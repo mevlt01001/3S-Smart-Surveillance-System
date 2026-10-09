@@ -16,16 +16,21 @@ from .rules_service import rules_service
 logger = logging.getLogger("aegis.rules")
 
 try:
-    from Rule_Generator_LLM.compiler import RuleCompiler
+    from Rule_Generator_LLM.compiler import RuleCompiler, UnsupportedRule
 
     # Address, key and model come from the EVREN_* environment variables
     _compiler: Optional[Any] = RuleCompiler(temperature=0.05)
     logger.info("Rule compiler is ready.")
 except Exception as exc:  # missing package, key or network configuration
     _compiler = None
+
+    class UnsupportedRule(Exception):  # type: ignore[no-redef]  # never raised without a compiler
+        pass
     logger.warning("Rule compiler is unavailable; rules that need a plan will not run: %s", exc)
 
-# rule_id -> {"token", "status": "compiling" | "error", "started_at", "error"}
+# rule_id -> {"token", "status": "compiling" | "error" | "unsupported", "started_at", "error"}
+# "unsupported": the model explained that the request cannot be observed by a camera; `error` is
+# that explanation, meant for the operator
 _jobs: Dict[str, Dict[str, Any]] = {}
 _jobs_lock = threading.Lock()
 
@@ -122,10 +127,11 @@ def start(rule_id: str) -> bool:
                 if _jobs.get(rule_id, {}).get("token") == token:
                     _jobs.pop(rule_id, None)
         except Exception as exc:
-            logger.warning("Rule '%s' could not be compiled: %s", rule.get("title", ""), exc)
+            status = "unsupported" if isinstance(exc, UnsupportedRule) else "error"
+            logger.warning("Rule '%s' could not be compiled (%s): %s", rule.get("title", ""), status, exc)
             with _jobs_lock:
                 if _jobs.get(rule_id, {}).get("token") == token:
-                    _jobs[rule_id] = {"token": token, "status": "error", "error": str(exc), "started_at": time.time()}
+                    _jobs[rule_id] = {"token": token, "status": status, "error": str(exc), "started_at": time.time()}
 
     threading.Thread(target=work, daemon=True, name=f"RuleCompile_{rule_id}").start()
     return True
@@ -147,7 +153,7 @@ def error_of(rule_id: str) -> Optional[str]:
 
 
 def status_of(rule: Dict[str, Any]) -> str:
-    """compiling | error | not_required | compiled | fallback | pending | unavailable"""
+    """compiling | error | unsupported | not_required | compiled | fallback | pending | unavailable"""
     job = _jobs.get(rule.get("id", ""))
     if job:
         return job["status"]
@@ -167,6 +173,8 @@ def rule_view(rule: Dict[str, Any], slim: bool = False) -> Dict[str, Any]:
     """API representation of a rule. `slim` replaces the bulky plan data by a short summary (list views)."""
     view = dict(rule)
     view["compile_status"] = status_of(rule)
+    # Why the request cannot be turned into a rule, in words for the operator
+    view["compile_note"] = error_of(rule.get("id", "")) if view["compile_status"] == "unsupported" else None
     view["camera_missing"] = bool(
         rule.get("scope") != "system" and rule.get("camera_id") and not camera_service.get_by_id(rule["camera_id"])
     )
@@ -183,6 +191,8 @@ def rule_view(rule: Dict[str, Any], slim: bool = False) -> Dict[str, Any]:
                 "classes": plan.get("model_classes") or plan.get("yoloe_classes") or [],
                 "conditions": [condition.get("type") for condition in plan.get("conditions", [])],
                 "status": (zone.get("compile_meta") or {}).get("status") or plan.get("status"),
+                # Set when the rule is only the closest thing to what was asked
+                "note": plan.get("user_note"),
             }
         zones.append(light)
     view["zones"] = zones

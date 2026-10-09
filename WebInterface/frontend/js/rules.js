@@ -18,7 +18,14 @@ const STATUS_BADGES = {
   pending: { className: "is-warn", text: "Hazır değil", hint: "Bu kural henüz hazırlanmadı.", retry: true },
   unavailable: { className: "is-danger", text: "Hazırlanamadı", hint: "Kural hazırlama servisine ulaşılamadı. Kural şu anda çalışmıyor.", retry: true },
   error: { className: "is-danger", text: "Hazırlanamadı", hint: "Kural hazırlanırken hata oluştu. Kural şu anda çalışmıyor.", retry: true },
+  unsupported: { className: "is-danger", text: "Yapılamıyor", hint: "Bu istek kameradan anlaşılabilecek bir duruma çevrilemedi. Kural çalışmıyor." },
 };
+
+/** Badge of a rule's preparation state; a request the system cannot serve carries its own explanation. */
+function statusOf(rule) {
+  const status = STATUS_BADGES[rule.compile_status];
+  return status && rule.compile_note ? { ...status, hint: `${rule.compile_note} Kural çalışmıyor; açıklamayı değiştirin.` } : status;
+}
 
 let rules = [];
 let cameras = [];
@@ -43,12 +50,15 @@ function zoneSummaryHTML(rule) {
     const what = zone.zone_type === "change_detection"
       ? "Engel veya değişiklik izleniyor"
       : describePlan(zone.plan_summary) || zone.description || "";
-    return `<span class="cell-sub rule-zone"><i class="zone-dot" style="--zone-color: ${ZONE_COLORS[(zone.color_idx ?? index) % ZONE_COLORS.length]}"></i>${escapeHTML(zone.name || "Bölge")}: ${escapeHTML(what)}</span>`;
+    // Shown when the rule is only the closest thing to what was asked for
+    const note = zone.plan_summary && zone.plan_summary.note
+      ? `<span class="cell-sub rule-note">${icon("info")} ${escapeHTML(zone.plan_summary.note)}</span>` : "";
+    return `<span class="cell-sub rule-zone"><i class="zone-dot" style="--zone-color: ${ZONE_COLORS[(zone.color_idx ?? index) % ZONE_COLORS.length]}"></i>${escapeHTML(zone.name || "Bölge")}: ${escapeHTML(what)}</span>${note}`;
   }).join("");
 }
 
 function rowHTML(rule) {
-  const status = STATUS_BADGES[rule.compile_status];
+  const status = statusOf(rule);
   const badges = [];
   if (rule.camera_missing) {
     badges.push(`<span class="badge is-warn" title="Bu kuralın kamerası silinmiş. Düzenleyip başka bir kameraya taşıyabilirsiniz.">Kamerası yok</span>`);
@@ -120,8 +130,10 @@ function announceSavedRule() {
   const rule = rules.find((item) => item.id === justSavedId);
   if (!rule || rule.compile_status === "compiling") return;
   justSavedId = null;
-  const status = STATUS_BADGES[rule.compile_status];
-  if (status) showToast(`“${rule.title}”: ${status.hint}`, "warning", 8000);
+  const status = statusOf(rule);
+  const notes = (rule.zones || []).map((zone) => zone.plan_summary && zone.plan_summary.note).filter(Boolean);
+  if (status) showToast(`“${rule.title}”: ${status.hint}`, "warning", 12000);
+  else if (notes.length) showToast(`“${rule.title}” çalışıyor, ancak istediğinizden farklı: ${notes.join(" ")}`, "warning", 15000);
   else if (rule.enabled !== false) showToast(`“${rule.title}” çalışıyor.`, "success");
 }
 
@@ -377,6 +389,7 @@ function wireEditor() {
       }
       return true;
     },
+    onReject: () => showToast("Bölgenin kenarları birbirini kesemez. Köşeyi başka bir yere koyun ya da Esc ile baştan çizin.", "warning"),
     onChange: () => {
       dirty = true;
       renderZoneFields();

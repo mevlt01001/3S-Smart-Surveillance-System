@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Any, Tuple
 from Object_Detection import YOLODetector
 from Rule_Generator_LLM.evaluator import ConditionEvaluator
 from Rule_Generator_LLM.schema import DetectionPlan
+from Rule_Generator_LLM.tracker import ObjectTracker
 from WebInterface.backend.camera_service import camera_service
 from WebInterface.backend.rules_service import rules_service
 from WebInterface.backend.change_detector import change_detector
@@ -32,16 +33,22 @@ class LiveDetectionService:
     MIN_CYCLE_SEC = 0.08
     # Sleep while no camera has an enabled rule (the loop must never spin).
     IDLE_SLEEP_SEC = 0.5
-    # Minimum spacing of journal entries for the same camera + rule.
-    RULE_LOG_COOLDOWN_SEC = 30.0
+    # A tracker that received no frame for this long is discarded.
+    TRACKER_IDLE_SEC = 60.0
+    # A rule must stay violated this long before it counts as an alarm: a detector that misses
+    # a helmet on two frames has not seen a violation.
+    RULE_CONFIRM_SEC = 1.0
 
     def __init__(self, triton_url: Optional[str] = None):
         self.triton_url = triton_url or self._configured_triton_url()
         self.detector: Optional[YOLODetector] = None
         self.evaluator = ConditionEvaluator()
         self.latest_detections: Dict[str, Dict[str, Any]] = {}
-        self._last_rule_log: Dict[Tuple[str, str], float] = {}
         self._plan_cache: Dict[Tuple[str, str], Tuple[float, Optional[DetectionPlan], set]] = {}
+        # One tracker per camera and detector: (camera id, model, class list) -> tracker
+        self._trackers: Dict[Tuple[Any, ...], ObjectTracker] = {}
+        # (camera id, rule id) -> since when the rule has been violated without interruption
+        self._violated_since: Dict[Tuple[str, str], float] = {}
         self._last_frame_seq: Dict[str, int] = {}
         self._lock = threading.Lock()
         self.running = True
@@ -215,6 +222,10 @@ class LiveDetectionService:
                     for stale_id in [cid for cid in self.latest_detections if cid not in known_ids]:
                         del self.latest_detections[stale_id]
                         self._last_frame_seq.pop(stale_id, None)
+                # ... and trackers nothing feeds any more (camera removed, rule switched off)
+                idle_since = time.time() - self.TRACKER_IDLE_SEC
+                for key in [k for k, tracker in self._trackers.items() if tracker.last_update < idle_since]:
+                    del self._trackers[key]
 
                 active: List[Tuple[Dict[str, Any], List[Dict[str, Any]]]] = []
                 for cam in cameras:
@@ -287,7 +298,9 @@ class LiveDetectionService:
         triggered_rules: Dict[str, Dict[str, Any]] = {}
         all_detections: List[Dict[str, Any]] = []
         change_results: List[Dict[str, Any]] = []
-        # One GPU round-trip per (model, class list) per frame, shared by all zones that use it
+        # One GPU round-trip per (model, class list) per frame, shared by all zones that use it.
+        # Holds the tracked objects of that detector: this frame's detections with their identity
+        # plus the confirmed objects the detector missed on this frame.
         infer_cache: Dict[Tuple[str, Optional[Tuple[str, ...]]], Any] = {}
 
         def _mark(rule: Dict[str, Any], descriptions: List[str]):
@@ -334,8 +347,8 @@ class LiveDetectionService:
                 else:
                     cache_key = (target_model, tuple(plan.get_yoloe_classes()))
 
-                det_result = infer_cache.get(cache_key)
-                if det_result is None:
+                tracked = infer_cache.get(cache_key)
+                if tracked is None:
                     try:
                         t_infer_0 = time.perf_counter()
                         det_result = self.detector.detect_with_plan(bgr_frame, plan)
@@ -345,7 +358,8 @@ class LiveDetectionService:
                         self.last_latency_ms = round(
                             lat_infer_ms if prev_l is None else 0.25 * lat_infer_ms + 0.75 * prev_l, 1
                         )
-                        infer_cache[cache_key] = det_result
+                        tracker = self._trackers.setdefault((cam_id, *cache_key), ObjectTracker())
+                        tracked = infer_cache[cache_key] = tracker.update(det_result.boxes)
                     except Exception as e:
                         logger.warning(f"[LiveDetection] Inference error on {cam_id} ({target_model}): {e}")
                         # Force a fresh liveness check on the next pass
@@ -358,10 +372,11 @@ class LiveDetectionService:
                     zone_poly = [(p.get("x", 0.0), p.get("y", 0.0)) for p in zone_pts]
                 zone_poly_px = [(p[0] * w, p[1] * h) for p in zone_poly] if zone_poly else None
 
-                # Evaluate condition
+                # Rules react to confirmed objects only (a one-frame false detection is not an
+                # object) and also to those the detector missed for a moment (coasting)
                 eval_res = self.evaluator.evaluate(
                     plan=plan,
-                    detections=det_result.boxes,
+                    detections=[box for box in tracked if box.confirmed],
                     zone_polygon=zone_poly,
                     frame_shape=(h, w),
                     zone_id=zone.get("id"),
@@ -373,7 +388,10 @@ class LiveDetectionService:
                     _mark(rule, eval_res.triggered_conditions)
 
                 # Format detections - ONLY include classes that the rule is inspecting!
-                for b in det_result.boxes:
+                # The picture shows what the detector sees right now, not remembered positions.
+                for b in tracked:
+                    if b.coasting:
+                        continue
                     b_cls_lower = b.cls_name.strip().lower()
                     if rule_target_classes and b_cls_lower not in rule_target_classes:
                         # Skip unrelated objects (e.g. machinery or cones if rule is only about hardhat/person)
@@ -393,6 +411,7 @@ class LiveDetectionService:
                             is_violation = True
 
                     all_detections.append({
+                        "track_id": b.track_id,
                         "class_name": b.cls_name,
                         "confidence": round(float(b.conf), 3),
                         "bbox": b.xyxy,
@@ -407,6 +426,17 @@ class LiveDetectionService:
                         "is_violation": is_violation,
                         "rule_title": rule.get("title", ""),
                     })
+
+        # Only violations that have lasted RULE_CONFIRM_SEC are alarms
+        now = time.time()
+        for key in [k for k in self._violated_since if k[0] == cam_id and k[1] not in triggered_rules]:
+            del self._violated_since[key]
+        confirmed_rules = {
+            rule_id: info for rule_id, info in triggered_rules.items()
+            if now - self._violated_since.setdefault((cam_id, rule_id), now) >= self.RULE_CONFIRM_SEC
+        }
+        is_alarm = bool(confirmed_rules)
+        triggered_conditions = [text for info in confirmed_rules.values() for text in info["conditions"]]
 
         # Deduplicate overlapping detections of same class
         unique_detections = self._deduplicate_detections(all_detections)
@@ -425,21 +455,18 @@ class LiveDetectionService:
             "change_results": change_results,
         })
 
-        # Record each violated rule into the persistent journal (with an MP4 evidence clip),
-        # attributed to the rule that actually fired, at most once per cooldown window.
+        # Tell the journal about each violated rule, attributed to the rule that actually fired.
+        # It opens one event (with an MP4 evidence clip) per violation and keeps it running
+        # for as long as these reports keep coming.
         if is_alarm:
-            now_log = time.time()
-            for rule_id, info in triggered_rules.items():
-                key = (cam_id, rule_id)
-                if now_log - self._last_rule_log.get(key, 0.0) < self.RULE_LOG_COOLDOWN_SEC:
-                    continue
-                self._last_rule_log[key] = now_log
+            for rule_id, info in confirmed_rules.items():
                 rule = info["rule"]
                 message = " | ".join(dict.fromkeys(info["conditions"])) or "Kural ihlali tespit edildi"
                 try:
                     from WebInterface.backend.anomaly_service import anomaly_service
-                    anomaly_service.record_rule_violation(
+                    anomaly_service.rule_violated(
                         camera_id=cam_id,
+                        rule_id=rule_id,
                         rule_title=rule.get("title", "Güvenlik Kuralı"),
                         message=message,
                         severity=rule.get("severity", "warning"),

@@ -125,8 +125,9 @@ DOM'a dokunulmaz; böylece fare vurgusu, odak ve kaydırma bozulmaz.
 
 ### `shell.js`
 5 saniyede bir `/api/system/stats` sorgular. Art arda iki başarısızlıkta "bağlantı koptu" şeridini
-gösterir. `subscribeSystemStats(dinleyici)` ile başka modüller aynı veriyi alır (Ayarlar'daki sistem
-durumu, Olaylar'daki uyarı). `refreshEventsBadge()` menüdeki incelenmemiş olay sayısını günceller.
+gösterir. Analiz sunucusu yanıt vermiyorsa her sayfanın üstündeki `#analysis-notice` satırını açar
+(kurallar o sırada denetlenmez; kural listesi bunu kendiliğinden göstermez).
+`subscribeSystemStats(dinleyici)` ile başka modüller aynı veriyi alır (Ayarlar'daki sistem durumu). `refreshEventsBadge()` menüdeki incelenmemiş olay sayısını günceller.
 
 ### `stream.js`
 `startStream(cameraId, img, maxFps)` → durdurma işlevi. WebSocket'ten gelen her JPEG'i `<img>`'e
@@ -154,10 +155,11 @@ sürüyorsa ya da özeti yazılıyorsa 3 saniyede bir kendini tazeler, bu yüzde
 güncel kalır.
 
 ### `rules.js` ve `zone-editor.js`
-`zone-editor.js` yalnızca çizimi bilir: `createZoneEditor(canvas, { onChange, canDraw })` bir nesne
+`zone-editor.js` yalnızca çizimi bilir: `createZoneEditor(canvas, { onChange, canDraw, onReject })` bir nesne
 döndürür (`setZones`, `getZones`, `getSelected`, `select`, `updateSelected`, `removeZone`,
 `finishDrawing`, `cancelDrawing`, `undo`, `clear`, `resize`, `draftPoints`). Formla ilgili her şey
-`rules.js`'tedir. Köşeler 0–1 aralığında saklanır.
+`rules.js`'tedir. Köşeler 0–1 aralığında saklanır. Kenarı önceki bir kenarı kesecek köşe kabul
+edilmez (`onReject` çağrılır); dokunmatik ekranda ilk köşeye tıklayıp kapatma alanı daha geniştir.
 
 ### `cameras.js`
 Liste, ağ taraması, ekleme, düzenleme (canlı önizlemeli), bilgi ve silme. Küçük resimler 2,5

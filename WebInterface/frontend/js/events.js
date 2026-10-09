@@ -4,10 +4,10 @@
 
 import { clearEvents, getFleetStatus, labelEvent, listEvents, openEventStream } from "./api.js";
 import {
-  eventTitle, isRuleEvent, levelBadge, levelInfo, openEventDetail, summaryDetail, summaryHeadline, syncEventDetail,
+  eventSeconds, eventTitle, isRuleEvent, levelBadge, levelInfo, openEventDetail, summaryDetail, summaryHeadline, syncEventDetail,
   verdictBadge, VERDICT_LABELS,
 } from "./event-detail.js";
-import { refreshEventsBadge, subscribeSystemStats } from "./shell.js";
+import { refreshEventsBadge } from "./shell.js";
 import {
   $, NO_IMAGE, bindSegmented, confirmDialog, downloadBlob, escapeHTML, formatDuration, icon, setHTML, showError, showToast,
 } from "./ui.js";
@@ -23,8 +23,6 @@ let page = 1;
 let pageSize = 12;
 let layout = localStorage.getItem(LAYOUT_KEY) === "table" ? "table" : "cards";
 let stream = null;
-let unsubscribeStats = null;
-let analysisServerReady = true;
 let fleetNotice = "";
 let wired = false;
 let setActiveLayout = () => {};
@@ -65,7 +63,7 @@ const describe = (entry) =>
 
 function durationText(entry) {
   if (entry.is_ongoing) return "Sürüyor";
-  return entry.duration_sec ? formatDuration(entry.duration_sec) : "";
+  return eventSeconds(entry) ? formatDuration(eventSeconds(entry)) : "";
 }
 
 function reviewButtons(entry) {
@@ -181,11 +179,8 @@ function renderCameraFilter() {
 
 function renderNotice() {
   const notice = $("#events-notice");
-  const text = analysisServerReady
-    ? fleetNotice
-    : "Analiz sunucusuna ulaşılamıyor. Sorun giderilene kadar yeni olay kaydedilmez.";
-  notice.hidden = !text;
-  notice.textContent = text;
+  notice.hidden = !fleetNotice;
+  notice.textContent = fleetNotice;
 }
 
 /* -------------------------------------------------------------------- Data */
@@ -289,7 +284,7 @@ function exportEvents() {
   rows.forEach((entry) => {
     lines.push([
       entry.date_str, entry.timestamp_str, entry.camera_name, eventTitle(entry), levelInfo(entry).text,
-      entry.duration_sec ?? "", REVIEW_LABELS[entry.operator_label] || "İncelenmedi", describe(entry),
+      entry.is_ongoing ? "sürüyor" : eventSeconds(entry) || "", REVIEW_LABELS[entry.operator_label] || "İncelenmedi", describe(entry),
       VERDICT_LABELS[entry.ai_verdict] || "",
     ].map(cell).join(";"));
   });
@@ -374,17 +369,9 @@ export function mount() {
     stream = openEventStream();
     stream.onmessage = onStreamMessage;
   }
-  if (!unsubscribeStats) {
-    unsubscribeStats = subscribeSystemStats((stats) => {
-      analysisServerReady = Boolean(stats.triton && stats.triton.status === "READY");
-      renderNotice();
-    });
-  }
 }
 
 export function unmount() {
   if (stream) stream.close();
   stream = null;
-  if (unsubscribeStats) unsubscribeStats();
-  unsubscribeStats = null;
 }

@@ -81,10 +81,11 @@ sakinlik > birleştirme süresi ──► olay kapatılır:
 
 ### Kural ihlali
 
-Kural döngüsü bir koşulun sağlandığını görünce `anomaly_service.record_rule_violation` çağrılır:
-son 5 saniyenin kareleriyle olay kaydı açılır ve aynı video / özet yolu izlenir. Aynı kamera ve
-kural için 30 saniyede en fazla bir olay kaydedilir; canlı duvardaki alarm etiketi ise ihlal
-sürdükçe görünür.
+Kural döngüsü, bir kural en az 1 saniyedir ihlal ediliyorsa her karede
+`anomaly_service.rule_violated` çağırır. İlk çağrı, son 5 saniyenin kareleriyle bir olay kaydı
+açar (aynı video / özet yolu); sonraki çağrılar yalnızca olayı açık tutar. Kural 10 saniye
+ihlal edilmeyince olay, gerçek bitiş saati ve süresiyle kapatılır. Bir saat süren ihlal bu yüzden
+tek olaydır.
 
 ## Tasarım kararları
 

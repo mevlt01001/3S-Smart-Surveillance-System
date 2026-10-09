@@ -34,6 +34,9 @@ _CLASS_LABELS = {
     "forklift": "forklift",
 }
 
+# A waiting object that is not seen for this long has left; a shorter gap is a missed detection
+LOITER_GRACE_SEC = 1.5
+
 
 def _names(classes) -> str:
     """Readable, de-duplicated list of detector classes: "baretsiz kişi, forklift"."""
@@ -113,6 +116,7 @@ class ConditionEvaluator:
         zone_polygon: Optional[List[Tuple[float, float]]] = None,
         frame_shape: Optional[Tuple[int, int]] = None,
         zone_id: Optional[str] = None,
+        now: Optional[float] = None,
     ) -> EvaluationResult:
         """
         Evaluates all conditions in the plan against current detections.
@@ -125,6 +129,8 @@ class ConditionEvaluator:
             frame_shape: (height, width) of the frame, used if polygon is
                          in normalized [0,1] coordinates.
             zone_id: Optional zone identifier for loitering state tracking.
+            now: Time of the frame (defaults to the current time); waiting and absence
+                 durations are measured against it.
 
         Returns:
             EvaluationResult with alarm status and details.
@@ -155,7 +161,7 @@ class ConditionEvaluator:
         # Evaluate each condition
         condition_results = []
         for cond in plan.conditions:
-            fired, desc, detail = self._evaluate_condition(cond, in_zone, zone_id)
+            fired, desc, detail = self._evaluate_condition(cond, in_zone, zone_id, time.time() if now is None else now)
             condition_results.append((fired, desc, detail))
             if fired:
                 result.triggered_conditions.append(desc)
@@ -179,6 +185,7 @@ class ConditionEvaluator:
         cond: Condition,
         in_zone: List[DetectionBox],
         zone_id: Optional[str],
+        now: float,
     ) -> Tuple[bool, str, Dict[str, Any]]:
         """
         Dispatches to the appropriate condition evaluator.
@@ -187,13 +194,13 @@ class ConditionEvaluator:
         if cond.type == ConditionType.ZONE_PRESENCE:
             return self._eval_zone_presence(cond, in_zone)
         elif cond.type == ConditionType.ZONE_ABSENCE:
-            return self._eval_zone_absence(cond, in_zone, zone_id)
+            return self._eval_zone_absence(cond, in_zone, zone_id, now)
         elif cond.type == ConditionType.OBJECT_COUNT:
             return self._eval_object_count(cond, in_zone)
         elif cond.type == ConditionType.UNAUTHORIZED_OBJECT:
             return self._eval_unauthorized_object(cond, in_zone)
         elif cond.type == ConditionType.LOITERING:
-            return self._eval_loitering(cond, in_zone, zone_id)
+            return self._eval_loitering(cond, in_zone, zone_id, now)
         elif cond.type == ConditionType.LINE_CROSSING:
             return self._eval_line_crossing(cond, in_zone)
         else:
@@ -231,7 +238,7 @@ class ConditionEvaluator:
         return fired, desc, detail
 
     def _eval_zone_absence(
-        self, cond: Condition, in_zone: List[DetectionBox], zone_id: Optional[str] = None
+        self, cond: Condition, in_zone: List[DetectionBox], zone_id: Optional[str], now: float
     ) -> Tuple[bool, str, Dict[str, Any]]:
         """
         Dual-mode zone absence evaluator:
@@ -308,7 +315,6 @@ class ConditionEvaluator:
         ]
 
         state_key = f"absence_{zone_id or 'default'}_{'_'.join(sorted(target_classes))}"
-        now = time.time()
 
         if present_targets:
             # Target is present in zone! Reset absence timer.
@@ -386,7 +392,7 @@ class ConditionEvaluator:
         return fired, desc, detail
 
     def _eval_loitering(
-        self, cond: Condition, in_zone: List[DetectionBox], zone_id: Optional[str]
+        self, cond: Condition, in_zone: List[DetectionBox], zone_id: Optional[str], now: float
     ) -> Tuple[bool, str, Dict[str, Any]]:
         """
         Fires when subject stays in zone longer than duration_sec.
@@ -404,8 +410,10 @@ class ConditionEvaluator:
             d for d in in_zone
             if (d.cls_name.strip().lower() in target_classes) and d.conf >= conf_thr
         ]
-        now = time.time()
         state_key = f"{zone_id or 'default'}_{subject_cls}"
+
+        if subjects and all(getattr(subject, "track_id", None) is not None for subject in subjects):
+            return self._eval_loitering_per_object(subjects, subject_cls, state_key, duration_thr, now)
 
         if subjects:
             if state_key not in self._loiter_state or not isinstance(self._loiter_state[state_key], dict):
@@ -419,7 +427,7 @@ class ConditionEvaluator:
             # Grace period of 1.5 seconds to handle detector frame drops
             if state_key in self._loiter_state and isinstance(self._loiter_state[state_key], dict):
                 time_since_seen = now - self._loiter_state[state_key]["last_seen"]
-                if time_since_seen <= 1.5:
+                if time_since_seen <= LOITER_GRACE_SEC:
                     elapsed = now - self._loiter_state[state_key]["start"]
                     fired = elapsed >= duration_thr
                 else:
@@ -436,6 +444,30 @@ class ConditionEvaluator:
             desc = f"{_names([subject_cls]).capitalize()} {elapsed:.0f} saniyedir bölgede bekliyor"
 
         detail = {"elapsed_sec": round(elapsed, 1), "threshold_sec": duration_thr}
+        return fired, desc, detail
+
+    def _eval_loitering_per_object(
+        self, subjects: List[Any], subject_cls: str, state_key: str, duration_thr: float, now: float
+    ) -> Tuple[bool, str, Dict[str, Any]]:
+        """
+        Waiting time measured per tracked object: the clock of one person does not keep
+        running because another person walked into the zone as the first one left.
+        """
+        previous = self._loiter_state.get(state_key)
+        # track id -> [entered the zone at, last seen in the zone at]
+        tracks: Dict[int, List[float]] = previous.get("tracks", {}) if isinstance(previous, dict) else {}
+        for subject in subjects:
+            tracks.setdefault(subject.track_id, [now, now])[1] = now
+        # An object keeps its clock through a short gap; one that left for longer starts anew
+        tracks = {track_id: times for track_id, times in tracks.items() if now - times[1] <= LOITER_GRACE_SEC}
+        self._loiter_state[state_key] = {"tracks": tracks, "start": now, "last_seen": now}
+
+        waits = [now - tracks[subject.track_id][0] for subject in subjects]
+        elapsed = max(waits)
+        fired = elapsed >= duration_thr
+        desc = f"{_names([subject_cls]).capitalize()} {elapsed:.0f} saniyedir bölgede bekliyor" if fired else ""
+        detail = {"elapsed_sec": round(elapsed, 1), "threshold_sec": duration_thr,
+                  "waiting_count": sum(1 for wait in waits if wait >= duration_thr)}
         return fired, desc, detail
 
     def _eval_line_crossing(

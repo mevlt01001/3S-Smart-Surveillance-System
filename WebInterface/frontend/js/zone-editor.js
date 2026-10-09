@@ -7,7 +7,8 @@
 export const ZONE_COLORS = ["#ff8533", "#38bdf8", "#34d399", "#c084fc", "#f43f5e", "#fbbf24"];
 
 const MIN_POINTS = 3;
-const CLOSE_RADIUS_PX = 16;
+// How close to the first corner a click closes the polygon; a fingertip is less precise than a mouse
+const CLOSE_RADIUS_PX = window.matchMedia("(pointer: coarse)").matches ? 30 : 16;
 const MIN_POINT_DISTANCE = 0.008;
 const LABEL_FONT = '600 12px system-ui, -apple-system, "Segoe UI", sans-serif';
 
@@ -26,13 +27,25 @@ function contains(polygon, point) {
   return inside;
 }
 
+const turn = (origin, a, b) => (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+
+/** Do the segments a–b and c–d cross each other (touching at an end point does not count)? */
+const segmentsCross = (a, b, c, d) => turn(c, d, a) * turn(c, d, b) < 0 && turn(a, b, c) * turn(a, b, d) < 0;
+
+/** Would the edge from the last corner of `points` to `next` cut through an earlier edge? */
+function edgeCrossesOutline(points, next) {
+  const last = points[points.length - 1];
+  return points.slice(0, -1).some((point, index) => segmentsCross(last, next, point, points[index + 1]));
+}
+
 /**
  * @param {HTMLCanvasElement} canvas
- * @param {{onChange: () => void, canDraw: () => boolean}} hooks
+ * @param {{onChange: () => void, canDraw: () => boolean, onReject?: () => void}} hooks
  *        onChange: zones, selection or the unfinished polygon changed
  *        canDraw:  whether a click may start drawing (e.g. a camera is selected)
+ *        onReject: a corner was refused because the outline would cross itself
  */
-export function createZoneEditor(canvas, { onChange, canDraw }) {
+export function createZoneEditor(canvas, { onChange, canDraw, onReject = () => {} }) {
   const ctx = canvas.getContext("2d");
   let zones = [];
   let draft = [];
@@ -113,6 +126,12 @@ export function createZoneEditor(canvas, { onChange, canDraw }) {
 
   function finishDrawing() {
     if (draft.length < MIN_POINTS) return false;
+    // The closing edge must not cut through the outline either: a zone that crosses itself
+    // has no clear inside
+    if (edgeCrossesOutline(draft, draft[0])) {
+      onReject();
+      return false;
+    }
     const zone = {
       id: `zone_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       name: `Bölge ${zones.length + 1}`,
@@ -176,6 +195,10 @@ export function createZoneEditor(canvas, { onChange, canDraw }) {
     } else {
       const last = draft[draft.length - 1];
       if (Math.hypot(point.x - last.x, point.y - last.y) < MIN_POINT_DISTANCE) return;
+      if (edgeCrossesOutline(draft, point)) {
+        onReject();
+        return;
+      }
     }
     draft.push(point);
     changed();

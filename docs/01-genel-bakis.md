@@ -48,7 +48,7 @@ izleyip "doğru alarm" ya da "hatalı alarm" olarak işaretler.
 | :--- | :--- | :--- |
 | Web sunucusu | `WebInterface/backend/` | Kameralardan görüntü alır, analizi yürütür, olayları kaydeder, API sunar. |
 | Arayüz | `WebInterface/frontend/` | Tarayıcıda çalışan beş sayfalık uygulama. |
-| Kural motoru | `Rule_Generator_LLM/` | Cümleyi plana çevirir, planı değerlendirir, olay özetini yazar. |
+| Kural motoru | `Rule_Generator_LLM/` | Cümleyi plana çevirir, nesneleri kareler arasında izler, planı değerlendirir, olay özetini yazar. |
 | Tespit kitaplığı | `Object_Detection/` | Triton'a nesne tespiti isteği gönderen `YOLODetector` ve model deposu. |
 | Analiz sunucusu | Docker: `triton_yoloe_server` | Dört modeli GPU üzerinde çalıştırır. |
 | Dil modeli servisi | dış servis | Kural derleme ve olay özeti. Erişilemezse sistemin geri kalanı çalışır. |

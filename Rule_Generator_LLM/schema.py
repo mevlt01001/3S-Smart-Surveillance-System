@@ -181,6 +181,14 @@ class DetectionPlan(BaseModel):
         default=None,
         description="Flat deduplicated list of class names to pass to detector."
     )
+    feasibility: str = Field(
+        default="full",
+        description="'full' when the plan does what was asked, 'partial' when it is the closest thing the system can do."
+    )
+    user_note: Optional[str] = Field(
+        default=None,
+        description="For a partial plan: what could not be done and what the rule does instead, in the operator's words."
+    )
     compile_logs: Optional[List[Dict[str, Any]]] = Field(
         default=None,
         description="Step-by-step compilation trace logs for developer inspection."

@@ -5,7 +5,7 @@ Arayüzün beş sayfası soldaki menüdedir. Sol alttaki satır sistemin durumun
 | Gösterge | Anlamı |
 | :--- | :--- |
 | ● Sistem çalışıyor | Kameralar izleniyor, analiz çalışıyor. |
-| ● Analiz durdu | Analiz sunucusuna ulaşılamıyor. Canlı görüntü çalışır; olay algılama ve kurallar durur. |
+| ● Analiz durdu | Analiz sunucusuna ulaşılamıyor. Canlı görüntü çalışır; olay algılama ve kurallar durur. Aynı uyarı her sayfanın üstünde kırmızı bir satır olarak da görünür. |
 | ● Bağlantı yok | Tarayıcı sunucuya ulaşamıyor. Ekranın üstünde kırmızı şerit de çıkar; ekrandaki bilgiler eskimiş olabilir. |
 
 "Olaylar"ın yanındaki sayı, henüz incelenmemiş olay sayısıdır.
@@ -50,6 +50,9 @@ Bir karoya tıklayınca kamera büyür ve altında iki şey açılır:
 ## Olaylar
 
 Kaydedilen her alarm burada listelenir. Yeni olaylar sayfa yenilenmeden listenin başına düşer.
+
+Bir kural ihlali sürdüğü sürece **tek olaydır**: kartında "Sürüyor" yazar; ihlal bitince ne kadar
+sürdüğü görünür (örneğin "22 dk"). Videosu ihlalin başladığı anı gösterir.
 
 ### Süzme
 
@@ -103,7 +106,14 @@ Liste; her kuralın adını, ne aradığını, hangi kamerada geçerli olduğunu
 | Hazırlanıyor | Açıklama işleniyor; kural birkaç saniye içinde çalışmaya başlar. |
 | Genel ayarla çalışıyor | Açıklama tam çözümlenemedi. Açıklamayı sadeleştirin ya da **Yeniden dene**. |
 | Hazır değil / Hazırlanamadı | Kural şu an çalışmıyor. **Yeniden dene**'ye basın; düzelmezse sol alttaki duruma bakın. |
+| Yapılamıyor | İsteğiniz kameradan anlaşılabilecek bir şey değil (örneğin ses ya da plaka okuma gerektiriyor). Rozetin üstüne gelince nedeni ve ne isteyebileceğiniz yazar. Kural çalışmaz; açıklamayı değiştirin. |
 | Kamerası yok | Kuralın kamerası silinmiş. Düzenleyip başka bir kameraya taşıyın. |
+
+Bölgenin altında turuncu bir not varsa kural çalışıyordur ama **istediğinizden farklı** çalışıyordur.
+Sistem yapamadığı bir şey istendiğinde amaca en yakın kuralı kurar ve farkı size söyler. Örneğin
+"Ahmet yerinden ayrılırsa haber ver" yazarsanız not şunu der: "Kişileri adıyla ayırt edemem. Bunun
+yerine bölgede kimse kalmadığında haber veririm; Ahmet'in yerine başka biri gelirse haber vermem."
+Aynı not, kuralı kaydettiğinizde bildirim olarak da gösterilir.
 
 Rozet yoksa kural hazırdır. Satırdaki anahtar kuralı açıp kapatır; kalem düzenler, çöp kutusu siler.
 
@@ -113,6 +123,7 @@ Rozet yoksa kural hazırdır. Satırdaki anahtar kuralı açıp kapatır; kalem 
 2. Kuralın geçerli olacağı yeri seçin: **Tek kamera** (ve kamerayı) ya da **Tüm kameralar**.
 3. Görüntüye tıklayarak bölgenin köşelerini işaretleyin. Bölgeyi kapatmak için ilk noktaya tıklayın,
    çift tıklayın ya da `Enter`'a basın. `Backspace` son noktayı geri alır, `Esc` çizimi iptal eder.
+   Bölgenin kenarları birbirini kesemez; kesecek bir köşe kabul edilmez.
    Bir kuralda birden çok bölge olabilir; her biri "Bölgeler" satırında bir etiket olur.
 4. Seçili bölge için **Ne izlensin?** sorusunu yanıtlayın:
    - **Kişi ve nesneler:** bölgede ne olunca haber verileceğini kendi cümlenizle yazın.
@@ -131,6 +142,12 @@ Rozet yoksa kural hazırdır. Satırdaki anahtar kuralı açıp kapatır; kalem 
 | "Bölgeye araç girerse haber ver." | "Araçları izle." |
 
 Tek bir koşul, somut bir nesne ve gerekiyorsa bir sayı ya da süre içeren cümleler en iyi sonucu verir.
+
+Sistemin kurallarla **yapamadıkları:** kişileri tanımak (ad, görev, yetkili / yetkisiz), plaka ve
+yazı okumak, davranış tanımak (koşma, sigara içme; kavga ve düşme gibi olağandışı hareketler kural
+yazmadan ayrıca izlenir), yön ve çizgi geçişi, giren-çıkan saymak, mesafe ölçmek, saat koşulu
+("mesai dışında") ve ses. Böyle bir şey yazarsanız sistem ya en yakın kuralı kurup farkı söyler ya
+da yapamadığını açıklar.
 Desteklenen koşullar [08 — Kurallar ve analiz](08-kurallar-ve-analiz.md) bölümündedir.
 
 ### Engel / değişiklik bölgesi için referans

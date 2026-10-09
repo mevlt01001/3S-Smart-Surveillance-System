@@ -478,6 +478,32 @@ async def test_live_video(base, c, sim_ip):
     check("change detection is evaluated on live frames", bool(d) and d["change_results"][0]["has_reference"],
           f"ssim={d['change_results'][0]['ssim']}" if d else "no result")
 
+    # -- a rule that stays violated is one running event, closed when the violation ends.
+    # "No airplane in the picture" is a violation that is certain to last.
+    plan = {"source_prompt": "test", "selected_model": "coco_detector", "triton_model_name": "coco_detector",
+            "detection_targets": [{"class_name": "airplane", "role": "subject"}], "model_classes": ["airplane"],
+            "conditions": [{"type": "zone_absence", "targets": ["airplane"], "subject": "airplane",
+                            "duration_sec": 0.0, "min_confidence": 0.25}]}
+    lasting = c.post("/api/rules", json={"title": "Süren İhlal", "scope": "camera", "camera_id": cid, "zones": [
+        {"id": "zone_last", "name": "Alan", "description": "test", "zone_type": "detection", "detection_plan": plan,
+         "points": [{"x": 0.05, "y": 0.05}, {"x": 0.95, "y": 0.05}, {"x": 0.95, "y": 0.95}, {"x": 0.05, "y": 0.95}]}]}).json()["rule"]
+
+    def rule_events():
+        return [e for e in c.get("/api/anomaly/journal").json()["journal"] if e.get("rule_title") == "Süren İhlal"]
+    if not wait_until(lambda: c.get("/api/live/state").json()["detector_ready"], timeout=8):
+        skip("lasting rule violation", "AI server (Triton) not reachable")
+    else:
+        opened = wait_until(rule_events, timeout=10)
+        check("a violated rule opens an event that is marked as running",
+              bool(opened) and opened[0]["is_ongoing"] and opened[0]["end_time_str"] == "", str(opened)[:160])
+        time.sleep(4.0)
+        check("while the violation lasts it stays a single event", len(rule_events()) == 1, f"{len(rule_events())} events")
+        c.put(f"/api/rules/{lasting['id']}", json={"enabled": False})
+        closed = wait_until(lambda: [e for e in rule_events() if not e["is_ongoing"]], timeout=16)
+        check("the event is closed with its real duration once the violation ends",
+              bool(closed) and len(rule_events()) == 1 and closed[0].get("incident_sec", 0) >= 4.0 and closed[0]["end_time_str"],
+              str({k: closed[0].get(k) for k in ("incident_sec", "end_time_str", "duration_sec")}) if closed else "still running")
+
     snap_entry = c.post("/api/anomaly/simulate", json={"camera_id": cid, "score": 55}).json()["entry"]
     img = c.get(snap_entry["snapshot_url"]) if snap_entry["snapshot_url"] else None
     check("incident snapshot is a stored frame of the incident (not a live URL)",
@@ -630,6 +656,70 @@ def test_summary_shaping():
     check("an answer without a headline is rejected", compact_summary("**Değerlendirme:** OLAĞAN\n") is None)
 
 
+def test_tracking_and_rule_logic():
+    print("\n[13] Object tracking, rule logic and compiler answers (no model needed)")
+    sys.path.insert(0, PROJECT_ROOT)
+    from Rule_Generator_LLM.compiler import RuleCompiler, UnsupportedRule
+    from Rule_Generator_LLM.evaluator import ConditionEvaluator, DetectionBox
+    from Rule_Generator_LLM.schema import DetectionPlan
+    from Rule_Generator_LLM.tracker import COAST_SEC, FORGET_SEC, ObjectTracker
+
+    person = lambda x: DetectionBox(xyxy=[x, 100, x + 40, 200], conf=0.8, cls_name="Person")  # noqa: E731
+    tracker = ObjectTracker()
+    first = tracker.update([person(100)], now=0.0)
+    second = tracker.update([person(104)], now=0.1)
+    check("an object is confirmed on its second frame and keeps its identity",
+          not first[0].confirmed and second[0].confirmed and first[0].track_id == second[0].track_id)
+    missed = tracker.update([], now=0.2)
+    check("a confirmed object missed for one frame is still reported (coasting)",
+          len(missed) == 1 and missed[0].coasting and missed[0].track_id == first[0].track_id)
+    check("it is no longer reported after the coasting time", tracker.update([], now=0.2 + COAST_SEC + 0.1) == [])
+    back = tracker.update([person(110)], now=1.5)
+    check("an object that comes back soon keeps its identity", back[0].track_id == first[0].track_id)
+    tracker.update([], now=1.5 + FORGET_SEC + 0.5)
+    check("an object that comes back late is a new object",
+          tracker.update([person(110)], now=5.0)[0].track_id != first[0].track_id)
+
+    def first_alarm(scene, condition, seconds=12):
+        plan = DetectionPlan(source_prompt="t", detection_targets=[{"class_name": "Person", "role": "subject"}],
+                             conditions=[dict(condition, targets=["Person"], min_confidence=0.25)])
+        evaluator, tracker = ConditionEvaluator(), ObjectTracker()
+        for step in range(seconds * 10):
+            now = step * 0.1
+            boxes = [box for box in tracker.update(scene(now), now) if box.confirmed]
+            if evaluator.evaluate(plan, boxes, zone_id="zone", now=now).alarm:
+                return round(now, 1)
+        return None
+
+    waiting = {"type": "loitering", "subject": "Person", "duration_sec": 5.0}
+    alone = first_alarm(lambda now: [person(100)], waiting)
+    relay = first_alarm(lambda now: [person(100)] if now < 4.0 else [person(400)], waiting)
+    gap = first_alarm(lambda now: [] if 2.0 <= now < 2.5 else [person(100)], waiting)
+    check("waiting time is measured per object: a second person does not inherit the first one's clock",
+          alone is not None and alone < 5.5 and relay is not None and relay > 8.5, f"alone {alone}s, relay {relay}s")
+    check("a short detection gap does not restart the waiting clock", gap is not None and gap < 5.5, f"{gap}s")
+    presence = {"type": "zone_presence"}
+    check("a detection that appears on a single frame raises no alarm",
+          first_alarm(lambda now: [person(100)] if abs(now - 3.0) < 0.05 else [], presence) is None)
+    real = first_alarm(lambda now: [person(100)] if now >= 3.0 else [], presence)
+    check("a real object raises the alarm on its second frame", real is not None and real <= 3.2, f"{real}s")
+
+    compiler = RuleCompiler.__new__(RuleCompiler)  # parsing needs no connection to the language model
+    answer = {"selected_model": "coco_detector", "detection_targets": [{"class_name": "person", "role": "forbidden"}],
+              "conditions": [{"type": "zone_presence", "targets": ["person"]}]}
+    partial = compiler._parse_and_validate(json.dumps(dict(answer, feasibility="partial", user_note="Kişileri ayırt edemem.")), "t")
+    full = compiler._parse_and_validate(json.dumps(dict(answer, feasibility="full", user_note="gereksiz not")), "t")
+    check("a partial rule carries the compiler's note, a full one never does",
+          partial.feasibility == "partial" and partial.user_note == "Kişileri ayırt edemem." and full.user_note is None)
+    try:
+        compiler._parse_and_validate(json.dumps({"feasibility": "none", "user_note": "Ses alamam.",
+                                                 "detection_targets": [], "conditions": []}), "t")
+        refused = ""
+    except UnsupportedRule as exc:
+        refused = str(exc)
+    check("a request the system cannot serve is refused with the explanation", refused == "Ses alamam.", refused)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sim-ip", default=os.environ.get("SIM_IP", ""), help="IP the camera simulator advertises (default: auto-detect)")
@@ -665,6 +755,7 @@ def main():
             test_persistence_and_cleanup(c, srv, eid)
             test_shutdown_and_single_instance(srv)
             test_summary_shaping()
+            test_tracking_and_rule_logic()
     except Exception as e:  # a crash of the harness is a failure, never a silent pass
         import traceback
         traceback.print_exc()

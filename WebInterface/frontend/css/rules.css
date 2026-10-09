@@ -128,3 +128,18 @@
     grid-template-columns: 1fr;
   }
 }
+
+.rule-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 3px;
+  color: var(--warn);
+}
+
+.rule-note .icon {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  margin-top: 2px;
+}

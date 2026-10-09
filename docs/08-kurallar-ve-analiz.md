@@ -89,6 +89,21 @@ yönerge: `Rule_Generator_LLM/prompts.py`.
 5. Dil modeli yanıt vermez ya da geçersiz yanıt verirse genel bir **yedek plan** üretilir
    (`fallback`): kural çalışır ama açıklamayı tam karşılamayabilir.
 
+**Yetenek sınırları.** Yönerge, sistemin neleri yapabildiğini (bölgede belirli türde nesne var mı,
+bölge boş mu kaldı, donanım eksik mi, bekleme süresi, sayı sınırı) ve neleri yapamadığını (kişi
+tanıma, yazı okuma, davranış tanıma, yön / çizgi geçişi, sayaç ve rapor, mesafe, saat koşulu, ses
+gibi görüntü dışı bilgi, renk gibi ayrıntı) tek tek sayar. Model her isteği üç durumdan birine
+koyar ve yanıtına yazar:
+
+| `feasibility` | Ne olur |
+| :--- | :--- |
+| `full` | Plan isteneni yapar. |
+| `partial` | İsteğin bir bölümü yapılamıyor; amaca en yakın plan derlenir ve `user_note` alanına operatör için bir not yazılır: ne yapılamadı, kural bunun yerine ne yapıyor. Örnek: "Kişileri adıyla ayırt edemem. Bunun yerine bölgede kimse kalmadığında haber veririm; Ahmet'in yerine başka biri gelirse haber vermem." Not, kural listesinde bölgenin altında ve kaydetme bildiriminde gösterilir. |
+| `none` | Amaca hizmet eden hiçbir kural kurulamıyor (örneğin ses gerektiriyor). Derleyici `UnsupportedRule` fırlatır: yeniden denenmez, yedek plana da düşülmez; kural `unsupported` durumunda kalır ve modelin açıklaması operatöre gösterilir. |
+
+Sisteme yeni bir yetenek eklendiğinde (örneğin saat koşulu) yönergedeki bu liste de güncellenmelidir;
+yoksa derleyici o isteği "yapılamıyor" diye yanıtlamayı sürdürür.
+
 Bir bölgenin açıklaması değişmediyse (yalnızca adı, köşeleri ya da kuralın başlığı değiştiyse)
 plan korunur ve yeniden derleme yapılmaz.
 
@@ -103,6 +118,7 @@ plan korunur ve yeniden derleme yapılmaz.
 | `pending` | Plan yok, servis kullanılabilir | Hazır değil |
 | `unavailable` | Plan yok, servis kullanılamıyor | Hazırlanamadı |
 | `error` | Derleme hata verdi | Hazırlanamadı |
+| `unsupported` | İstek kameradan anlaşılabilecek bir duruma çevrilemedi (`compile_note` nedenini söyler) | Yapılamıyor |
 
 ### B.2 Algılama planı
 
@@ -154,16 +170,33 @@ noktasından biri çokgenin içindeyse **bölgede** sayılır: merkez, alt orta 
 | `zone_absence` (donanım) | Bölgedeki özne, gerekli donanımla örtüşmüyor | `subject`, `required`, `overlap_iou_threshold` | "Yeleksiz çalışan olursa haber ver." |
 | `zone_absence` (terk) | Hedef, `duration_sec` boyunca bölgede yok | `targets`, `duration_sec` | "Nöbetçi 10 saniyeden uzun ayrılırsa haber ver." |
 | `object_count` | Bölgedeki sayı eşiği sağlıyor | `targets`, `count_threshold`, `count_operator` (`gt`, `gte`, `lt`, `lte`, `eq`) | "5'ten fazla kişi olursa haber ver." |
-| `loitering` | Özne `duration_sec` (varsayılan 30) boyunca bölgede | `subject`, `duration_sec` | "Bir kişi 30 saniyeden uzun beklerse haber ver." |
+| `loitering` | Aynı özne `duration_sec` (varsayılan 30) boyunca bölgede | `subject`, `duration_sec` | "Bir kişi 30 saniyeden uzun beklerse haber ver." |
 | `unauthorized_object` | Yasak sınıf bölgede | `targets` | "Bölgede çanta bırakılırsa haber ver." |
-| `line_crossing` | Hedef bölgede görüldü | `targets` | "Hattı geçen olursa haber ver." |
+| `line_crossing` | Hedef bölgede görüldü | `targets` | (yalnızca eski planlarda; derleyici artık üretmez) |
+
+**Nesne takibi** (`Rule_Generator_LLM/tracker.py`, `ObjectTracker`). Tespitler değerlendirilmeden
+önce kamera ve model başına bir izleyiciden geçer; her tespit bir kimlik (`track_id`) alır:
+
+| Kavram | Değer | Anlamı |
+| :--- | :--- | :--- |
+| Eşleme | aynı sınıf; örtüşme (IoU ≥ 0,15), yoksa bir kutu köşegeninden yakın olan | Tespit, önceki karedeki hangi nesne? |
+| Onay | `CONFIRM_HITS` = 2 kare | Tek karede görünen tespit nesne sayılmaz; kurallar yalnızca onaylı nesnelere bakar. |
+| Sürdürme | `COAST_SEC` = 0,8 sn | Dedektörün kaçırdığı onaylı nesne son yerinde var sayılır. |
+| Unutma | `FORGET_SEC` = 2 sn | Bu kadar görünmeyen nesnenin kimliği biter. |
+
+Kurallara etkisi: tek karelik yanlış tespit alarm üretmez; bir karede kaçan baret "baretsiz" alarmı
+vermez; sayı, tespit titrese de sabit kalır; `loitering` süresi **nesne başına** ölçülür (biri
+çıkarken başkası girdiyse süre baştan başlar; 1,5 saniyeden kısa kesinti süreyi sıfırlamaz).
 
 Sınırlar:
 
-- **Nesne takibi yoktur.** `loitering` ve terk koşulları "bu sınıftan biri bölgede var mı" sorusuna
-  bakar; aynı kişi mi olduğunu bilmez. Bekleme süresi, tespit 1,5 saniyeden uzun kesilirse sıfırlanır.
-- `line_crossing` yön bilmez; bölgede görünmeyi alarm sayar.
-- Kişi tanıma yoktur: "Ahmet yerinde mi?" kuralı "bölgede bir kişi var mı" olarak derlenir.
+- Takip tek kamera içindedir ve yalnızca kutuların konumuna bakar (hareket modeli, görünüş
+  özelliği yok). Kalabalıkta ya da nesneler birbirinin önünden geçerken kimlikler karışabilir;
+  2 saniyeden uzun kaybolan nesne yeni kimlik alır.
+- Yön, çizgi geçişi ve giren-çıkan sayımı yoktur. İzleyici bunlar için gereken kimliği artık
+  sağlıyor; eksik olan çizgi çizme aracı ve sayaçların gösterileceği yerdir.
+- Kişi tanıma yoktur: "Ahmet yerinde mi?" kuralı "bölgede bir kişi var mı" olarak derlenir ve
+  kullanıcıya bu söylenir (bkz. B.1, yetenek sınırları).
 
 İhlal iletileri de burada üretilir ve operatöre gösterilir: "Bölgede görüldü: baretsiz kişi",
 "Kişi 12 saniyedir bölgede bekliyor", "Bölgedeki sayı sınırı aşıldı: 6 kişi".
@@ -177,12 +210,13 @@ Her turda (en az 80 ms arayla), **etkin kuralı olan** ve **yeni kare getiren** 
 1. Kameraya uygulanan kurallar toplanır: kendi kuralları + `scope: system` kuralları, yalnızca açık olanlar.
 2. Her bölge için:
    - Engel bölgesi → `change_detector.check_frame`.
-   - Kişi / nesne bölgesi → planın modeli ve sınıflarıyla tespit. Aynı karede aynı model ve
-     sınıflar birden çok bölgede isteniyorsa tespit bir kez yapılır.
-   - `ConditionEvaluator.evaluate(plan, tespitler, çokgen)` → alarm ve tetikleyen koşullar.
-3. Kameranın durumu yayınlanır (`/api/live/state` → `detections`): kutular, alarm ve alarm metni.
-4. Alarm varsa ve aynı kamera + kural için son 30 saniyede kayıt açılmadıysa
-   `anomaly_service.record_rule_violation` çağrılır.
+   - Kişi / nesne bölgesi → planın modeli ve sınıflarıyla tespit, ardından nesne takibi. Aynı
+     karede aynı model ve sınıflar birden çok bölgede isteniyorsa ikisi de bir kez yapılır.
+   - `ConditionEvaluator.evaluate(plan, onaylı nesneler, çokgen)` → koşul sağlandı mı.
+3. Bir kural ancak `RULE_CONFIRM_SEC` (1 sn) boyunca kesintisiz ihlal edildiyse **alarm** sayılır.
+4. Kameranın durumu yayınlanır (`/api/live/state` → `detections`): o karedeki kutular (`track_id`
+   ile), alarm ve alarm metni.
+5. Alarm veren her kural için `anomaly_service.rule_violated` çağrılır (her karede).
 
 Hiçbir kamerada etkin kural yoksa döngü 0,5 saniye uyur; tespit modeli hiç yüklenmez.
 
@@ -208,10 +242,22 @@ da kameranın oynaması yanlış alarm üretir. Çözüm referansı yeniden alma
 
 ### B.6 Kural ihlalinin kaydı
 
-`record_rule_violation(kamera, kural başlığı, ileti, önem)`:
+`rule_violated(kamera, kural, kural başlığı, ileti, önem)`, kural ihlal edildiği sürece her karede
+çağrılır:
+
+| Aşama | Koşul | Yapılan |
+| :--- | :--- | :--- |
+| Açılış | Bu kamera + kural için açık olay yok | Kayıt oluşturulur (`is_ongoing: true`, bitiş saati boş), video ve özet başlatılır. |
+| Sürme | Açık olay var | Yalnızca son görülme zamanı güncellenir; kayda dokunulmaz. |
+| Kapanış | Kural `RULE_QUIET_SEC` (10 sn) ihlal edilmedi | `is_ongoing: false`, `end_time_str` son ihlal anı, `incident_sec` ihlalin toplam süresi. |
+
+Kapanışı anomali döngüsü yapar (`_close_silent_incidents`); bu döngü analiz kapalıyken de döndüğü
+için kural silinse, kapatılsa ya da analiz sunucusu dursa bile olay açık kalmaz. Sunucu yeniden
+başlarsa açık olaylar `interrupted` olarak kapatılır.
 
 - Kayıt kimliği `rule_…`; `tier`, kuralın önemine göre `warning` ya da `critical`; skor sabit 75.
-- Video: ihlalden **önceki** 5 saniye (kameranın tamponundan). Kamera yeni bağlandıysa var olan
+- Video: ihlalin başlangıcından **önceki** 5 saniye (kameranın tamponundan); ihlal ne kadar sürerse
+  sürsün video bu kadardır (`duration_sec`), ihlalin süresi ayrı tutulur (`incident_sec`). Kamera yeni bağlandıysa var olan
   kadarı; 1 saniyeden azsa video kaydedilmez, yalnızca fotoğraf kalır.
 - Özet: olağandışı hareketle aynı yol; ayrıca kuralın başlığı ve ihlal iletisi modele bağlam olarak verilir.
 

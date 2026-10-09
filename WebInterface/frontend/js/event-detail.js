@@ -32,6 +32,12 @@ export function eventTitle(entry) {
   return summaryHeadline(entry).replace(/[.!]+$/, "") || entry.anomaly_type || "Olağandışı hareket";
 }
 
+/**
+ * How long an event lasted, in seconds. A rule violation can outlast its video by hours
+ * (`incident_sec`); for every other event the video covers the whole event.
+ */
+export const eventSeconds = (entry) => Number(entry.incident_sec) || Number(entry.duration_sec) || 0;
+
 /** Text and colour class of the badge that tells how serious an event is. */
 export function levelInfo(entry) {
   const level = levelOf(entry.tier);
@@ -108,7 +114,7 @@ function renderFacts(entry) {
   const end = entry.is_ongoing ? "" : entry.end_time_str || "";
   let when = end && end !== start ? `${start} – ${end}` : start;
   if (entry.is_ongoing) when += " (sürüyor)";
-  else if (entry.duration_sec) when += ` · ${formatDuration(entry.duration_sec)}`;
+  else if (eventSeconds(entry)) when += ` · ${formatDuration(eventSeconds(entry))}`;
   facts.push(["Saat", escapeHTML(when)]);
   if (isRuleEvent(entry)) {
     const detail = entry.rule_description || entry.message || "";

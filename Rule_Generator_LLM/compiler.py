@@ -265,6 +265,8 @@ class RuleCompiler:
                     "model": self.model_name
                 }
 
+            except UnsupportedRule:
+                raise  # not a failure of the model: asking again or falling back would hide its answer
             except Exception as e:
                 last_error = e
                 logs.append({
@@ -396,6 +398,15 @@ class RuleCompiler:
             raise CompilationError(
                 f"LLM çıktısı geçerli JSON değil: {e}\nÇıktı: {raw_text[:500]}"
             )
+
+        # What the model said about its own limits: a request it cannot serve at all is not
+        # turned into some plan anyway, and a note only accompanies a plan that is partial
+        feasibility = str(data.get("feasibility") or "full").strip().lower()
+        note = str(data.get("user_note") or "").strip() or None
+        if feasibility == "none":
+            raise UnsupportedRule(note or "Bu istek kameradan anlaşılabilecek bir duruma çevrilemedi.")
+        data["feasibility"] = "partial" if feasibility == "partial" and note else "full"
+        data["user_note"] = note if data["feasibility"] == "partial" else None
 
         data["source_prompt"] = source_prompt
         data = self._normalize_plan_data(data, source_prompt=source_prompt)
@@ -743,4 +754,11 @@ class RuleCompiler:
 class CompilationError(Exception):
     """Raised when the LLM output cannot be parsed into a valid DetectionPlan."""
     pass
+
+
+class UnsupportedRule(CompilationError):
+    """
+    The request needs something the system cannot observe (sound, identity, ...) and has no
+    useful approximation. The message is the model's explanation, written for the operator.
+    """
 

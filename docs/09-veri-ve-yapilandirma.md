@@ -92,7 +92,8 @@ kanıtlarıyla silinir.
 | `anomaly_type` | Kural ihlalinde `Kural İhlali: <kural adı>`, olağandışı harekette her zaman `Olağandışı hareket`. Arayüz ikincisinde özetin başlığını gösterir. |
 | `rule_title`, `rule_description` | Yalnızca kural ihlalinde: kuralın adı ve ne görüldüğü. |
 | `start_time_str`, `peak_time_str`, `end_time_str`, `duration_sec` | Videonun kapsadığı aralık. |
-| `is_ongoing` | Olay sürüyor. |
+| `is_ongoing` | Olay sürüyor. Kural ihlalinde, kural ihlal edildiği sürece `true` kalır. |
+| `incident_sec` | Yalnızca kural ihlalinde, kapanınca: ihlalin toplam süresi. `duration_sec` videonun süresidir. |
 | `snapshot_url`, `clip_url` | Kanıt adresleri; video yoksa `clip_url` `null`. |
 | `clip_expired` | Video disk kotası nedeniyle silindi. |
 | `ai_status` | `none`, `generating`, `completed`, `fallback`, `error`, `interrupted`. |

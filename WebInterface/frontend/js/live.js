@@ -4,7 +4,7 @@
  */
 
 import { captureReference, getLiveState, getSettings, listCameras, listEvents, listRules, snapshotUrl } from "./api.js";
-import { eventTitle, levelBadge, openEventDetail } from "./event-detail.js";
+import { eventSeconds, eventTitle, levelBadge, openEventDetail } from "./event-detail.js";
 import { clearOverlay, drawOverlay } from "./overlay.js";
 import { navigate } from "./router.js";
 import { startStream } from "./stream.js";
@@ -368,7 +368,7 @@ function renderHistory() {
     const from = now - windowSec + index * segmentSec;
     const to = from + segmentSec;
     const worst = entries
-      .filter((entry) => entry.timestamp < to && entry.timestamp + (Number(entry.duration_sec) || 0) >= from)
+      .filter((entry) => entry.timestamp < to && (entry.is_ongoing || entry.timestamp + eventSeconds(entry) >= from))
       .sort((a, b) => (weight[b.tier] || 0) - (weight[a.tier] || 0))[0];
     const time = new Date(from * 1000).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
     if (!worst) return `<span class="timeline-segment" title="${time}"></span>`;
@@ -382,7 +382,7 @@ function renderHistory() {
         <button type="button" class="history-item" data-event="${escapeHTML(entry.id)}">
           ${levelBadge(entry)}
           <span class="history-title">${escapeHTML(eventTitle(entry))}</span>
-          <span class="history-time">${escapeHTML(entry.date_str || "")} ${escapeHTML(entry.timestamp_str || "")}${entry.duration_sec ? ` · ${formatDuration(entry.duration_sec)}` : ""}</span>
+          <span class="history-time">${escapeHTML(entry.date_str || "")} ${escapeHTML(entry.timestamp_str || "")}${entry.is_ongoing ? " · sürüyor" : eventSeconds(entry) ? ` · ${formatDuration(eventSeconds(entry))}` : ""}</span>
         </button>`).join("")
     : `<p class="hint">Bu kamerada kayıtlı olay yok.</p>`;
 }
