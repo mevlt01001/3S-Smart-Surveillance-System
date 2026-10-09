@@ -104,6 +104,10 @@ olay ──► event_journal (kayıt) + evidence_store (video, fotoğraf) + vlm_
 Kendi portunda, geçici veriyle ayrı bir sunucu başlatır ve arayüzle API'nin tamamını sınar (134
 denetim); çalışan sisteme dokunmaz. Her değişiklikten sonra koşulmalıdır.
 
+Sistemin **ne kadar doğru çalıştığını** ölçmek ayrı bir iştir: `WebInterface/tests/accuracy_check.py`
+etiketli test videolarını sisteme kamera gibi oynatır ve yakalanan olayı, kaçanı, yanlış alarmı sayar
+(bkz. [docs/10](docs/10-gelistirme-ve-test.md#doğruluk-ölçümü)).
+
 Aynı test her push'ta GitHub Actions üzerinde de koşar (`.github/workflows/ci.yml`); orada kamera ve
 ekran kartı olmadığı için canlı video bölümü atlanır, kalan 112 denetim çalışır.
 

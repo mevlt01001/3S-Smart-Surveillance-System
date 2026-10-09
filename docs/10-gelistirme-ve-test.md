@@ -75,6 +75,80 @@ bulutta bir hedefi yoktur. Tam testin de otomatik koşması istenirse, geliştir
 "self-hosted runner" olarak GitHub'a bağlanabilir; depo herkese açıksa bu, yabancı pull
 request'lerin o makinede kod çalıştırmasına izin vermek anlamına geldiği için önerilmez.
 
+## Doğruluk ölçümü
+
+Sistem testi "çalışıyor mu" sorusunu yanıtlar; "ne kadar doğru" sorusunu `accuracy_check.py` yanıtlar.
+
+```bash
+.conda/bin/python WebInterface/tests/accuracy_check.py                    # bütün etiketli videolar
+.conda/bin/python WebInterface/tests/accuracy_check.py --only Test_Videos  # yolunda bu metin geçenler
+.conda/bin/python WebInterface/tests/accuracy_check.py --no-summaries      # dil modelini çağırmadan
+```
+
+**Ne yapar.** Her video grubu için özel bir medya sunucusu ve özel bir backend başlatır (kendi
+portları, geçici veri dizini; çalışan sisteme dokunmaz), videoları **bir kez, gerçek zamanlı**
+RTSP kamerası olarak yayınlar ve olağandışı hareket algılamanın bunlarla ne yaptığına bakar. Video
+oynarken kameranın skorunu örnekler; bitince sistemin kaydettiği olayları günlükten okur. Hiçbir şey
+taklit edilmez: sayılar gerçek hattın sayılarıdır (yayın, model, eşikler, olay mantığı, özet).
+
+**Etiketler** `WebInterface/tests/accuracy_labels.json` dosyasındadır:
+
+```json
+{"file": "Anomaly_Detection/Test_Videos/test_video_15.mp4", "expect": "event", "what": "Kişi kapı önünde düşüyor", "window": [2, 8]}
+```
+
+| Alan | Anlamı |
+| :--- | :--- |
+| `file` | Depo köküne göre video yolu (videolar depoda değildir; dosya yoksa atlanır). |
+| `expect` | `event`: olay bekleniyor. `none`: olay yok, her alarm yanlış alarmdır. `unknown`: oynatılır ve raporlanır ama sayılmaz. |
+| `window` | İsteğe bağlı `[başlangıç, bitiş]` saniye: olay yalnızca bu aralıkta (±3 sn) yakalanırsa sayılır, dışındaki alarmlar yanlış alarmdır. |
+| `what` | İnsan için açıklama; ölçüme etkisi yoktur. |
+
+Etiket dosyasındaki ilk liste **taslaktır**: videoların küçük karelerine bakılarak çıkarıldı.
+Videoları bilen biri gözden geçirmeden sayılar kesin kabul edilmemelidir.
+
+**Rapor** (`accuracy_report/report.md` ve `report.json`; `--out` ile başka yere):
+
+- **Özet:** olay içeren videoların kaçında olay yakalandı, kaçanlar; olaysız videolarda kaç yanlış
+  alarm ve saatte kaç; özetin "gerçek / olağan" değerlendirmesinin gerçek olaylarda ve yanlış
+  alarmlarda ne dediği; bir olay kaç ayrı kayda bölündü.
+- **Başka eşiklerde ne olurdu:** her videonun en yüksek skoruna göre, uyarı eşiği 10, 20, … 90
+  olsaydı kaç olay yakalanır ve kaç olaysız video alarm verirdi. Eşik seçmek için bu tabloya bakılır.
+- **Videolar:** her video için beklenen, sonuç, en yüksek skor ve alarmların saniyesi, skoru, özeti.
+
+**Bilinmesi gerekenler**
+
+- Eşikler ve kayıt ayarları **çalışan kurulumun** `settings.json` dosyasından alınır (`--settings`
+  ile başkası verilebilir); yani rapor, sistemi o an ayarlandığı hâliyle anlatır. Olağandışı hareket
+  algılama ölçüm sırasında her zaman açıktır.
+- Gerçek zamanlıdır: süre, videoların toplam süresine yakındır (`--parallel` kadar video aynı anda oynar).
+  Analiz sunucusunu çalışan sistemle paylaşır; ölçüm sırasında ağır başka iş yapılmamalıdır.
+- Özetler açıkken her olay için dil modeli bir kez çağrılır; servisin günlük kotası sınırlıysa
+  `--no-summaries` kullanın.
+- Videonun ilk karesi 8 saniye tutulur (sistemin yayına bağlanması için); süreler bundan sonrasına göredir.
+- Analiz sunucusu, `ffmpeg` ve simülatörün MediaMTX dosyası gerekir. CI'da koşmaz.
+
+### İlk ölçüm (9 Ekim 2026)
+
+Taslak etiketlerle, kurulumun o günkü ayarlarıyla (uyarı eşiği 39, kritik 40, olay birleştirme 1 sn):
+
+| Ölçü | Sonuç |
+| :--- | :--- |
+| Olay içeren 11 video | 10'unda olay yakalandı (%91). Kaçan: gece sokakta araç çarpması (en yüksek skor 23). |
+| Olaysız 63 video, 73 dakika | 2 yanlış alarm (saatte 1,6): biri duran bir kişinin üstünde ışık renginin değişmesi, biri kalabalığın yürüdüğü videonun ilk saniyesi. |
+| Eşik 60 olsaydı | Yine 10 / 11 olay, 0 yanlış alarm. Eşik 20 olsaydı 11 / 11 olay, 3 olaysız videoda alarm. |
+| Bir olayın bölündüğü kayıt sayısı | Ortalama 3,7 (birleştirme 1 sn). Birleştirme 5 sn ile 2,7. |
+| Özetin değerlendirmesi | Gerçek olaylara ait alarmların yaklaşık üçte birine "gerçek", yarısına "olağan" dedi; 10 olayın 7–8'inde en az bir alarmı doğruladı. Belirgin olmayan düşmeleri (forklift önünde düşen işçi, kapı önünde düşen kişi) göremedi. |
+
+Özetin değerlendirmesini iyileştirmek için üç değişiklik aynı videolarla ölçüldü ve **hiçbiri fark
+yaratmadı**: özete olayın çevresinden daha uzun görüntü vermek, kareleri iki kat büyütmek, olayları
+daha uzun birleştirmek. Bu yüzden değerlendirme yalnızca bilgi olarak kalmalı, alarm bastırmada
+kullanılmamalıdır; iyileştirmek başka bir yaklaşım ister (daha çok kare, daha güçlü ya da videoyu
+doğrudan gören bir model).
+
+Sınırlar: etiketler taslaktır; 11 olay videosu azdır (bir video sonucu 9 puan oynatır); olaysız
+görüntünün tamamı tek bir ofistendir; videolar müşteri kameralarından değil, toplanmış kliplerdir.
+
 ## Birim testleri
 
 ```bash

@@ -40,6 +40,7 @@ WebInterface/backend/static/
 !docs/images/*
 
 # ------------------------------------------------- Simülatör çıktıları, günlükler
+accuracy_report/
 Camera_System_Simulator/recordings/
 # MediaMTX'in her kurulumda kendiliğinden ürettiği sertifika ve özel anahtar
 Camera_System_Simulator/auto.key
