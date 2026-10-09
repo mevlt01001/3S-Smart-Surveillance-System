@@ -45,7 +45,7 @@ class ONNXBackend:
         self.input_names = [i.name for i in self.session.get_inputs()]
         self.output_names = [o.name for o in self.session.get_outputs()]
 
-    def infer(self, images: np.ndarray, text_feats: np.ndarray) -> np.ndarray:
+    def infer(self, images: np.ndarray, text_feats: np.ndarray, model_name=None) -> np.ndarray:
         """
         Runs inference on preprocessed images and text features.
         
@@ -55,6 +55,9 @@ class ONNXBackend:
             
         Returns:
             outputs: [batch, 4 + num_classes, num_anchors] float32 array
+
+        `model_name` is accepted for interface parity with the Triton backend (a local
+        backend serves exactly one model) and is ignored.
         """
         assert images.ndim == 4, f"images shape must be 4D [B, 3, H, W], got {images.shape}"
         assert text_feats.ndim == 3, f"text_feats shape must be 3D [B, K, 512], got {text_feats.shape}"

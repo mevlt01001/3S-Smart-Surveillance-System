@@ -1,0 +1,150 @@
+/* Cameras page and its windows. */
+
+.camera-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.camera-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.camera-thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: #000;
+  aspect-ratio: 16 / 9;
+}
+
+.camera-thumb.is-small {
+  width: 96px;
+  border-radius: 4px;
+}
+
+.camera-snapshot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-info {
+  flex: 1;
+  padding: 10px 12px 6px;
+}
+
+.camera-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.camera-name > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.camera-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: 12.5px;
+}
+
+.camera-state.is-danger {
+  color: var(--danger);
+  cursor: help;
+}
+
+.camera-state.is-busy {
+  color: var(--info);
+}
+
+.camera-description {
+  display: -webkit-box;
+  min-height: 0;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--text-2);
+  font-size: 12.5px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.camera-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px 8px;
+}
+
+/* ------------------------------------------------------------ Scan window */
+.scan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 8px;
+}
+
+.scan-results {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.scan-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.scan-status .loading {
+  padding: 28px 16px;
+}
+
+.scan-status .hint,
+.scan-status .notice {
+  margin: 14px 0 0;
+}
+
+/* ------------------------------------------------------------ Edit window */
+.camera-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.camera-edit .chip-row {
+  margin-top: 4px;
+}
+
+@media (max-width: 760px) {
+  .camera-edit {
+    grid-template-columns: 1fr;
+  }
+}

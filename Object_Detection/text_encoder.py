@@ -4,7 +4,7 @@ Extracts normalized semantic text embeddings using MobileCLIP text model with ca
 """
 
 from __future__ import annotations
-from typing import List, Union, Dict, Optional
+from typing import List, Union, Dict
 import numpy as np
 import torch
 from ultralytics import YOLO

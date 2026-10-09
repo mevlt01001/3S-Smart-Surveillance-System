@@ -1,5 +1,5 @@
 name: "yoloe_detector"
-platform: "onnxruntime_onnx"
+backend: "tensorrt"
 max_batch_size: 8
 
 input [
@@ -22,12 +22,6 @@ output [
     dims: [ -1, 8400 ]
   }
 ]
-
-# Dinamik batchleme (Kameralardan gelen kareleri optimize etmek için)
-dynamic_batching {
-  max_queue_delay_microseconds: 5000
-}
-
 
 instance_group [
   {

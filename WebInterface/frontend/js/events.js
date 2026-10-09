@@ -1,238 +1,386 @@
 /**
- * AegisVision Incident & Escalation Center Module (events.js)
- * Manages active violations, assignees, escalation countdowns, and resolution verification loop.
+ * Events page: the searchable list of everything the system recorded, updated live.
  */
 
-let incidents = [];
-let currentFilter = "all"; // all, active, resolved
-let timerInterval = null;
+import { clearEvents, getFleetStatus, labelEvent, listEvents, openEventStream } from "./api.js";
+import {
+  eventTitle, isRuleEvent, levelBadge, levelInfo, openEventDetail, summaryHeadline, syncEventDetail,
+} from "./event-detail.js";
+import { refreshEventsBadge, subscribeSystemStats } from "./shell.js";
+import {
+  $, NO_IMAGE, bindSegmented, confirmDialog, downloadBlob, escapeHTML, formatDuration, icon, setHTML, showError, showToast,
+} from "./ui.js";
 
-export async function initEventsModule() {
-  setupEventsToolbar();
-  await loadIncidents();
-  startEscalationClock();
+const LAYOUT_KEY = "aegis.events.layout";
+const MAX_ENTRIES = 300;
+const NEW_HIGHLIGHT_MS = 6000;
+const REVIEW_LABELS = { correct: "Doğru alarm", false_positive: "Hatalı alarm" };
+
+let entries = [];
+let filters = { search: "", camera: "", time: "all", kind: "all", review: "all" };
+let page = 1;
+let pageSize = 12;
+let layout = localStorage.getItem(LAYOUT_KEY) === "table" ? "table" : "cards";
+let stream = null;
+let unsubscribeStats = null;
+let analysisServerReady = true;
+let fleetNotice = "";
+let wired = false;
+let setActiveLayout = () => {};
+const freshIds = new Set();
+
+/* --------------------------------------------------------------- Filtering */
+function sinceTimestamp(range) {
+  const now = Date.now() / 1000;
+  if (range === "15m") return now - 15 * 60;
+  if (range === "1h") return now - 3600;
+  if (range === "6h") return now - 6 * 3600;
+  if (range === "today") return new Date().setHours(0, 0, 0, 0) / 1000;
+  return 0;
 }
 
-function setupEventsToolbar() {
-  const btnAll = document.getElementById("btn-events-all");
-  const btnActive = document.getElementById("btn-events-active");
-  const btnResolved = document.getElementById("btn-events-resolved");
-  const btnSimulate = document.getElementById("btn-simulate-incident");
+const reviewOf = (entry) => (REVIEW_LABELS[entry.operator_label] ? entry.operator_label : "unlabeled");
 
-  const tabBtns = [btnAll, btnActive, btnResolved];
-
-  function setActiveTab(filter, btn) {
-    currentFilter = filter;
-    tabBtns.forEach(b => b?.classList.remove("active"));
-    btn?.classList.add("active");
-    renderIncidentsGrid();
-  }
-
-  btnAll?.addEventListener("click", () => setActiveTab("all", btnAll));
-  btnActive?.addEventListener("click", () => setActiveTab("active", btnActive));
-  btnResolved?.addEventListener("click", () => setActiveTab("resolved", btnResolved));
-
-  btnSimulate?.addEventListener("click", async () => {
-    btnSimulate.disabled = true;
-    btnSimulate.textContent = "Simüle Ediliyor...";
-    try {
-      const res = await fetch("/api/events/simulate", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        await loadIncidents();
-      }
-    } catch (e) {
-      alert("Simülasyon başlatılamadı: " + e.message);
-    } finally {
-      btnSimulate.disabled = false;
-      btnSimulate.textContent = "⚡ Yeni İhlal Simülasyonu";
-    }
+function filteredEntries() {
+  const since = sinceTimestamp(filters.time);
+  const query = filters.search.trim().toLocaleLowerCase("tr");
+  return entries.filter((entry) => {
+    if (filters.camera && entry.camera_id !== filters.camera) return false;
+    if ((entry.timestamp || 0) < since) return false;
+    if (filters.kind === "rule" && !isRuleEvent(entry)) return false;
+    if ((filters.kind === "critical" || filters.kind === "warning") && entry.tier !== filters.kind) return false;
+    if (filters.review !== "all" && reviewOf(entry) !== filters.review) return false;
+    if (!query) return true;
+    const haystack = [entry.camera_name, eventTitle(entry), entry.rule_description, entry.message, entry.ai_summary]
+      .filter(Boolean).join(" ").toLocaleLowerCase("tr");
+    return haystack.includes(query);
   });
 }
 
-async function loadIncidents() {
-  try {
-    const res = await fetch("/api/events");
-    const data = await res.json();
-    incidents = data.events || [];
-    updateMetrics();
-    renderIncidentsGrid();
-  } catch (e) {
-    console.error("[Events] Load failed:", e);
-  }
+/* --------------------------------------------------------------- Rendering */
+const describe = (entry) => summaryHeadline(entry) || (isRuleEvent(entry) ? entry.rule_description || "" : "");
+
+function durationText(entry) {
+  if (entry.is_ongoing) return "Sürüyor";
+  return entry.duration_sec ? formatDuration(entry.duration_sec) : "";
 }
 
-function updateMetrics() {
-  const activeCount = incidents.filter(i => i.status === "active").length;
-  const escalatedCount = incidents.filter(i => i.status === "escalated").length;
-  const resolvedCount = incidents.filter(i => i.status === "resolved").length;
-
-  const mActive = document.getElementById("metric-active-count");
-  const mEscalated = document.getElementById("metric-escalated-count");
-  const mResolved = document.getElementById("metric-resolved-count");
-  const mTotal = document.getElementById("metric-total-count");
-
-  if (mActive) mActive.textContent = activeCount;
-  if (mEscalated) mEscalated.textContent = escalatedCount;
-  if (mResolved) mResolved.textContent = resolvedCount;
-  if (mTotal) mTotal.textContent = incidents.length;
+function reviewButtons(entry) {
+  const current = reviewOf(entry);
+  return `
+    <button type="button" class="chip ${current === "correct" ? "is-active is-ok" : ""}" data-action="label" data-label="correct" title="Bu alarm doğruydu">${icon("check")} Doğru</button>
+    <button type="button" class="chip ${current === "false_positive" ? "is-active is-muted" : ""}" data-action="label" data-label="false_positive" title="Bu alarm hatalıydı">${icon("close")} Hatalı</button>`;
 }
 
-function renderIncidentsGrid() {
-  const container = document.getElementById("events-grid-container");
-  if (!container) return;
-
-  const filtered = incidents.filter(i => {
-    if (currentFilter === "active") return i.status === "active" || i.status === "escalated";
-    if (currentFilter === "resolved") return i.status === "resolved";
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-dim); background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-card);">
-        Bu filtrede gösterilecek olay bulunmuyor.
+function cardHTML(entry) {
+  const description = describe(entry);
+  const duration = durationText(entry);
+  return `
+    <article class="event-card is-${escapeHTML(entry.tier || "normal")} ${freshIds.has(entry.id) ? "is-new" : ""}" data-event="${escapeHTML(entry.id)}">
+      <button type="button" class="event-thumb" data-action="open" aria-label="Olayı aç">
+        <img src="${escapeHTML(entry.snapshot_url || NO_IMAGE)}" alt="" loading="lazy">
+        ${entry.clip_url ? `<span class="event-play">${icon("play")}</span>` : ""}
+        ${duration ? `<span class="event-duration">${duration}</span>` : ""}
+      </button>
+      <div class="event-body" data-action="open">
+        <div class="event-meta">${levelBadge(entry)}<time>${escapeHTML(entry.date_str || "")} ${escapeHTML(entry.timestamp_str || "")}</time></div>
+        <h3 class="event-title">${escapeHTML(eventTitle(entry))}</h3>
+        <p class="event-camera">${icon("camera")} ${escapeHTML(entry.camera_name || entry.camera_id)}</p>
+        ${description ? `<p class="event-description">${escapeHTML(description)}</p>` : ""}
       </div>
-    `;
+      <footer class="event-review-bar">${reviewButtons(entry)}</footer>
+    </article>`;
+}
+
+function rowHTML(entry) {
+  return `
+    <tr class="is-clickable ${freshIds.has(entry.id) ? "is-new" : ""}" data-event="${escapeHTML(entry.id)}" data-action="open">
+      <td><time>${escapeHTML(entry.date_str || "")} ${escapeHTML(entry.timestamp_str || "")}</time></td>
+      <td>${escapeHTML(entry.camera_name || entry.camera_id)}</td>
+      <td>${escapeHTML(eventTitle(entry))}<span class="cell-sub">${escapeHTML(describe(entry))}</span></td>
+      <td>${levelBadge(entry)}</td>
+      <td>${durationText(entry)}</td>
+      <td><div class="chip-row">${reviewButtons(entry)}</div></td>
+    </tr>`;
+}
+
+function emptyHTML() {
+  const nothingRecorded = entries.length === 0;
+  return `
+    <div class="empty">
+      ${icon(nothingRecorded ? "events" : "search")}
+      <p class="empty-title">${nothingRecorded ? "Henüz kayıtlı olay yok" : "Aramanıza uyan olay yok"}</p>
+      <p>${nothingRecorded
+        ? "Bir alarm oluştuğunda videosu ve fotoğrafıyla birlikte burada görünür."
+        : "Filtreleri değiştirerek yeniden deneyin."}</p>
+    </div>`;
+}
+
+function renderPager(total, pageCount) {
+  const from = total ? (page - 1) * pageSize + 1 : 0;
+  const to = Math.min(page * pageSize, total);
+  $("#events-pager-info").textContent = total ? `${from}–${to} / ${total}` : "";
+
+  const first = Math.max(1, Math.min(page - 2, pageCount - 4));
+  const pages = Array.from({ length: Math.min(5, pageCount) }, (_, index) => first + index);
+  const button = (label, target, { active = false, disabled = false } = {}) =>
+    `<button type="button" class="btn btn-sm ${active ? "is-active" : ""}" data-page="${target}" ${disabled ? "disabled" : ""}>${label}</button>`;
+  $("#events-pager-buttons").innerHTML = pageCount > 1
+    ? button("‹", page - 1, { disabled: page === 1 })
+      + pages.map((number) => button(number, number, { active: number === page })).join("")
+      + button("›", page + 1, { disabled: page === pageCount })
+    : "";
+}
+
+function renderSummary(shown) {
+  const unreviewed = entries.filter((entry) => reviewOf(entry) === "unlabeled").length;
+  const critical = entries.filter((entry) => entry.tier === "critical").length;
+  const parts = [shown === entries.length ? `${entries.length} olay` : `${shown} olay gösteriliyor (toplam ${entries.length})`];
+  if (critical) parts.push(`${critical} kritik`);
+  if (unreviewed) parts.push(`${unreviewed} incelenmemiş`);
+  $("#events-summary").textContent = entries.length ? parts.join(" · ") : "";
+}
+
+function render() {
+  const filtered = filteredEntries();
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  page = Math.min(Math.max(1, page), pageCount);
+  const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  const list = $("#events-list");
+  if (!visible.length) {
+    setHTML(list, emptyHTML());
+  } else if (layout === "table") {
+    setHTML(list, `
+      <div class="table-wrap"><table class="table events-table">
+        <thead><tr><th>Zaman</th><th>Kamera</th><th>Olay</th><th>Seviye</th><th>Süre</th><th>Karar</th></tr></thead>
+        <tbody>${visible.map(rowHTML).join("")}</tbody>
+      </table></div>`);
+  } else {
+    setHTML(list, `<div class="event-grid">${visible.map(cardHTML).join("")}</div>`);
+  }
+  renderSummary(filtered.length);
+  renderPager(filtered.length, pageCount);
+  renderCameraFilter();
+}
+
+function renderCameraFilter() {
+  const select = $("#events-camera");
+  const names = new Map(entries.map((entry) => [entry.camera_id, entry.camera_name || entry.camera_id]));
+  const options = `<option value="">Tüm kameralar</option>` + Array.from(names, ([cameraId, name]) =>
+    `<option value="${escapeHTML(cameraId)}">${escapeHTML(name)}</option>`).join("");
+  if (select.dataset.rendered === options) return;
+  select.innerHTML = options;
+  select.dataset.rendered = options;
+  select.value = names.has(filters.camera) ? filters.camera : "";
+  filters.camera = select.value;
+}
+
+function renderNotice() {
+  const notice = $("#events-notice");
+  const text = analysisServerReady
+    ? fleetNotice
+    : "Analiz sunucusuna ulaşılamıyor. Sorun giderilene kadar yeni olay kaydedilmez.";
+  notice.hidden = !text;
+  notice.textContent = text;
+}
+
+/* -------------------------------------------------------------------- Data */
+function upsert(entry) {
+  const index = entries.findIndex((item) => item.id === entry.id);
+  if (index === -1) {
+    entries.unshift(entry);
+    entries.length = Math.min(entries.length, MAX_ENTRIES);
+    freshIds.add(entry.id);
+    setTimeout(() => {
+      freshIds.delete(entry.id);
+      render();
+    }, NEW_HIGHLIGHT_MS);
+  } else {
+    entries[index] = { ...entries[index], ...entry };
+  }
+  return entries[index === -1 ? 0 : index];
+}
+
+async function load() {
+  try {
+    entries = (await listEvents({ limit: MAX_ENTRIES })).journal || [];
+    render();
+  } catch (err) {
+    setHTML($("#events-list"), `<div class="empty"><p class="empty-title">Olaylar yüklenemedi</p><p>${escapeHTML(err.message)}</p></div>`);
+  }
+}
+
+async function loadFleetNotice() {
+  try {
+    const fleet = await getFleetStatus();
+    if (fleet.analysis_enabled === false) {
+      fleetNotice = "Olağandışı hareket algılama Ayarlar’dan kapatılmış. Yalnızca kural ihlalleri kaydedilir.";
+    } else if (fleet.offline_count > 0) {
+      fleetNotice = `${fleet.offline_count} kameradan görüntü alınamıyor; bu kameralarda olay algılanamaz.`;
+    } else {
+      fleetNotice = "";
+    }
+  } catch (_) {
+    fleetNotice = "";
+  }
+  renderNotice();
+}
+
+function onStreamMessage(message) {
+  let data;
+  try {
+    data = JSON.parse(message.data);
+  } catch (_) {
     return;
   }
-
-  container.innerHTML = filtered.map(evt => {
-    const isResolved = evt.status === "resolved";
-    const isEscalated = evt.status === "escalated";
-    const sevLabel = evt.severity === "critical" ? "🚨 KRİTİK İHLAL" : "⚠️ İSG UYARISI";
-
-    const assignee = evt.assignee || { name: "Saha Şefi", role: "Güvenlik Sorumlusu", phone: "Dahili 104" };
-    const escalation = evt.escalation || { supervisor_name: "İSG Müdürü", timeout_minutes: 5 };
-
-    const elapsedMin = Math.floor((Date.now() / 1000 - evt.created_at) / 60);
-    const timeoutMin = escalation.timeout_minutes || 5;
-    const remainingMin = Math.max(0, timeoutMin - elapsedMin);
-
-    let escalationBadge = "";
-    if (isResolved) {
-      escalationBadge = `<span class="severity-badge" style="background: rgba(16, 185, 129, 0.15); color: #34D399; border-color: rgba(16, 185, 129, 0.4);">✅ ÇÖZÜLDÜ</span>`;
-    } else if (isEscalated || remainingMin <= 0) {
-      escalationBadge = `<span class="escalation-timer-badge escalated">⚠️ AMİRE ESKALASYON İLETİLDİ</span>`;
-    } else {
-      escalationBadge = `<span class="escalation-timer-badge">⏳ Eskalasyona ${remainingMin} dk</span>`;
-    }
-
-    return `
-      <div class="incident-card ${evt.severity} ${evt.status}" id="incident-card-${evt.id}">
-        <div class="incident-header">
-          <div class="incident-title-box">
-            <span class="incident-type-tag">
-              <span class="status-dot-pulse" style="background: ${isResolved ? '#10B981' : '#EF4444'};"></span>
-              ${evt.violation_type || 'Kural İhlali'}
-            </span>
-            <span class="incident-camera-zone">
-              📹 ${evt.camera_name || 'Kamera'} &bull; 📍 ${evt.zone_name || 'Bölge'}
-            </span>
-          </div>
-          <div>
-            ${escalationBadge}
-          </div>
-        </div>
-
-        <div class="incident-body">
-          <div class="incident-media-preview">
-            <img class="incident-snapshot-img" src="${evt.snapshot_url || '/api/cameras/' + evt.camera_id + '/snapshot'}?t=${evt.created_at}" alt="İhlal Snapshot">
-            <span class="incident-snapshot-badge">📸 AI Snapshot</span>
-          </div>
-
-          <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">
-            ${evt.description || 'Alana ilişkin kural ihlali tespit edildi.'}
-          </p>
-
-          <!-- Sorumlu & Eskalasyon Strip -->
-          <div class="incident-assignee-box">
-            <div class="assignee-info-col">
-              <span class="assignee-info-label">1. Derece Sorumlu</span>
-              <span class="assignee-info-val">${assignee.name}</span>
-              <span class="assignee-info-sub">${assignee.role} &bull; ${assignee.phone || ''}</span>
-            </div>
-            <div class="assignee-info-col">
-              <span class="assignee-info-label">2. Derece Eskalasyon</span>
-              <span class="assignee-info-val">${escalation.supervisor_name}</span>
-              <span class="assignee-info-sub">Süre Sınırı: ${timeoutMin} dk</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="incident-footer">
-          <div class="incident-time-ago">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <span>${elapsedMin} dakika önce</span>
-          </div>
-
-          <div style="display: flex; gap: 8px;">
-            ${!isResolved ? `
-              <button type="button" class="btn-resolve-verify" data-resolve-id="${evt.id}">
-                🔍 Olayı Çözüldü İşaretle
-              </button>
-            ` : `
-              <span style="font-size: 0.76rem; color: #34D399; font-weight: 600;">Arşivlendi</span>
-            `}
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  // Attach resolve verification handlers
-  document.querySelectorAll("[data-resolve-id]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const eventId = btn.getAttribute("data-resolve-id");
-      await handleAttemptResolve(eventId, btn);
-    });
-  });
+  if (data.type === "journal_cleared") {
+    entries = [];
+    page = 1;
+  } else {
+    const entry = data.entry || data;
+    if (!entry || !entry.id || !entry.camera_id) return;
+    syncEventDetail(upsert(entry));
+  }
+  render();
+  refreshEventsBadge();
 }
 
-async function handleAttemptResolve(eventId, btn, forceOverride = false) {
-  btn.disabled = true;
-  btn.textContent = "AI Doğruluyor...";
-
+/* ----------------------------------------------------------------- Actions */
+async function setLabel(entry, label) {
+  // Pressing the selected verdict again withdraws it
+  const next = reviewOf(entry) === label ? "unlabeled" : label;
   try {
-    const res = await fetch(`/api/events/${eventId}/resolve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        operator_name: "Nöbetçi İSG Operatörü",
-        force_override: forceOverride,
-        note: forceOverride ? "Yetkili amir kontrolü ile manuel kapatıldı." : "Saha denetimi yapıldı."
-      })
-    });
-    const result = await res.json();
-
-    if (!result.can_resolve && !forceOverride) {
-      // Verification Failed! Show the user the exact system rejection logic!
-      const userChoice = confirm(
-        `${result.message}\n\n` +
-        `--------------------------------------------------\n` +
-        `Yapay zeka sahadaki ihlalin devam ettiğini tespit ettiği için olay otomatik olarak kapatılmadı.\n\n` +
-        `Sorumlu amir olarak sahayı bizzat incelediyseniz ve YETKİLİ ONAYIYLA kapatmak istiyorsanız [Tamam]'a tıklayabilirsiniz.`
-      );
-      if (userChoice) {
-        await handleAttemptResolve(eventId, btn, true);
-        return;
-      }
-    } else {
-      alert(result.message || "Olay başarıyla çözüldü.");
-      await loadIncidents();
-    }
-  } catch (e) {
-    alert("Hata oluştu: " + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "🔍 Olayı Çözüldü İşaretle";
+    upsert({ ...entry, ...(await labelEvent(entry.id, next)) });
+    render();
+    refreshEventsBadge();
+  } catch (err) {
+    showError("Karar kaydedilemedi", err);
   }
 }
 
-function startEscalationClock() {
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    // Refresh incidents periodically to update countdown timers and auto-escalations
-    loadIncidents();
-  }, 10000);
+function onListClick(event) {
+  const target = event.target.closest("[data-action]");
+  const holder = event.target.closest("[data-event]");
+  if (!target || !holder) return;
+  const entry = entries.find((item) => item.id === holder.dataset.event);
+  if (!entry) return;
+  if (target.dataset.action === "label") {
+    setLabel(entry, target.dataset.label);
+  } else {
+    openEventDetail(entry, (updated) => {
+      upsert(updated);
+      render();
+    });
+  }
+}
+
+function exportEvents() {
+  const rows = filteredEntries();
+  if (!rows.length) {
+    showToast("Dışa aktarılacak olay yok.", "info");
+    return;
+  }
+  const cell = (value) => `"${String(value ?? "").replace(/"/g, '""').replace(/\s+/g, " ")}"`;
+  const lines = [["Tarih", "Saat", "Kamera", "Olay", "Seviye", "Süre (sn)", "Karar", "Özet"].map(cell).join(";")];
+  rows.forEach((entry) => {
+    lines.push([
+      entry.date_str, entry.timestamp_str, entry.camera_name, eventTitle(entry), levelInfo(entry).text,
+      entry.duration_sec ?? "", REVIEW_LABELS[entry.operator_label] || "İncelenmedi", describe(entry),
+    ].map(cell).join(";"));
+  });
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
+  // The byte-order mark makes spreadsheet programs read the Turkish characters correctly
+  downloadBlob(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }), `olaylar_${stamp}.csv`);
+  showToast(`${rows.length} olay dışa aktarıldı.`, "success");
+}
+
+async function clearAll() {
+  if (!entries.length) {
+    showToast("Silinecek olay yok.", "info");
+    return;
+  }
+  const confirmed = await confirmDialog({
+    title: "Tüm olaylar silinsin mi?",
+    message: `${entries.length} olay kaydı, videoları ve fotoğraflarıyla birlikte kalıcı olarak silinecek. Bu işlem geri alınamaz.`,
+    confirmText: "Tümünü sil",
+    danger: true,
+  });
+  if (!confirmed) return;
+  try {
+    await clearEvents();
+    entries = [];
+    page = 1;
+    render();
+    refreshEventsBadge();
+    showToast("Tüm olaylar silindi.", "success");
+  } catch (err) {
+    showError("Olaylar silinemedi", err);
+  }
+}
+
+/* --------------------------------------------------------------- Lifecycle */
+function wire() {
+  wired = true;
+  const bindFilter = (selector, key, eventName = "change") => {
+    $(selector).addEventListener(eventName, (event) => {
+      filters[key] = event.target.value;
+      page = 1;
+      render();
+    });
+  };
+  bindFilter("#events-search", "search", "input");
+  bindFilter("#events-camera", "camera");
+  bindFilter("#events-time", "time");
+  bindFilter("#events-kind", "kind");
+  bindFilter("#events-review", "review");
+
+  setActiveLayout = bindSegmented($("#events-layout"), "mode", (mode) => {
+    layout = mode;
+    localStorage.setItem(LAYOUT_KEY, mode);
+    setActiveLayout(mode);
+    render();
+  });
+  setActiveLayout(layout);
+
+  $("#events-page-size").addEventListener("change", (event) => {
+    pageSize = Number(event.target.value);
+    page = 1;
+    render();
+  });
+  $("#events-pager-buttons").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-page]");
+    if (!button) return;
+    page = Number(button.dataset.page);
+    render();
+    $("#content").scrollTop = 0;
+  });
+  $("#events-list").addEventListener("click", onListClick);
+  $("#events-export").addEventListener("click", exportEvents);
+  $("#events-clear").addEventListener("click", clearAll);
+}
+
+export function mount() {
+  if (!wired) wire();
+  if (!entries.length) setHTML($("#events-list"), `<div class="loading"><div class="spinner"></div></div>`);
+  load();
+  loadFleetNotice();
+
+  if (!stream) {
+    stream = openEventStream();
+    stream.onmessage = onStreamMessage;
+  }
+  if (!unsubscribeStats) {
+    unsubscribeStats = subscribeSystemStats((stats) => {
+      analysisServerReady = Boolean(stats.triton && stats.triton.status === "READY");
+      renderNotice();
+    });
+  }
+}
+
+export function unmount() {
+  if (stream) stream.close();
+  stream = null;
+  if (unsubscribeStats) unsubscribeStats();
+  unsubscribeStats = null;
 }

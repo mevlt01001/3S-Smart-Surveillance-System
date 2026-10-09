@@ -67,10 +67,12 @@ class TestYOLODetectorE2E(unittest.TestCase):
 
     def test_backend_auto_fallback(self):
         # Auto backend should automatically fall back to local ONNX when Triton is offline
+        # (an unreachable address makes "Triton is offline" true even on a machine where Triton runs)
         auto_detector = YOLODetector(
             model_path="yoloe-26l-seg_decoupled_sim.onnx",
             classes=["bus"],
             backend="auto",
+            triton_url="127.0.0.1:1",
         )
         self.assertEqual(auto_detector.backend_type, "onnx")
         res = auto_detector.detect(self.image_path)

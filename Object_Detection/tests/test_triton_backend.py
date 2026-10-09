@@ -3,7 +3,6 @@ Functional tests for TritonBackend module.
 """
 
 import unittest
-import numpy as np
 from Object_Detection.triton_backend import TritonBackend, TRITON_HTTP_AVAILABLE
 
 

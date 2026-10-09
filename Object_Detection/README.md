@@ -111,10 +111,11 @@ trtexec --onnx=yoloe_decoupled_sim.onnx \
 ## 📁 Modül Mimarisi
 
 * `detector.py`: Ana `YOLODetector` API sınıfı.
-* `text_encoder.py`: MobileCLIP ile metin prompt vektörlerini çıkaran ve önbelleğe (cache) alan sınıf.
-* `onnx_backend.py`: ONNXRuntime çıkarım motoru.
-* `trt_backend.py`: TensorRT sıfır kopyalı (zero-copy GPU buffer) çıkarım motoru ve `trtexec` oluşturucusu.
-* `decoupled_model.py`: Saf YOLOE PyTorch modeli ile metin girişini ayıran sarmalayıcı ve ONNX export mantığı.
-* `utils.py`: Letterbox boyutlandırma, kutu ölçekleme, NMS ve `DetectionResult` görselleştirme yardımcıları.
-* `yolo_e_test.py`: Standalone test ve doğrulama betiği.
-* `tests/`: 12 adet kapsamlı fonksiyonel ve uçtan uca birim testi (`run_tests.py` ile çalıştırılabilir).
+* `triton_backend.py`, `triton_fast_client.py`: Triton sunucusu üzerinden çıkarım (web sisteminin kullandığı yol) ve kopyasız HTTP istemcisi.
+* `onnx_backend.py`: Yerel ONNXRuntime çıkarım motoru.
+* `trt_backend.py`: Yerel TensorRT çıkarım motoru ve `trtexec` komut üreticisi.
+* `text_encoder.py`, `text_feature_cache.py`: MobileCLIP ile sınıf adlarının metin vektörleri ve bunların disk önbelleği.
+* `decoupled_model.py`: YOLOE modelini metin girişinden ayıran sarmalayıcı ve ONNX dışa aktarımı.
+* `utils.py`: Letterbox, kutu ölçekleme, NMS ve `DetectionResult` yardımcıları.
+* `tests/`: Birim ve uçtan uca testler (`python Object_Detection/run_tests.py`). Model yüklediği için bellek ister; canlı sistem çalışırken koşmayın.
+* Araç betikleri: `check_environment.py`, `benchmark_triton.py`, `triton_inference_test.py`, `triton_multi_model_test.py`, `start_triton_docker.sh`, `convert_to_tensorrt.sh`, `apply_tensorrt_configs.sh`.

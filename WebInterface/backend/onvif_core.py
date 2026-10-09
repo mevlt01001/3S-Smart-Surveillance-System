@@ -7,33 +7,18 @@ ONVIF Core Communication Engine
 """
 
 import asyncio
-import os
-import re
+import logging
 import socket
-import struct
 import urllib.parse
 import uuid
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 import httpx
 
 from .onvif_auth import generate_ws_security_header
 
-# Standard XML Namespaces
-NAMESPACES = {
-    "s": "http://www.w3.org/2003/05/soap-envelope",
-    "soap11": "http://schemas.xmlsoap.org/soap/envelope/",
-    "wsa": "http://schemas.xmlsoap.org/ws/2004/08/addressing",
-    "d": "http://schemas.xmlsoap.org/ws/2005/04/discovery",
-    "tds": "http://www.onvif.org/ver10/device/wsdl",
-    "trt": "http://www.onvif.org/ver10/media/wsdl",
-    "tt": "http://www.onvif.org/ver10/schema",
-    "dn": "http://www.onvif.org/ver10/network/wsdl",
-    "wsse": "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd",
-    "wsu": "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
-}
-
+logger = logging.getLogger("aegis.onvif")
 
 def _strip_ns(tag: str) -> str:
     """Helper to remove namespace prefix from XML tag."""
@@ -308,7 +293,7 @@ class ONVIFClient:
                         uri = f"rtsp://{safe_user}:{safe_pass}@{uri[7:]}"
                     return uri
         except Exception as e:
-            print(f"[ONVIFClient] Failed GetStreamUri: {e}")
+            logger.warning(f"Failed GetStreamUri: {e}")
         return None
 
     async def get_snapshot_uri(self, profile_token: str) -> Optional[str]:
@@ -480,7 +465,7 @@ async def run_multi_nic_ws_discovery(timeout: float = 3.0) -> List[Dict[str, Any
 
                 sockets.append((s, iface))
             except Exception as e:
-                print(f"[WSDiscovery] Socket error on {iface}: {e}")
+                logger.warning(f"Socket error on {iface}: {e}")
 
         # Send probes out of every interface (multicast, local loopback, and broadcast)
         targets = [

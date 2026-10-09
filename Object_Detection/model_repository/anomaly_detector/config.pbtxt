@@ -1,5 +1,5 @@
 name: "anomaly_detector"
-platform: "onnxruntime_onnx"
+backend: "tensorrt"
 max_batch_size: 16
 
 input [
@@ -18,7 +18,6 @@ output [
   }
 ]
 
-# Dinamik batchleme (Kameralardan gelen video kliplerini gruplamak için)
 dynamic_batching {
   max_queue_delay_microseconds: 5000
 }

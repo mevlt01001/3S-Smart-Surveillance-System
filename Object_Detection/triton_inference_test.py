@@ -45,8 +45,7 @@ def run_triton_test(
             print("  ./Object_Detection/start_triton_docker.sh")
 
         print("\n" + "-" * 60)
-        print("💡 Triton çevrimdışı iken YEREL ÇIKARIM (ONNX/GPU) testini çalıştırmak için:")
-        print("   python dummy_main.py")
+        print("💡 Triton çevrimdışı iken yerel çıkarım (ONNX/GPU) örneği: Object_Detection/README.md")
         print("-" * 60)
         return False
 

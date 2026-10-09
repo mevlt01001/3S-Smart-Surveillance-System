@@ -3,947 +3,587 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AegisVision AI - Akıllı Kamera & Gözetim Sistemi</title>
-  <link rel="stylesheet" href="/static/css/theme.css">
-  <link rel="stylesheet" href="/static/css/layout.css">
-  <link rel="stylesheet" href="/static/css/home.css?v=2.0">
-  <link rel="stylesheet" href="/static/css/rules.css?v=2.3">
-  <link rel="stylesheet" href="/static/css/live.css?v=1.0">
-  <link rel="stylesheet" href="/static/css/events.css?v=1.0">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF8533'%3E%3Cpath d='M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5zm0 4a4 4 0 110 8 4 4 0 010-8z'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#0b0e14">
+  <title>AegisVision</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff8533'%3E%3Cpath d='M12 2L3 6v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V6l-9-4zm0 5a4 4 0 110 8 4 4 0 010-8z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/ui/css/base.css">
+  <link rel="stylesheet" href="/ui/css/components.css">
+  <link rel="stylesheet" href="/ui/css/layout.css">
+  <link rel="stylesheet" href="/ui/css/live.css">
+  <link rel="stylesheet" href="/ui/css/events.css">
+  <link rel="stylesheet" href="/ui/css/rules.css">
+  <link rel="stylesheet" href="/ui/css/cameras.css">
+  <link rel="stylesheet" href="/ui/css/settings.css">
 </head>
 <body>
 
-  <div class="app-container">
+  <!-- Icon sprite: every icon in the interface is one of these symbols -->
+  <svg class="icon-sprite" aria-hidden="true">
+    <defs>
+      <symbol id="i-live" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></symbol>
+      <symbol id="i-events" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+      <symbol id="i-rules" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z" fill="currentColor"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></symbol>
+      <symbol id="i-photo" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+      <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    </defs>
+  </svg>
 
-    <!-- ====================================================================
-         Sol Dikey Navigasyon Menüsü (Sidebar)
-         ==================================================================== -->
+  <div class="app">
+
     <aside class="sidebar">
-      <div>
-        <!-- Marka & Logo -->
-        <div class="brand">
-          <div class="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              <circle cx="12" cy="11" r="3"></circle>
-            </svg>
-          </div>
-          <div class="brand-text">
-            <h1>AEGIS VISION</h1>
-            <span class="version-tag">VMS Enterprise</span>
-          </div>
-        </div>
-
-        <!-- Menü Öğeleri -->
-        <nav class="nav-menu">
-          <div class="nav-section-title">Modüller</div>
-
-          <!-- 1. KAMERALAR (HOME) - AKTİF -->
-          <a class="nav-item active" id="nav-home">
-            <div class="nav-item-content">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-              </svg>
-              <span>Kameralar (Home)</span>
-            </div>
-          </a>
-
-          <!-- 2. KURALLAR & BÖLGELER - AKTİF -->
-          <a class="nav-item" id="nav-rules">
-            <div class="nav-item-content">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                <polyline points="2 17 12 22 22 17"></polyline>
-                <polyline points="2 12 12 17 22 12"></polyline>
-              </svg>
-              <span>Kurallar & Bölgeler</span>
-            </div>
-          </a>
-
-          <!-- 3. CANLI İZLEME - AKTİF -->
-          <a class="nav-item" id="nav-live">
-            <div class="nav-item-content">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
-                <line x1="7" y1="2" x2="7" y2="22"></line>
-                <line x1="17" y1="2" x2="17" y2="22"></line>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-              </svg>
-              <span>Canlı İzleme (Video Wall)</span>
-            </div>
-          </a>
-
-          <!-- 4. İHLAL & ANOMALİ İZLEME - AKTİF -->
-          <a class="nav-item" id="nav-events">
-            <div class="nav-item-content">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-              <span>İhlal & Anomali İzleme</span>
-            </div>
-            <span class="coming-soon-badge" id="sidebar-alert-badge" style="background: rgba(239, 68, 68, 0.2); color: #F87171; border-color: rgba(239, 68, 68, 0.4);">
-              1 Olay
-            </span>
-          </a>
-
-          <!-- 5. NESNE TESPİTİ - GELECEK -->
-          <div class="nav-item disabled" title="YOLOE Nesne Tespiti modülü bir sonraki aşamada açılacaktır">
-            <div class="nav-item-content">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="22" y1="12" x2="18" y2="12"></line>
-                <line x1="6" y1="12" x2="2" y2="12"></line>
-                <line x1="12" y1="6" x2="12" y2="2"></line>
-                <line x1="12" y1="22" x2="12" y2="18"></line>
-              </svg>
-              <span>Nesne Tespiti</span>
-            </div>
-            <span class="coming-soon-badge">Yakında</span>
-          </div>
-
-          <!-- 5. AYARLAR - GELECEK -->
-          <div class="nav-item disabled" title="Ayarlar modülü bir sonraki aşamada açılacaktır">
-            <div class="nav-item-content">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-              <span>Ayarlar</span>
-            </div>
-            <span class="coming-soon-badge">Yakında</span>
-          </div>
-        </nav>
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24"><path d="M12 2L3 6v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V6l-9-4zm0 5a4 4 0 110 8 4 4 0 010-8z"/></svg>
+        <span class="brand-name">AegisVision</span>
       </div>
 
-      <!-- Alt Donanım & Triton Telemetri Kartı -->
-      <div class="sidebar-footer">
-        <div class="telemetry-row">
-          <span class="telemetry-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
-            Triton Server
-          </span>
-          <span class="status-pill ready" id="telemetry-triton-status">
-            <span class="status-dot-pulse"></span> BAĞLANIYOR
-          </span>
-        </div>
+      <nav class="nav" aria-label="Ana menü">
+        <a class="nav-item" href="#live" data-view="live"><svg class="icon"><use href="#i-live"/></svg><span>Canlı İzleme</span></a>
+        <a class="nav-item" href="#events" data-view="events"><svg class="icon"><use href="#i-events"/></svg><span>Olaylar</span><span class="nav-badge" id="nav-events-badge" hidden></span></a>
+        <a class="nav-item" href="#rules" data-view="rules"><svg class="icon"><use href="#i-rules"/></svg><span>Kurallar</span></a>
+        <a class="nav-item" href="#cameras" data-view="cameras"><svg class="icon"><use href="#i-camera"/></svg><span>Kameralar</span></a>
+        <a class="nav-item" href="#settings" data-view="settings"><svg class="icon"><use href="#i-settings"/></svg><span>Ayarlar</span></a>
+      </nav>
 
-        <div class="telemetry-row">
-          <span class="telemetry-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            GPU
-          </span>
-          <span class="telemetry-val" id="telemetry-gpu-name">GTX 1650 Ti</span>
-        </div>
-
-        <div>
-          <div class="telemetry-row" style="font-size: 0.72rem; margin-bottom: 3px;">
-            <span style="color: var(--text-dim);">VRAM Kullanımı</span>
-            <span style="color: var(--primary); font-family: monospace;" id="telemetry-vram-text">--- / --- MB</span>
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill" id="telemetry-vram-fill" style="width: 25%;"></div>
-          </div>
-        </div>
-
-        <div class="telemetry-row" style="font-size: 0.72rem; border-top: 1px solid var(--border-subtle); padding-top: 6px;">
-          <span style="color: var(--text-dim);">Sıcaklık & Yük</span>
-          <span style="color: var(--text-muted); font-family: monospace;" id="telemetry-gpu-temp">--°C</span>
-        </div>
+      <div class="system-status" id="system-status" role="status">
+        <span class="status-dot"></span>
+        <span class="system-status-text" id="system-status-text">Bağlanıyor…</span>
       </div>
     </aside>
 
-
-    <!-- ====================================================================
-         Ana Görüntüleme Alanı (Viewport)
-         ==================================================================== -->
-    <main class="main-viewport">
-
-      <!-- Üst Bilgi & Saat Çubuğu -->
-      <header class="top-navbar">
-        <div class="top-nav-left">
-          <div>
-            <h2 class="page-title">Kamera Yönetim Merkezi</h2>
-            <p class="page-subtitle">ONVIF Profile S / G / T Standart Aygıt Keşfi ve Canlı Önizleme</p>
-          </div>
-        </div>
-
-        <div class="top-nav-right">
-          <div class="system-clock">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <span id="nav-clock">12:00:00</span>
-          </div>
-          <button class="btn-icon" id="btn-refresh-fleet" title="Filoyu Yenile">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-          </button>
-        </div>
+    <main class="main">
+      <header class="topbar">
+        <h1 class="page-title" id="page-title">Canlı İzleme</h1>
+        <time class="clock" id="clock">--:--:--</time>
       </header>
 
-      <!-- Ana İçerik -->
-      <section class="content-body">
+      <div class="content" id="content">
 
-        <!-- ================================================================
-             1. GÖRÜNÜM: KAMERA YÖNETİMİ (HOME)
-             ================================================================ -->
-        <div id="view-home" class="view-content-section">
-          <!-- Aksiyon Çubuğu -->
-          <div class="home-header-strip">
-            <div class="action-buttons-group">
-              <button class="btn-primary" id="btn-start-scan">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                  <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"></path>
-                  <path d="M8.5 8.5a5 5 0 0 0 7 7"></path>
-                  <circle cx="12" cy="12" r="1.5"></circle>
-                </svg>
-                Ağda Kamera Tara (ONVIF WS-Discovery)
-              </button>
-
-              <button class="btn-secondary" id="btn-manual-add">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Manuel Kamera Ekle
-              </button>
+        <!-- ============================ Canlı İzleme ============================ -->
+        <section id="view-live" class="view" hidden>
+          <div class="toolbar">
+            <div class="segmented" id="live-layouts" role="group" aria-label="Ekran düzeni">
+              <button type="button" data-layout="grid-1x1" title="Tek kamera">1</button>
+              <button type="button" data-layout="grid-2x2" title="4 kamera (2×2)">4</button>
+              <button type="button" data-layout="grid-3x2" title="6 kamera (3×2)">6</button>
+              <button type="button" data-layout="grid-4x3" title="12 kamera (4×3)">12</button>
             </div>
+            <label class="check" title="Yalnızca uyarı veren, alarmdaki veya sinyali kesilen kameraları göster">
+              <input type="checkbox" id="live-only-alarms"> Yalnızca alarmdakiler
+            </label>
+            <span class="toolbar-spacer"></span>
+            <label class="check" title="Kurallarda çizdiğiniz bölgeleri görüntünün üzerinde göster">
+              <input type="checkbox" id="live-show-zones" checked> Bölgeler
+            </label>
+            <label class="check" title="Tespit edilen kişi ve nesneleri çerçeveyle göster">
+              <input type="checkbox" id="live-show-detections" checked> Tespitler
+            </label>
+            <span class="badge" id="live-count"></span>
           </div>
 
-          <!-- Özet Sayaçlar -->
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <div class="metric-info">
-                <h3>Toplam Kamera</h3>
-                <div class="metric-value" id="stat-total-cameras">0</div>
-              </div>
-              <div class="metric-icon-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-info">
-                <h3>Çevrimiçi Aygıtlar</h3>
-                <div class="metric-value" id="stat-online-cameras">0 / 0</div>
-              </div>
-              <div class="metric-icon-box" style="color: var(--status-online); background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.25);">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-info">
-                <h3>Profil Dağılımı</h3>
-                <div class="metric-value" style="font-size: 1.25rem;" id="stat-profiles-count">S:0 | T:0</div>
-              </div>
-              <div class="metric-icon-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-info">
-                <h3>Triton AI Gecikmesi</h3>
-                <div class="metric-value" style="font-size: 1.35rem; color: var(--primary-light);">~66 ms</div>
-              </div>
-              <div class="metric-icon-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-              </div>
-            </div>
+          <div class="focus-bar" id="live-focus-bar" hidden>
+            <button type="button" class="btn btn-sm" id="live-exit-focus"><svg class="icon"><use href="#i-back"/></svg> Tüm kameralar</button>
+            <strong id="live-focus-name"></strong>
           </div>
 
-          <!-- Kamera Kartları Izgarası (Fleet Grid) -->
-          <div class="camera-grid" id="camera-fleet-grid">
-            <!-- js/home.js tarafından dinamik render edilir -->
+          <div id="live-grid" class="live-grid grid-3x2"></div>
+
+          <div class="card live-history" id="live-history" hidden>
+            <div class="card-header">
+              <h2 class="card-title">Son 30 dakika</h2>
+              <span class="legend">
+                <span class="legend-item"><i class="legend-swatch is-ok"></i> Olay yok</span>
+                <span class="legend-item"><i class="legend-swatch is-warn"></i> Uyarı</span>
+                <span class="legend-item"><i class="legend-swatch is-danger"></i> Kritik</span>
+              </span>
+            </div>
+            <div class="timeline" id="live-timeline"></div>
+            <div class="timeline-axis"><span>30 dk önce</span><span>15 dk önce</span><span>Şimdi</span></div>
+            <h3 class="section-title">Bu kameranın son olayları</h3>
+            <div class="history-list" id="live-history-list"></div>
           </div>
-        </div>
+        </section>
 
+        <!-- ============================== Olaylar ============================== -->
+        <section id="view-events" class="view" hidden>
+          <div class="notice is-warn" id="events-notice" role="status" hidden></div>
 
-        <!-- ================================================================
-             2. GÖRÜNÜM: KURAL & BÖLGE TANIMLAMA (RULES & ZONES)
-             ================================================================ -->
-        <div id="view-rules" class="view-content-section" style="display: none;">
-          <div class="rules-container">
+          <div class="toolbar">
+            <label class="search">
+              <svg class="icon"><use href="#i-search"/></svg>
+              <input type="search" id="events-search" placeholder="Olaylarda ara" aria-label="Olaylarda ara">
+            </label>
+            <select class="select" id="events-camera" aria-label="Kamera"><option value="">Tüm kameralar</option></select>
+            <select class="select" id="events-time" aria-label="Zaman aralığı">
+              <option value="all">Tüm zamanlar</option>
+              <option value="15m">Son 15 dakika</option>
+              <option value="1h">Son 1 saat</option>
+              <option value="6h">Son 6 saat</option>
+              <option value="today">Bugün</option>
+            </select>
+            <select class="select" id="events-kind" aria-label="Olay türü">
+              <option value="all">Tüm türler</option>
+              <option value="critical">Kritik</option>
+              <option value="warning">Uyarı</option>
+              <option value="rule">Kural ihlali</option>
+            </select>
+            <select class="select" id="events-review" aria-label="İnceleme durumu">
+              <option value="all">Tüm durumlar</option>
+              <option value="unlabeled">İncelenmemiş</option>
+              <option value="correct">Doğru alarm</option>
+              <option value="false_positive">Hatalı alarm</option>
+            </select>
+            <span class="toolbar-spacer"></span>
+            <div class="segmented" id="events-layout" role="group" aria-label="Görünüm">
+              <button type="button" data-mode="cards" title="Kart görünümü" aria-label="Kart görünümü"><svg class="icon"><use href="#i-live"/></svg></button>
+              <button type="button" data-mode="table" title="Liste görünümü" aria-label="Liste görünümü"><svg class="icon"><use href="#i-list"/></svg></button>
+            </div>
+            <button type="button" class="btn" id="events-export" title="Listelenen olayları dosya olarak indir"><svg class="icon"><use href="#i-download"/></svg> Dışa aktar</button>
+            <button type="button" class="btn" id="events-clear" title="Tüm olay kayıtlarını, videolarını ve fotoğraflarını sil"><svg class="icon"><use href="#i-trash"/></svg> Tümünü sil</button>
+          </div>
 
-            <!-- Üst Editör Alanı: Sol Canvas + Sağ Kural Formu -->
-            <div class="rules-editor-layout">
+          <p class="summary-line" id="events-summary"></p>
+          <div id="events-list"></div>
 
-              <!-- Sol: Çizim & Mekansal Bölge Editörü -->
-              <div class="canvas-card">
-                <!-- Bar: Kapsam & Kamera Seçimi -->
-                <div class="canvas-header-bar">
-                  <div class="canvas-scope-selector">
-                    <button class="scope-btn active" id="btn-scope-camera" type="button">
-                      📷 Kamera Bazlı (Camera-Wise)
-                    </button>
-                    <button class="scope-btn" id="btn-scope-system" type="button">
-                      🌐 Sistem Geneli (System-Wise)
-                    </button>
+          <div class="pager">
+            <span id="events-pager-info"></span>
+            <span class="toolbar-spacer"></span>
+            <select class="select" id="events-page-size" aria-label="Sayfa başına olay">
+              <option value="12">12 / sayfa</option>
+              <option value="24">24 / sayfa</option>
+              <option value="48">48 / sayfa</option>
+            </select>
+            <div class="pager-buttons" id="events-pager-buttons"></div>
+          </div>
+        </section>
+
+        <!-- ============================== Kurallar ============================== -->
+        <section id="view-rules" class="view" hidden>
+          <div id="rules-list-panel">
+            <div class="toolbar">
+              <button type="button" class="btn btn-primary" id="rules-new"><svg class="icon"><use href="#i-plus"/></svg> Yeni kural</button>
+              <p class="summary-line" id="rules-summary"></p>
+            </div>
+            <div class="notice is-warn" id="rules-notice" hidden></div>
+            <div id="rules-list"></div>
+          </div>
+
+          <div id="rule-editor-panel" hidden>
+            <div class="toolbar">
+              <button type="button" class="btn" data-action="close-editor"><svg class="icon"><use href="#i-back"/></svg> Kurallar</button>
+              <h2 class="toolbar-title" id="rule-editor-title">Yeni kural</h2>
+            </div>
+
+            <div class="rule-editor">
+              <div class="card">
+                <div class="toolbar toolbar-inset">
+                  <div class="segmented" id="rule-scope" role="group" aria-label="Kuralın geçerli olduğu yer">
+                    <button type="button" data-scope="camera" class="is-active">Tek kamera</button>
+                    <button type="button" data-scope="system">Tüm kameralar</button>
                   </div>
+                  <select class="select" id="rule-camera" aria-label="Kamera"></select>
+                  <span class="toolbar-spacer"></span>
+                  <button type="button" class="btn btn-sm" id="zone-undo" title="Son noktayı geri al (Backspace)">Geri al</button>
+                  <button type="button" class="btn btn-sm" id="zone-clear" title="Çizilen tüm bölgeleri sil">Temizle</button>
+                </div>
+                <div class="zone-canvas" id="zone-canvas-wrap">
+                  <img id="zone-canvas-bg" class="zone-canvas-bg" alt="">
+                  <div class="zone-canvas-system" id="zone-canvas-system" hidden>Bu kural tüm kameralarda geçerli olur.<br>İsterseniz yalnızca görüntünün belirli bir bölümünü çizebilirsiniz.</div>
+                  <canvas id="zone-canvas"></canvas>
+                  <div class="zone-canvas-status" id="zone-canvas-status"></div>
+                </div>
+                <p class="hint card-hint">Görüntüye tıklayarak bölgenin köşelerini işaretleyin. İlk noktaya tıklayarak, çift tıklayarak veya <kbd>Enter</kbd> ile bölgeyi kapatın. <kbd>Esc</kbd> çizimi iptal eder.</p>
+              </div>
 
-                  <div class="camera-dropdown-group" id="camera-select-group">
-                    <label for="rule-camera-select" style="font-size: 0.8rem; color: var(--text-muted);">Kamera:</label>
-                    <select id="rule-camera-select" class="camera-select">
-                      <!-- Dinamik doldurulur -->
+              <form class="card rule-form" id="rule-form" novalidate>
+                <div class="field">
+                  <label for="rule-title">Kural adı</label>
+                  <input class="input" type="text" id="rule-title" placeholder="Örn. Depo girişi baret kontrolü" maxlength="80">
+                </div>
+
+                <div class="field">
+                  <span class="field-label">Bölgeler</span>
+                  <div class="chip-row" id="zone-chips"></div>
+                </div>
+
+                <fieldset class="zone-fields" id="zone-fields" disabled>
+                  <div class="field">
+                    <label for="zone-name">Bölge adı</label>
+                    <input class="input" type="text" id="zone-name" placeholder="Örn. Depo girişi" maxlength="40">
+                  </div>
+                  <div class="field">
+                    <label for="zone-type">Ne izlensin?</label>
+                    <select class="select" id="zone-type">
+                      <option value="detection">Kişi ve nesneler (kendi cümlenizle tarif edin)</option>
+                      <option value="change_detection">Engel veya değişiklik (acil çıkış, yangın dolabı önü…)</option>
                     </select>
                   </div>
+                  <div class="field" id="zone-detection-fields">
+                    <label for="zone-description">Bu bölgede ne olunca haber verilsin?</label>
+                    <textarea class="textarea" id="zone-description" rows="3" placeholder="Örn. Baret takmayan biri bölgeye girerse"></textarea>
+                    <div class="chip-row">
+                      <button type="button" class="chip" data-template="Bu bölgeye yetkisiz bir kişi veya araç girdiğinde alarm üret.">Yetkisiz giriş</button>
+                      <button type="button" class="chip" data-template="Bu bölgede baret veya reflektörlü yelek takmayan biri olursa bildir.">Baret ve yelek</button>
+                      <button type="button" class="chip" data-template="Bu bölgede bir kişi uzun süre beklerse bildir.">Uzun süre bekleme</button>
+                      <button type="button" class="chip" data-template="Bu bölgeden geçen kişileri giriş ve çıkış yönüne göre say.">Giriş-çıkış sayımı</button>
+                    </div>
+                  </div>
+                  <p class="hint" id="zone-change-hint" hidden>Sistem bu bölgeyi boş hâliyle hatırlar ve önüne bir şey konduğunda uyarır. Kuralı kaydettikten sonra <strong>Canlı İzleme</strong>’de kameranın üzerindeki <strong>Referans al</strong> düğmesine bir kez basmanız yeterlidir.</p>
+                </fieldset>
+
+                <div class="form-actions">
+                  <button type="button" class="btn" data-action="close-editor">Vazgeç</button>
+                  <button type="submit" class="btn btn-primary" id="rule-save">Kaydet</button>
                 </div>
-
-                <!-- Çizim Araçları Çubuğu -->
-                <div class="canvas-toolbar">
-                  <div class="canvas-tools-left">
-                    <button class="btn-tool" id="btn-canvas-undo" type="button" title="Son noktayı veya son bölgeyi geri al">
-                      ↩️ Geri Al
-                    </button>
-                    <button class="btn-tool" id="btn-canvas-clear" type="button" title="Tüm çizimleri sıfırla">
-                      🧹 Tümünü Temizle
-                    </button>
-                    <button class="btn-tool" id="btn-canvas-close" type="button" title="Aktif çizimi kapatıp bölgeyi tamamla">
-                      ✓ Bölgeyi Kapat
-                    </button>
-                    <button class="btn-tool" id="btn-canvas-new-poly" type="button" title="Yeni bir poligon bölgesi çizmeye başla">
-                      ➕ Yeni Bölge Ekle
-                    </button>
-                  </div>
-                  <div class="canvas-hud-coordinates" id="canvas-coord-hud">
-                    0 Bölge | 0 Nokta
-                  </div>
-                </div>
-
-                <!-- Çizilen Çoklu Bölgeler Çubuğu -->
-                <div class="zones-bar" id="zones-chip-bar" style="display: none;">
-                  <span class="zones-bar-label">Tanımlı Bölgeler:</span>
-                  <div class="zones-chip-list" id="zones-chip-list"></div>
-                </div>
-
-                <!-- Canvas Görüntüleme Alanı -->
-                <div class="canvas-viewport-wrapper" id="canvas-viewport-wrapper">
-                  <!-- Kamera Arka Plan Görseli -->
-                  <img id="canvas-camera-bg" class="canvas-bg-image" src="" alt="Kamera Önizleme">
-                  
-                  <!-- Sistem Geneli Grid (System-Wise Seçildiğinde Gösterilir) -->
-                  <div id="canvas-system-grid" class="canvas-system-grid" style="display: none;">
-                    <div class="system-grid-hud">
-                      🌐 SİSTEM GENELİ KOORDİNAT DÜZLEMİ
-                      <div style="font-size: 0.76rem; color: var(--text-dim); margin-top: 4px;">
-                        Tüm kameralara ve sisteme uygulanacak global kurallar
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Etkileşimli Çizim Katmanı -->
-                  <canvas id="polygon-drawing-canvas"></canvas>
-
-                  <!-- Canvas Durum HUD -->
-                  <div class="canvas-hud-status" id="canvas-status-hud">
-                    Nokta Eklemek İçin Tıklayın
-                  </div>
-                </div>
-
-                <div class="canvas-footer-hint">
-                  <span>💡 <strong>Çizim İpucu:</strong> Tıklayarak poligonun köşe noktalarını belirleyin. Başlangıç noktasına tıklayarak veya 'Bölgeyi Kapat' ile tamamlayın. 'Yeni Bölge Ekle' butonuyla tek bir kural için dilediğiniz kadar bağımsız poligon çizebilirsiniz.</span>
-                </div>
-              </div>
-
-              <!-- Sağ: Kural Formülasyon Kartı -->
-              <div class="rule-form-card">
-                <div class="form-card-title">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                  Yapay Zeka Görev & Kural Tanımlama
-                </div>
-
-                <form id="create-rule-form">
-                  <!-- Kural Grubu / Kamera Kural Başlığı -->
-                  <div class="form-group">
-                    <label for="rule-title-input">Görev / Kural Grubu Başlığı *</label>
-                    <input type="text" id="rule-title-input" class="form-control" placeholder="Örn: Ana Giriş Kapısı Sayım & Güvenlik Analizi" required>
-                    <span style="font-size: 0.74rem; color: var(--text-dim); display: block; margin-top: 4px;">
-                      Kamera veya sistem genelindeki tüm analizleri kapsayan ana başlık.
-                    </span>
-                  </div>
-
-                  <!-- Dinamik Bölgeye Özel Kural Editörü -->
-                  <div class="zone-editor-container" id="zone-editor-container">
-                    <div class="zone-editor-header">
-                      <div class="zone-editor-badge" id="active-zone-badge">
-                        <span class="active-zone-dot" id="active-zone-dot"></span>
-                        <span id="active-zone-title-text">Bölge 1 Düzenleniyor</span>
-                      </div>
-                      <div class="zone-editor-tabs" id="zone-editor-tabs">
-                        <!-- js/rules.js tarafından dinamik render edilir -->
-                      </div>
-                    </div>
-
-                    <!-- 1. Analiz & Görev Türü Seçimi (Sayım vs İhlal) -->
-                    <div class="form-group" style="margin-top: 12px; margin-bottom: 10px;">
-                      <label style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Analiz Türü (Görev Amacı) *</span>
-                        <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: normal;">İş Zekası mı, İhlal Alarmı mı?</span>
-                      </label>
-                      <div class="task-type-segmented-control" id="task-type-control">
-                        <button type="button" class="task-type-btn active" data-task-type="counting" id="task-type-btn-counting">
-                          <span class="type-icon">📊</span>
-                          <div class="type-info">
-                            <span class="type-name">Sayım & İş Zekası (İhlal Yok)</span>
-                            <span class="type-hint">Kişi, turnike, araç sayımı & yoğunluk takibi</span>
-                          </div>
-                        </button>
-                        <button type="button" class="task-type-btn" data-task-type="security" id="task-type-btn-security">
-                          <span class="type-icon">🚨</span>
-                          <div class="type-info">
-                            <span class="type-name">Güvenlik & Kural İhlali</span>
-                            <span class="type-hint">Yasak bölge, İSG baret/yelek, ters yön & siren</span>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Dinamik Açıklama Bilgi Kutusu -->
-                    <div class="task-mode-explanation-box counting" id="task-mode-explanation-box">
-                      <span class="mode-box-icon">💡</span>
-                      <div class="mode-box-text" id="task-mode-explanation-text">
-                        <strong>Sayım & İstatistik Modu:</strong> "Bu kapıdan giriş çıkış yapanları say" gibi durumlar bir <u>kural ihlali değildir</u>. İnsanların kapıdan geçişi normal bir akıştır; sistem her geçişte canlı sayacı artırır (+1 Giriş / +1 Çıkış) ve istatistik tablosuna kaydeder. Siren çalmaz.
-                      </div>
-                    </div>
-
-                    <!-- Seçili Bölge Adı -->
-                    <div class="form-group" style="margin-bottom: 12px;">
-                      <label for="zone-name-input">Seçili Bölgenin Adı *</label>
-                      <input type="text" id="zone-name-input" class="form-control" placeholder="Örn: Ana Giriş Kapısı, Turnike Hattı, Forklift Koridoru">
-                    </div>
-
-                    <!-- Bu Bölgeye Özel Kural Açıklaması & AI Yönergesi -->
-                    <div class="form-group prompt-box-wrapper" style="margin-bottom: 12px;">
-                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <label for="zone-description-prompt" style="margin-bottom: 0;">
-                          Bölge Amacı & AI Analiz Yönergesi (Prompt) *
-                        </label>
-                        <span class="zone-hint-badge" id="zone-points-count-badge">0 Nokta</span>
-                      </div>
-                      <textarea id="zone-description-prompt" class="prompt-textarea" placeholder="Bu bölgede ne yapılmasını istiyorsunuz? İster sayım yapın ('Bu kapıdan giriş çıkış yapanları say'), ister güvenlik kuralı girin ('Bu alana yetkisiz araç girdiğinde alarm üret')..." rows="3"></textarea>
-                      
-                      <!-- Hızlı Şablon Etiketleri (Gruplanmış) -->
-                      <div class="prompt-chips-label">Hızlı Analiz Şablonları (Tek Tıkla Seç):</div>
-                      <div class="prompt-chips-group" style="margin-bottom: 6px;">
-                        <span class="chips-category-tag">📊 Sayım:</span>
-                        <button type="button" class="chip-btn chip-counting" data-prompt="Bu belirlenen kapı/hattan geçen insanları giriş ve çıkış yönüne göre say.">🔢 Giriş-Çıkış Sayımı</button>
-                        <button type="button" class="chip-btn chip-counting" data-prompt="Bu alan içindeki anlık insan sayısını tespit et ve doluluk yoğunluğunu izle.">👥 Kişi & Yoğunluk Sayımı</button>
-                        <button type="button" class="chip-btn chip-counting" data-prompt="Bu noktadan geçen araçları tespit et ve giriş/çıkış yapan araç sayısını hesapla.">🚗 Araç Sayımı</button>
-                      </div>
-                      <div class="prompt-chips-group">
-                        <span class="chips-category-tag">🚨 İhlal:</span>
-                        <button type="button" class="chip-btn chip-security" data-prompt="Bu bölgeye yetkisiz şahıs veya yabancı araç girdiğinde alarm üret.">🚫 Yetkisiz Giriş İhlali</button>
-                        <button type="button" class="chip-btn chip-security" data-prompt="Personeller bu belirlenen güvenli alanın dışına çıktığında derhal uyarı ver.">⚠️ Alan Dışına Çıkma</button>
-                        <button type="button" class="chip-btn chip-security" data-prompt="Bu alan içinde kask veya reflektörlü iş yeleği takmayanları tespit edip bildir.">🦺 Baret & Yelek İSG</button>
-                        <button type="button" class="chip-btn chip-security" data-prompt="Belirlenen bu hat üzerinden ters istikamette geçen hareketleri tespit et.">↩️ Ters Yön İhlali</button>
-                        <button type="button" class="chip-btn chip-security" data-prompt="Bu alanda 30 saniyeden uzun süre sahipsiz bırakılan şüpheli paket/eşyaları bildir.">📦 Sahipsiz Eşya</button>
-                        <button type="button" class="chip-btn chip-security" data-prompt="Bu alanda hareketsiz yatan veya bayılan kişi tespit edildiğinde acil durum bildir.">🚑 Düşme / Hareketsizlik</button>
-                      </div>
-                    </div>
-
-                    <!-- Bölge Öncelik / Önem Seviyesi -->
-                    <div class="form-group" style="margin-bottom: 0;">
-                      <label id="severity-selector-label">Görev Öncelik & Analiz Sınıfı</label>
-                      <div class="severity-selector">
-                        <div class="severity-pill info active" data-severity="info" title="Kişi/araç sayımı, istatistik ve genel operasyonel bilgi">📊 Sayım & İstatistik (İhlal Yok)</div>
-                        <div class="severity-pill warning" data-severity="warning" title="İSG veya prosedür ihlali durumları">⚠️ Uyarı / İSG İhlali</div>
-                        <div class="severity-pill critical" data-severity="critical" title="Acil müdahale gerektiren yüksek güvenlik tehditleri">🚨 Kritik Güvenlik Tehdidi</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Tanımlı Tüm Bölgelerin Canlı Listesi & Özeti -->
-                  <div class="configured-zones-summary" id="configured-zones-summary" style="display: none;">
-                    <div class="configured-zones-title">
-                      <span>Tanımlı Bölgeler & Özel Kuralları (<span id="zones-total-count">0</span>)</span>
-                    </div>
-                    <div class="configured-zones-list" id="configured-zones-list">
-                      <!-- js/rules.js tarafından dinamik render edilir -->
-                    </div>
-                  </div>
-
-                  <!-- Tetikleme Eylemleri -->
-                  <div class="form-group" style="margin-top: 14px;">
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-                      <label style="margin-bottom: 0;">Tetikleme, Bildirim & Raporlama Eylemleri</label>
-                      <span style="font-size: 0.72rem; color: var(--text-dim);">Görevin türüne göre yürütülecek aksiyonlar</span>
-                    </div>
-                    <div class="actions-checklist">
-                      <!-- Sayım / İstatistik Aksiyonu -->
-                      <label class="action-checkbox-item" id="action-count-stats-wrapper">
-                        <input type="checkbox" id="action-count-stats" checked>
-                        <span class="action-text">
-                          <strong>📊 Kişi / Araç Sayacına Ekle (+1 Sayım İstatistiği)</strong>
-                          <small style="display: block; color: var(--text-dim); font-size: 0.72rem;">Sayım analizlerinde canlı panel sayacını günceller (+1 In / +1 Out) ve istatistik grafiğine işler.</small>
-                        </span>
-                      </label>
-
-                      <!-- Alarm Aksiyonu -->
-                      <label class="action-checkbox-item" id="action-alert-screen-wrapper">
-                        <input type="checkbox" id="action-alert-screen">
-                        <span class="action-text">
-                          <strong id="action-alert-title">🚨 Sesli & Görsel Alarm Uyarısı Göster</strong>
-                          <small style="display: block; color: var(--text-dim); font-size: 0.72rem;" id="action-alert-hint">Güvenlik ihlali tespit edildiğinde ekranda kırmızı uyarı penceresi açar ve siren çalar (Sayım görevlerinde pasiftir).</small>
-                        </span>
-                      </label>
-
-                      <!-- Snapshot Aksiyonu -->
-                      <label class="action-checkbox-item">
-                        <input type="checkbox" id="action-snapshot" checked>
-                        <span class="action-text">
-                          <strong>📸 Olay / Geçiş Anında Otomatik Snapshot Yakala</strong>
-                          <small style="display: block; color: var(--text-dim); font-size: 0.72rem;">Tespit edilen anın yüksek çözünürlüklü karesini yakalayıp günlüğe ekler.</small>
-                        </span>
-                      </label>
-
-                      <!-- NVR Bookmark Aksiyonu -->
-                      <label class="action-checkbox-item">
-                        <input type="checkbox" id="action-nvr-bookmark">
-                        <span class="action-text">
-                          <strong>🔖 NVR Video Akışında Olay / Geçiş Zamanını İşaretle (Bookmark)</strong>
-                          <small style="display: block; color: var(--text-dim); font-size: 0.72rem;">Geçmişe dönük izlemede kolay bulmak için video zaman çizgisine etiket koyar.</small>
-                        </span>
-                      </label>
-                    </div>
-                  <!-- İhlal Sorumlusu & Eskalasyon Matrisi -->
-                  <div class="form-group" style="margin-top: 14px;">
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-                      <label style="margin-bottom: 0;">👤 İhlal Sorumlusu & Eskalasyon Matrisi</label>
-                      <span style="font-size: 0.72rem; color: var(--text-dim);">İhlal kime bildirilecek ve kime eskalasyon edilecek?</span>
-                    </div>
-                    
-                    <div class="assignee-escalation-grid">
-                      <!-- 1. Derece Bildirim (Saha Şefi / Güvenlik) -->
-                      <div class="assignee-card primary">
-                        <span class="assignee-badge">1. Derece Bildirim (Saha Sorumlusu)</span>
-                        <div class="form-group-compact">
-                          <label>Sorumlu Adı Soyadı:</label>
-                          <input type="text" id="rule-assignee-name" class="form-control-compact" value="Ahmet Yılmaz" placeholder="Örn: Ahmet Yılmaz">
-                        </div>
-                        <div class="form-group-compact">
-                          <label>Görevi / Dahili Tel:</label>
-                          <input type="text" id="rule-assignee-role" class="form-control-compact" value="Saha Şefi (Dahili 104)" placeholder="Örn: Saha Şefi (+90 532 ...)">
-                        </div>
-                      </div>
-
-                      <!-- 2. Derece Eskalasyon (İSG Müdürü / Amir) -->
-                      <div class="assignee-card escalation">
-                        <span class="assignee-badge escalation">2. Derece Eskalasyon (Amir)</span>
-                        <div class="form-group-compact">
-                          <label>Eskalasyon Yetkilisi:</label>
-                          <input type="text" id="rule-escalation-name" class="form-control-compact" value="Mehmet Kaya (İSG Müdürü)" placeholder="Örn: İSG Müdürü">
-                        </div>
-                        <div class="form-group-compact">
-                          <label>Süre Aşımı Limiti:</label>
-                          <select id="rule-escalation-timeout" class="form-control-compact">
-                            <option value="3">3 Dakika İçinde Çözülmezse</option>
-                            <option value="5" selected>5 Dakika İçinde Çözülmezse</option>
-                            <option value="10">10 Dakika İçinde Çözülmezse</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button type="submit" class="btn-primary" id="btn-save-rule" style="width: 100%; justify-content: center; margin-top: 10px; padding: 12px;">
-                    💾 Tanımlanan Görev ve Kuralları Kaydet
-                  </button>
-                </form>
-
-              </div>
-
+              </form>
             </div>
-
-            <!-- Alt: Tanımlı Kurallar Listesi -->
-            <div class="rules-list-section">
-              <div class="rules-list-header">
-                <h3>Sistemde Kayıtlı Kurallar & Bölgeler</h3>
-                <span class="coming-soon-badge" id="rules-count-badge" style="background: rgba(255, 133, 51, 0.15);">0 Kural</span>
-              </div>
-              <div style="overflow-x: auto;">
-                <table class="rules-table">
-                  <thead>
-                    <tr>
-                      <th>Alan / Kural Adı</th>
-                      <th>Kapsam</th>
-                      <th>Öncelik</th>
-                      <th>Kural Açıklaması</th>
-                      <th>Tanımlı Alan</th>
-                      <th>Durum</th>
-                      <th>İşlemler</th>
-                    </tr>
-                  </thead>
-                  <tbody id="rules-table-tbody">
-                    <!-- js/rules.js tarafından dinamik render edilir -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
           </div>
-        </div>
+        </section>
 
-        <!-- ================================================================
-             3. GÖRÜNÜM: CANLI İZLEME (LIVE VIDEO WALL)
-             ================================================================ -->
-        <div id="view-live" class="view-content-section" style="display: none;">
-          <div class="live-toolbar-strip">
-            <div class="live-toolbar-left">
-              <span class="live-layout-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Izgara Görünümü:</span>
-              <div class="live-layout-selector">
-                <button type="button" class="btn-layout-mode" id="btn-layout-1x1">1x1 Tekli</button>
-                <button type="button" class="btn-layout-mode" id="btn-layout-2x2">2x2 Dörtlü</button>
-                <button type="button" class="btn-layout-mode active" id="btn-layout-3x2">3x2 Çoklu</button>
+        <!-- ============================== Kameralar ============================== -->
+        <section id="view-cameras" class="view" hidden>
+          <div class="toolbar">
+            <button type="button" class="btn btn-primary" id="cameras-scan"><svg class="icon"><use href="#i-search"/></svg> Ağda kamera ara</button>
+            <button type="button" class="btn" id="cameras-add"><svg class="icon"><use href="#i-plus"/></svg> Elle ekle</button>
+            <p class="summary-line" id="cameras-summary"></p>
+            <span class="toolbar-spacer"></span>
+            <div class="segmented" id="cameras-layout" role="group" aria-label="Görünüm">
+              <button type="button" data-mode="grid" title="Kart görünümü" aria-label="Kart görünümü"><svg class="icon"><use href="#i-live"/></svg></button>
+              <button type="button" data-mode="list" title="Liste görünümü" aria-label="Liste görünümü"><svg class="icon"><use href="#i-list"/></svg></button>
+            </div>
+          </div>
+          <div id="cameras-list" class="camera-grid"></div>
+        </section>
+
+        <!-- =============================== Ayarlar =============================== -->
+        <section id="view-settings" class="view" hidden>
+          <form class="settings" id="settings-form" novalidate>
+
+            <div class="card settings-card">
+              <h2 class="card-title">Algılama</h2>
+              <label class="switch-row">
+                <span><span class="switch-title">Olağandışı hareketleri algıla</span>
+                  <span class="hint">Kavga, panik gibi olağandışı hareketleri kendiliğinden yakalar. Kapatırsanız yalnızca tanımladığınız kurallar çalışır.</span></span>
+                <input type="checkbox" class="switch" data-setting="anomaly.continuous_pipeline">
+              </label>
+              <div class="field">
+                <label for="set-threshold-normal">Uyarı seviyesi <output data-output="anomaly.threshold_normal" data-unit="%"></output></label>
+                <input type="range" id="set-threshold-normal" data-setting="anomaly.threshold_normal" min="5" max="45" step="1">
+                <span class="hint">Hareket bu seviyeyi geçince olay <strong>Uyarı</strong> olarak kaydedilir. Düşürürseniz sistem daha hassas olur.</span>
               </div>
-              <span class="coming-soon-badge" id="live-stream-count-badge" style="background: rgba(16, 185, 129, 0.15); color: #34D399; border-color: rgba(16, 185, 129, 0.3);">
-                5 Kamera Canlı
-              </span>
+              <div class="field">
+                <label for="set-threshold-warning">Kritik seviyesi <output data-output="anomaly.threshold_warning" data-unit="%"></output></label>
+                <input type="range" id="set-threshold-warning" data-setting="anomaly.threshold_warning" min="30" max="80" step="1">
+                <span class="hint">Hareket bu seviyeyi geçince olay <strong>Kritik</strong> sayılır.</span>
+                <div class="threshold-scale" id="threshold-scale" aria-hidden="true">
+                  <span class="is-ok">Normal</span><span class="is-warn">Uyarı</span><span class="is-danger">Kritik</span>
+                </div>
+              </div>
             </div>
 
-            <div class="live-toolbar-right">
-              <label class="action-checkbox-item" style="padding: 0; background: none; border: none;">
-                <input type="checkbox" id="toggle-live-zones" checked>
-                <span style="font-size: 0.8rem; color: var(--text-main); font-weight: 500;">Bölge Poligonlarını Canlı Göster</span>
+            <div class="card settings-card">
+              <h2 class="card-title">Canlı izleme</h2>
+              <div class="field">
+                <label for="set-default-layout">Açılış düzeni</label>
+                <select class="select" id="set-default-layout" data-setting="live_wall.default_layout">
+                  <option value="grid-1x1">Tek kamera</option>
+                  <option value="grid-2x2">4 kamera (2×2)</option>
+                  <option value="grid-3x2">6 kamera (3×2)</option>
+                  <option value="grid-4x3">12 kamera (4×3)</option>
+                </select>
+              </div>
+              <label class="switch-row">
+                <span><span class="switch-title">Alarmda çerçeveyi vurgula</span>
+                  <span class="hint">Alarm veren kameranın çerçevesi renkli yanıp söner.</span></span>
+                <input type="checkbox" class="switch" data-setting="live_wall.alarm_borders">
+              </label>
+              <label class="switch-row">
+                <span><span class="switch-title">Durum etiketini göster</span>
+                  <span class="hint">Uyarı veya alarm sırasında görüntünün köşesinde nedeni yazar.</span></span>
+                <input type="checkbox" class="switch" data-setting="live_wall.hud_badges">
+              </label>
+              <label class="switch-row">
+                <span><span class="switch-title">Tıklayınca kamerayı büyüt</span></span>
+                <input type="checkbox" class="switch" data-setting="live_wall.click_to_focus">
+              </label>
+              <label class="switch-row">
+                <span><span class="switch-title">Tam akıcılıkta yayın</span>
+                  <span class="hint">Kapatırsanız görüntü saniyede 8 kareye iner; yavaş bağlantılarda işe yarar.</span></span>
+                <input type="checkbox" class="switch" data-setting="live_wall.zero_latency_mode">
               </label>
             </div>
-          </div>
 
-          <!-- Video Grid Container -->
-          <div id="live-grid-container" class="live-video-grid grid-3x2">
-            <!-- js/live.js dinamik dolduracak -->
-          </div>
-        </div>
-
-        <!-- ================================================================
-             4. GÖRÜNÜM: İHLAL & ANOMALİ İZLEME (INCIDENT & ESCALATION CENTER)
-             ================================================================ -->
-        <div id="view-events" class="view-content-section" style="display: none;">
-          
-          <!-- Metrik Özet Kartları -->
-          <div class="events-metrics-strip">
-            <div class="events-metric-card">
-              <div class="metric-icon-box warning">⚠️</div>
-              <div class="metric-data">
-                <span class="metric-value" id="metric-active-count">0</span>
-                <span class="metric-label">Aktif İhlaller</span>
+            <div class="card settings-card">
+              <h2 class="card-title">Kayıt</h2>
+              <label class="switch-row">
+                <span><span class="switch-title">Olayları video olarak kaydet</span>
+                  <span class="hint">Her olay, başından sonuna tek bir video olarak saklanır.</span></span>
+                <input type="checkbox" class="switch" data-setting="recording.auto_record_clips">
+              </label>
+              <div class="field">
+                <label for="set-padding">Olay öncesi ve sonrası <output data-output="recording.padding_sec" data-unit=" sn"></output></label>
+                <input type="range" id="set-padding" data-setting="recording.padding_sec" min="0.5" max="5" step="0.5">
+                <span class="hint">Videoya olayın başından önce ve bitişinden sonra eklenen süre.</span>
+              </div>
+              <div class="field">
+                <label for="set-max-duration">En uzun video <output data-output="recording.max_clip_duration_sec" data-unit=" sn"></output></label>
+                <input type="range" id="set-max-duration" data-setting="recording.max_clip_duration_sec" min="15" max="180" step="15">
+              </div>
+              <div class="field">
+                <label for="set-max-storage">Kayıtlar için ayrılan alan <output data-output="recording.max_storage_mb" data-unit=" MB"></output></label>
+                <input type="range" id="set-max-storage" data-setting="recording.max_storage_mb" min="100" max="5000" step="100">
+                <span class="hint">Alan dolunca en eski videolar kendiliğinden silinir.</span>
+              </div>
+              <div class="storage">
+                <div class="storage-head"><span>Kullanılan alan</span><strong id="storage-percent">—</strong></div>
+                <div class="progress"><div class="progress-fill" id="storage-fill"></div></div>
+                <p class="hint" id="storage-text">Yükleniyor…</p>
+                <div class="storage-orphans" id="storage-orphans" hidden>
+                  <p class="hint" id="storage-orphans-text"></p>
+                  <button type="button" class="btn btn-sm" id="storage-clean">Temizle</button>
+                </div>
               </div>
             </div>
 
-            <div class="events-metric-card">
-              <div class="metric-icon-box escalated">⏳</div>
-              <div class="metric-data">
-                <span class="metric-value" id="metric-escalated-count">0</span>
-                <span class="metric-label">Amire Eskalasyonda</span>
+            <details class="card settings-card settings-advanced">
+              <summary class="card-title">Gelişmiş</summary>
+              <p class="hint">Bu bölümü yalnızca kurulumu yapan kişinin değiştirmesi önerilir.</p>
+              <div class="field">
+                <label for="set-triton-url">Analiz sunucusu adresi</label>
+                <input class="input" type="text" id="set-triton-url" data-setting="anomaly.triton_url" placeholder="localhost:8000" spellcheck="false">
               </div>
-            </div>
-
-            <div class="events-metric-card">
-              <div class="metric-icon-box resolved">✅</div>
-              <div class="metric-data">
-                <span class="metric-value" id="metric-resolved-count">0</span>
-                <span class="metric-label">Çözülen İhlaller</span>
+              <div class="field">
+                <label for="set-model-name">Analiz modeli</label>
+                <input class="input" type="text" id="set-model-name" data-setting="anomaly.model_name" spellcheck="false">
               </div>
-            </div>
-
-            <div class="events-metric-card">
-              <div class="metric-icon-box critical">📋</div>
-              <div class="metric-data">
-                <span class="metric-value" id="metric-total-count">0</span>
-                <span class="metric-label">Toplam Olay Kaydı</span>
+              <div class="field">
+                <label for="set-batch">Aynı anda analiz edilen kamera <output data-output="anomaly.batch_size"></output></label>
+                <input type="range" id="set-batch" data-setting="anomaly.batch_size" min="1" max="8" step="1">
               </div>
+              <div class="field">
+                <label for="set-tolerance">Olay birleştirme süresi <output data-output="recording.tolerance_sec" data-unit=" sn"></output></label>
+                <input type="range" id="set-tolerance" data-setting="recording.tolerance_sec" min="0.5" max="5" step="0.5">
+                <span class="hint">Bu süreden kısa aralıklarla gelen alarmlar tek olay sayılır.</span>
+              </div>
+              <div class="field">
+                <label for="set-max-clips">En fazla video sayısı <output data-output="recording.max_stored_clips"></output></label>
+                <input type="range" id="set-max-clips" data-setting="recording.max_stored_clips" min="10" max="1000" step="10">
+              </div>
+              <h3 class="section-title">Sistem durumu</h3>
+              <dl class="info-list" id="system-info"></dl>
+              <button type="button" class="btn" id="settings-reset">Varsayılan ayarlara dön</button>
+            </details>
+
+            <div class="save-bar" id="settings-save-bar" hidden>
+              <span>Kaydedilmemiş değişiklikler var.</span>
+              <button type="button" class="btn" id="settings-discard">Vazgeç</button>
+              <button type="submit" class="btn btn-primary" id="settings-save">Kaydet</button>
             </div>
-          </div>
+          </form>
+        </section>
 
-          <!-- Filtre ve Simülasyon Çubuğu -->
-          <div class="events-filter-bar">
-            <div class="events-tab-buttons">
-              <button type="button" class="btn-event-tab active" id="btn-events-all">Tüm Olaylar</button>
-              <button type="button" class="btn-event-tab" id="btn-events-active">🚨 Aktif İhlaller</button>
-              <button type="button" class="btn-event-tab" id="btn-events-resolved">✅ Çözülenler</button>
-            </div>
-
-            <div>
-              <button type="button" class="btn-secondary" id="btn-simulate-incident" style="border-color: rgba(255, 133, 51, 0.4); color: var(--primary-light);">
-                ⚡ Yeni İhlal Simülasyonu
-              </button>
-            </div>
-          </div>
-
-          <!-- Olay Kartları Grid -->
-          <div id="events-grid-container" class="events-cards-grid">
-            <!-- js/events.js dinamik dolduracak -->
-          </div>
-
-        </div>
-
-      </section>
+      </div>
     </main>
-
   </div>
 
+  <!-- ============================== Pencereler ============================== -->
 
-  <!-- ====================================================================
-       Modal: ONVIF Radar Tarama (WS-Discovery)
-       ==================================================================== -->
-  <div class="modal-overlay" id="modal-radar-scan">
+  <div class="modal" id="modal-scan" role="dialog" aria-modal="true" aria-labelledby="modal-scan-title">
     <div class="modal-dialog">
-      <div class="modal-header">
-        <h3>ONVIF WS-Discovery Ağ Radar Taraması</h3>
-        <button class="modal-close-btn" data-close-modal="modal-radar-scan">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
+      <header class="modal-header">
+        <h2 id="modal-scan-title">Ağda kamera ara</h2>
+        <button type="button" class="btn-icon" data-close aria-label="Kapat"><svg class="icon"><use href="#i-close"/></svg></button>
+      </header>
       <div class="modal-body">
-        <div class="radar-scanner-box">
-          <div class="radar-sweep-circle">
-            <div class="radar-ping-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"></path><circle cx="12" cy="12" r="2"></circle></svg>
-            </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="scan-username">Kamera kullanıcı adı</label>
+            <input class="input" type="text" id="scan-username" value="admin" autocomplete="off">
           </div>
-          <div class="radar-status-text">
-            <h4 id="radar-status-title">Ağ Taranıyor...</h4>
-            <p id="radar-status-desc">Aktif ağ arayüzlerine UDP multicast probe paketleri iletiliyor...</p>
+          <div class="field">
+            <label for="scan-password">Kamera şifresi</label>
+            <input class="input" type="password" id="scan-password" autocomplete="off">
           </div>
         </div>
-
-        <!-- Keşfedilen Kameralar -->
-        <div class="discovered-cameras-list" id="discovered-cameras-container">
-          <!-- js/home.js dinamik dolduracak -->
-        </div>
-
-        <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
-          <button class="btn-secondary" data-close-modal="modal-radar-scan">Kapat</button>
-        </div>
+        <p class="hint">Bulunan kameralar bu bilgilerle eklenir. Şifresi farklı olan kamerayı “Elle ekle” ile ekleyebilirsiniz.</p>
+        <div class="scan-status" id="scan-status"></div>
+        <div class="scan-results" id="scan-results"></div>
       </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn" id="scan-again"><svg class="icon"><use href="#i-refresh"/></svg> Yeniden ara</button>
+        <span class="toolbar-spacer"></span>
+        <button type="button" class="btn" data-close>Kapat</button>
+      </footer>
     </div>
   </div>
 
+  <div class="modal" id="modal-camera-add" role="dialog" aria-modal="true" aria-labelledby="modal-camera-add-title">
+    <form class="modal-dialog" id="camera-add-form" novalidate>
+      <header class="modal-header">
+        <h2 id="modal-camera-add-title">Kamera ekle</h2>
+        <button type="button" class="btn-icon" data-close aria-label="Kapat"><svg class="icon"><use href="#i-close"/></svg></button>
+      </header>
+      <div class="modal-body">
+        <div class="field">
+          <label for="add-ip">Kameranın IP adresi</label>
+          <input class="input" type="text" id="add-ip" placeholder="192.168.1.150" inputmode="decimal" autocomplete="off">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="add-username">Kullanıcı adı</label>
+            <input class="input" type="text" id="add-username" value="admin" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="add-password">Şifre</label>
+            <input class="input" type="password" id="add-password" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <label for="add-name">Kamera adı <span class="optional">(isteğe bağlı)</span></label>
+          <input class="input" type="text" id="add-name" placeholder="Örn. Kuzey giriş kapısı" maxlength="60">
+        </div>
+        <details class="advanced">
+          <summary>Bağlantı ayarları</summary>
+          <div class="field-row">
+            <div class="field">
+              <label for="add-port">Bağlantı portu (ONVIF)</label>
+              <input class="input" type="number" id="add-port" value="80" min="1" max="65535">
+            </div>
+            <div class="field">
+              <label for="add-rtsp-port">Görüntü portu (RTSP)</label>
+              <input class="input" type="number" id="add-rtsp-port" value="554" min="1" max="65535">
+            </div>
+          </div>
+          <p class="hint">Çoğu kamerada bu değerleri değiştirmeniz gerekmez.</p>
+        </details>
+      </div>
+      <footer class="modal-footer">
+        <span class="toolbar-spacer"></span>
+        <button type="button" class="btn" data-close>Vazgeç</button>
+        <button type="submit" class="btn btn-primary" id="add-submit">Ekle</button>
+      </footer>
+    </form>
+  </div>
 
-  <!-- ====================================================================
-       Modal: Manuel Kamera Ekle
-       ==================================================================== -->
-  <div class="modal-overlay" id="modal-manual-add">
+  <div class="modal" id="modal-camera-edit" role="dialog" aria-modal="true" aria-labelledby="modal-camera-edit-title">
+    <form class="modal-dialog modal-lg" id="camera-edit-form" novalidate>
+      <header class="modal-header">
+        <h2 id="modal-camera-edit-title">Kamerayı düzenle</h2>
+        <button type="button" class="btn-icon" data-close aria-label="Kapat"><svg class="icon"><use href="#i-close"/></svg></button>
+      </header>
+      <div class="modal-body camera-edit">
+        <div class="video-frame">
+          <img id="edit-preview" alt="Canlı görüntü">
+          <span class="video-tag" id="edit-preview-tag"></span>
+        </div>
+        <div class="camera-edit-fields">
+          <div class="field">
+            <label for="edit-name">Kamera adı</label>
+            <input class="input" type="text" id="edit-name" maxlength="60">
+          </div>
+          <div class="field">
+            <label for="edit-description">Bu kamera neyi görüyor? <span class="optional">(isteğe bağlı)</span></label>
+            <textarea class="textarea" id="edit-description" rows="4" placeholder="Örn. Ana giriş turnikeleri ve ziyaretçi bekleme alanı. Mesai dışında kimse olmamalı."></textarea>
+            <span class="hint">Bu açıklama, olay özetlerinin daha isabetli yazılmasına yardımcı olur.</span>
+            <div class="chip-row" id="edit-templates">
+              <button type="button" class="chip" data-template="Ana bina giriş kapısı ve turnike alanı. Mesai dışında insan hareketi olmamalı.">Giriş kapısı</button>
+              <button type="button" class="chip" data-template="Otopark giriş ve çıkış yolu. Ters yönde giden veya yetkisiz araçlar izlenir.">Otopark</button>
+              <button type="button" class="chip" data-template="Depo ve yükleme alanı. Baret ve yelek zorunludur.">Depo</button>
+              <button type="button" class="chip" data-template="Koridor ve acil çıkış kapısı. Çıkışın önü her zaman boş olmalı.">Acil çıkış</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <span class="toolbar-spacer"></span>
+        <button type="button" class="btn" data-close>Vazgeç</button>
+        <button type="submit" class="btn btn-primary" id="edit-submit">Kaydet</button>
+      </footer>
+    </form>
+  </div>
+
+  <div class="modal" id="modal-camera-info" role="dialog" aria-modal="true" aria-labelledby="modal-camera-info-title">
     <div class="modal-dialog">
-      <div class="modal-header">
-        <h3>Manuel IP ile Kamera Ekle</h3>
-        <button class="modal-close-btn" data-close-modal="modal-manual-add">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
+      <header class="modal-header">
+        <h2 id="modal-camera-info-title">Kamera bilgileri</h2>
+        <button type="button" class="btn-icon" data-close aria-label="Kapat"><svg class="icon"><use href="#i-close"/></svg></button>
+      </header>
       <div class="modal-body">
-        <form id="manual-add-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="manual-ip">Kamera IP Adresi *</label>
-              <input type="text" id="manual-ip" class="form-control" placeholder="192.168.1.150" required>
-              <div class="form-hint">Fiziksel kameranın yerel ağdaki IPv4 adresi</div>
-            </div>
-            <div class="form-group">
-              <label for="manual-port">ONVIF Servis Portu *</label>
-              <input type="number" id="manual-port" class="form-control" value="80" required>
-              <div class="form-hint">Genellikle 80, 8080, 8891-8899 veya 5000</div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="manual-username">Kullanıcı Adı</label>
-              <input type="text" id="manual-username" class="form-control" value="admin" placeholder="admin">
-            </div>
-            <div class="form-group">
-              <label for="manual-password">Şifre</label>
-              <input type="password" id="manual-password" class="form-control" value="admin123" placeholder="admin123">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="manual-rtsp-port">RTSP Portu</label>
-              <input type="number" id="manual-rtsp-port" class="form-control" value="554">
-            </div>
-            <div class="form-group">
-              <label for="manual-name">Özel Kamera Adı</label>
-              <input type="text" id="manual-name" class="form-control" placeholder="Örn: Kuzey Giriş Kapısı">
-            </div>
-          </div>
-
-          <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
-            <button type="button" class="btn-secondary" data-close-modal="modal-manual-add">İptal</button>
-            <button type="submit" class="btn-primary" id="btn-manual-submit">
-              Bağlantıyı Doğrula & Sisteme Ekle
-            </button>
-          </div>
-        </form>
+        <dl class="info-list" id="camera-info"></dl>
       </div>
+      <footer class="modal-footer">
+        <span class="toolbar-spacer"></span>
+        <button type="button" class="btn" data-close>Kapat</button>
+      </footer>
     </div>
   </div>
 
-
-  <!-- ====================================================================
-       Modal: Cihaz Donanım Detayları
-       ==================================================================== -->
-  <div class="modal-overlay" id="modal-camera-details">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3>ONVIF Cihaz Donanım Bilgileri</h3>
-        <button class="modal-close-btn" data-close-modal="modal-camera-details">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div id="camera-details-content" style="background: rgba(14, 18, 30, 0.6); border-radius: var(--radius-md); padding: 16px; border: 1px solid var(--border-subtle);">
-          <!-- js/home.js doldurur -->
+  <div class="modal" id="modal-event" role="dialog" aria-modal="true" aria-labelledby="event-title">
+    <div class="modal-dialog modal-xl">
+      <header class="modal-header">
+        <div class="event-heading">
+          <span class="badge" id="event-level"></span>
+          <h2 id="event-title"></h2>
+          <span class="event-when" id="event-when"></span>
         </div>
-        <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
-          <button class="btn-secondary" data-close-modal="modal-camera-details">Kapat</button>
+        <button type="button" class="btn-icon" data-close aria-label="Kapat"><svg class="icon"><use href="#i-close"/></svg></button>
+      </header>
+      <div class="modal-body event-detail">
+        <div class="event-media">
+          <div class="video-frame">
+            <video id="event-video" controls playsinline loop></video>
+            <img id="event-image" alt="Olay görüntüsü" hidden>
+          </div>
+          <div class="toolbar event-media-actions">
+            <button type="button" class="btn btn-sm" id="event-back" title="2 saniye geri">−2 sn</button>
+            <button type="button" class="btn btn-sm" id="event-forward" title="2 saniye ileri">+2 sn</button>
+            <button type="button" class="btn btn-sm" id="event-speed" title="Oynatma hızını değiştir">1×</button>
+            <span class="toolbar-spacer"></span>
+            <button type="button" class="btn btn-sm" id="event-frames-toggle">Kareleri göster</button>
+            <a class="btn btn-sm" id="event-download" download><svg class="icon"><use href="#i-download"/></svg> İndir</a>
+          </div>
+          <div class="event-frames" id="event-frames" hidden></div>
+        </div>
+
+        <div class="event-info">
+          <dl class="info-list" id="event-facts"></dl>
+
+          <div class="event-summary">
+            <div class="event-summary-head">
+              <h3 class="section-title">Olay özeti</h3>
+              <button type="button" class="btn btn-sm" id="event-summarize"></button>
+            </div>
+            <div class="summary-text" id="event-summary-text"></div>
+          </div>
+
+          <div class="event-review">
+            <h3 class="section-title">Bu alarm doğru muydu?</h3>
+            <div class="segmented" id="event-label" role="group">
+              <button type="button" data-label="correct"><svg class="icon"><use href="#i-check"/></svg> Doğru alarm</button>
+              <button type="button" data-label="false_positive"><svg class="icon"><use href="#i-close"/></svg> Hatalı alarm</button>
+            </div>
+          </div>
+
+          <button type="button" class="btn" id="event-go-live"><svg class="icon"><use href="#i-camera"/></svg> Bu kamerayı canlı izle</button>
         </div>
       </div>
     </div>
   </div>
 
-
-  <!-- ====================================================================
-       Modal: Kamerayı Sisteme Tanıt & Canlı Büyütülmüş Görünüm
-       ==================================================================== -->
-  <div class="modal-overlay" id="modal-camera-edit">
-    <div class="modal-dialog modal-camera-edit-dialog">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div class="modal-icon-badge" style="background: rgba(255, 133, 51, 0.15); color: var(--primary); border: 1px solid rgba(255, 133, 51, 0.3); width: 38px; height: 38px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-          </div>
-          <div>
-            <h3 id="edit-camera-modal-title" style="margin: 0; font-size: 1.15rem;">Kamerayı Sisteme Tanıt</h3>
-            <p style="font-size: 0.78rem; color: var(--text-dim); margin-top: 2px;">Canlı akış izleme ve yapay zeka operasyonel amaç tanımı</p>
-          </div>
-        </div>
-        <button class="modal-close-btn" data-close-modal="modal-camera-edit">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-      <div class="modal-body" style="padding: 20px;">
-        <div class="camera-edit-layout">
-          <!-- Sol Sütun: Büyütülmüş Canlı Görüntü -->
-          <div class="camera-edit-viewport-col">
-            <div class="modal-large-viewport">
-              <img id="edit-camera-large-feed" class="modal-large-feed-img" src="" alt="Canlı Akış">
-              <div class="hud-live-tag">
-                <span class="hud-live-dot"></span> CANLI
-              </div>
-              <div class="hud-specs-tag" id="edit-camera-hud-specs">1920x1080 @ 30 FPS</div>
-              <div class="hud-codec-tag" id="edit-camera-hud-codec">H.264</div>
-              <div class="modal-stream-url-hud" id="edit-camera-hud-rtsp" title="RTSP Akış Adresi">rtsp://...</div>
-            </div>
-            <div class="modal-viewport-footer">
-              <span class="status-pill ready" id="edit-camera-status-pill">
-                <span class="status-dot-pulse"></span> BAĞLANTI AKTİF
-              </span>
-              <span style="font-size: 0.78rem; color: var(--text-dim); font-family: monospace;" id="edit-camera-ip-port">IP: 10.23.247.54:8891</span>
-            </div>
-          </div>
-
-          <!-- Sağ Sütun: Kamera Adı ve Açıklama Formu -->
-          <div class="camera-edit-form-col">
-            <form id="camera-edit-form">
-              <input type="hidden" id="edit-camera-id">
-
-              <!-- Kamera Adı -->
-              <div class="form-group">
-                <label for="edit-camera-name-input">Kamera Adı *</label>
-                <input type="text" id="edit-camera-name-input" class="form-control" placeholder="Örn: Giriş Turnikeleri Kamerası" required>
-                <span class="form-hint">Sistemde, haritada ve kurallarda görüntülenecek ayırt edici isim.</span>
-              </div>
-
-              <!-- Kamera Açıklaması / Amacı -->
-              <div class="form-group" style="margin-top: 14px;">
-                <label for="edit-camera-desc-input">
-                  Kamera Açıklaması & Güvenlik Amacı *
-                </label>
-                <textarea id="edit-camera-desc-input" class="prompt-textarea" rows="4" placeholder="Bu kamera hangi alanı görüyor, neyi denetliyor? (Örn: Bu kamera ana binanın giriş turnikelerini ve ziyaretçi bekleme alanını izler. Mesai saatleri dışında alanda insan bulunması anormaldir.)..."></textarea>
-                <span class="form-hint">Yapay zeka (VLM/LLM) video analizinde ve güvenlik kurallarında bu açıklama bağlam olarak kullanılır.</span>
-              </div>
-
-              <!-- Hızlı Açıklama Şablonları -->
-              <div class="prompt-chips-label" style="margin-top: 10px;">Hızlı Tanıtım Şablonları:</div>
-              <div class="prompt-chips-group" id="edit-camera-desc-chips">
-                <button type="button" class="chip-btn" data-desc="Ana bina giriş kapısı ve turnike geçiş alanı. Yetkisiz giriş ve mesai dışı insan hareketleri denetlenir.">🚪 Giriş Kapısı & Turnike</button>
-                <button type="button" class="chip-btn" data-desc="Açık ve kapalı otopark araç giriş/çıkış güzergahı. Hız ihlalleri, ters yön ve yetkisiz araçlar izlenir.">🚗 Otopark & Araç Yolu</button>
-                <button type="button" class="chip-btn" data-desc="Depo sahası ve yük indirme/bindirme peronları. Baret, reflektörlü yelek zorunluluğu ve sahipsiz yük takibi yapılır.">📦 Depo & Sevkiyat</button>
-                <button type="button" class="chip-btn" data-desc="Ana koridor ve acil yangın çıkış kapısı. Çıkış hattının sürekli boş tutulması ve şüpheli bekleme durumları izlenir.">🚨 Yangın Çıkışı & Koridor</button>
-              </div>
-
-              <!-- Aksiyon Butonları -->
-              <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-subtle); padding-top: 16px;">
-                <button type="button" class="btn-secondary" data-close-modal="modal-camera-edit">İptal</button>
-                <button type="submit" class="btn-primary" id="btn-save-camera-edit">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  Uygula
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <script type="module">
-    import { initRulesModule } from "/static/js/rules.js?v=2.3";
-    import { initLiveModule } from "/static/js/live.js?v=1.0";
-    import { initEventsModule } from "/static/js/events.js?v=1.0";
-
-    // SPA Navigation View Switcher
-    const navHome = document.getElementById("nav-home");
-    const navRules = document.getElementById("nav-rules");
-    const navLive = document.getElementById("nav-live");
-    const navEvents = document.getElementById("nav-events");
-
-    const viewHome = document.getElementById("view-home");
-    const viewRules = document.getElementById("view-rules");
-    const viewLive = document.getElementById("view-live");
-    const viewEvents = document.getElementById("view-events");
-
-    const pageTitle = document.querySelector(".page-title");
-    const pageSubtitle = document.querySelector(".page-subtitle");
-
-    function switchView(viewName) {
-      [navHome, navRules, navLive, navEvents].forEach(n => n?.classList.remove("active"));
-      [viewHome, viewRules, viewLive, viewEvents].forEach(v => { if (v) v.style.display = "none"; });
-
-      if (viewName === "home") {
-        navHome?.classList.add("active");
-        if (viewHome) viewHome.style.display = "block";
-        if (pageTitle) pageTitle.textContent = "Kamera Yönetim Merkezi";
-        if (pageSubtitle) pageSubtitle.textContent = "ONVIF Profile S / G / T Standart Aygıt Keşfi ve Canlı Önizleme";
-      } else if (viewName === "rules") {
-        navRules?.classList.add("active");
-        if (viewRules) viewRules.style.display = "block";
-        if (pageTitle) pageTitle.textContent = "Kural & Bölge Tanımlama";
-        if (pageSubtitle) pageSubtitle.textContent = "Kamera Bazlı veya Sistem Geneli Mekansal Poligon Alanları ve AI Yönergesi";
-        initRulesModule();
-      } else if (viewName === "live") {
-        navLive?.classList.add("active");
-        if (viewLive) viewLive.style.display = "block";
-        if (pageTitle) pageTitle.textContent = "Canlı Çoklu İzleme Duvarı";
-        if (pageSubtitle) pageSubtitle.textContent = "RTSP Video Akışları, Çoklu Izgara Görünümü ve Canlı Bölge Poligonları";
-        initLiveModule();
-      } else if (viewName === "events") {
-        navEvents?.classList.add("active");
-        if (viewEvents) viewEvents.style.display = "block";
-        if (pageTitle) pageTitle.textContent = "İhlal & Anomali Yönetim Merkezi";
-        if (pageSubtitle) pageSubtitle.textContent = "İSG ve Güvenlik İhlalleri, Görev Atama, Eskalasyon Takibi ve Çözüm Doğrulama";
-        initEventsModule();
-      }
-    }
-
-    if (navHome) navHome.addEventListener("click", () => switchView("home"));
-    if (navRules) navRules.addEventListener("click", () => switchView("rules"));
-    if (navLive) navLive.addEventListener("click", () => switchView("live"));
-    if (navEvents) navEvents.addEventListener("click", () => switchView("events"));
-  </script>
-  <script type="module" src="/static/js/home.js?v=2.0"></script>
+  <script type="module" src="/ui/js/main.js"></script>
 </body>
 </html>

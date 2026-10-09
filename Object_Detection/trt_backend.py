@@ -5,7 +5,7 @@ Supports dynamic input shapes (variable batch size and variable number of classe
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Union, List, Tuple, Dict, Optional, Any
+from typing import Union
 import subprocess
 import shutil
 import numpy as np
@@ -81,7 +81,8 @@ class TensorRTBackend:
     def infer(
         self,
         images: Union[np.ndarray, torch.Tensor],
-        text_feats: Union[np.ndarray, torch.Tensor]
+        text_feats: Union[np.ndarray, torch.Tensor],
+        model_name=None,  # interface parity with the Triton backend; a local engine serves one model
     ) -> np.ndarray:
         """
         Runs inference on TensorRT engine with dynamic shape allocation.

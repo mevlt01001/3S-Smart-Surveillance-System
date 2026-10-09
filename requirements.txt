@@ -1,0 +1,26 @@
+# AegisVision — Python bağımlılıkları (Python 3.10).
+# Sürümler, sistemin sınandığı ortamdan alınmıştır.
+#
+#   pip install -r requirements.txt
+#
+# Ayrıca gerekir: ffmpeg (sistem paketi) ve analiz sunucusu için Docker + NVIDIA Container Toolkit.
+
+# --- Web sunucusu ve çalışan sistem ---------------------------------------
+fastapi==0.141.1
+uvicorn==0.54.0
+websockets==16.1.1
+httpx==0.28.1
+pydantic==2.13.5
+numpy==2.2.6
+opencv-python==5.0.0.93
+ifaddr==0.2.0
+openai==3.19.2          # dil modeli servisi istemcisi (kural derleme, olay özeti)
+tritonclient[http]==2.71.0
+requests==2.34.2
+
+# --- Yalnızca model dışa aktarma ve yerel (Triton'suz) çıkarım için ---------
+# Çalışan web sistemi bunları yüklemez; Object_Detection paketinin araçları kullanır.
+# torch==2.14.0
+# ultralytics==8.4.162
+# onnxruntime-gpu==1.23.2
+# onnxslim==0.1.96

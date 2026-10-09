@@ -18,12 +18,20 @@ echo "=================================================================="
 
 export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH}"
 
+# Local settings (.env at the repository root, see .env.example).
+# A variable that is already set in the environment keeps its value.
+if [ -f "${PROJECT_ROOT}/.env" ]; then
+  while IFS='=' read -r name value; do
+    case "${name}" in ''|\#*) continue ;; esac
+    if [ -z "${!name+x}" ]; then export "${name}=${value}"; fi
+  done < "${PROJECT_ROOT}/.env"
+fi
+
 exec "${PYTHON_BIN}" -m uvicorn WebInterface.backend.server:app \
   --host 0.0.0.0 \
   --port 8500 \
   --reload \
   --reload-dir "${SCRIPT_DIR}/backend" \
-  --reload-include "*.py" \
-  --reload-exclude "*.json" \
+  --timeout-graceful-shutdown 5 \
   --log-level info
 

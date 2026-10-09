@@ -6,7 +6,7 @@ producing a two-input ONNX model compatible with TensorRT.
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Union, Tuple, Optional
+from typing import Union
 import torch
 import onnxslim
 from ultralytics import YOLO

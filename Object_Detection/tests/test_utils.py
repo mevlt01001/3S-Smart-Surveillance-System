@@ -4,7 +4,6 @@ Functional tests for preprocessing and postprocessing utilities.
 
 import unittest
 import numpy as np
-import cv2
 from Object_Detection.utils import (
     letterbox,
     preprocess_image,

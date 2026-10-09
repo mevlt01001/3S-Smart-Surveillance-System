@@ -6,11 +6,13 @@ Includes preprocessing, postprocessing, NMS, box scaling, and result visualizati
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple, Union, Optional, Dict, Any
+from typing import List, Tuple, Union, Dict, Any
 import cv2
 import numpy as np
-import torch
-from ultralytics.utils.nms import non_max_suppression
+
+# NOTE: This module is imported by the always-on web backend, which only talks to Triton.
+# It therefore must not import torch / ultralytics (≈650 MB RSS and seconds of start-up
+# for nothing): NMS is implemented with NumPy + OpenCV below.
 
 
 @dataclass
@@ -20,6 +22,19 @@ class DetectionBox:
     conf: float           # Confidence score (0.0 to 1.0)
     cls_id: int           # Class index
     cls_name: str         # Class label / prompt text
+
+    @property
+    def center(self) -> Tuple[float, float]:
+        """Returns center (cx, cy) of the bounding box."""
+        return (
+            (self.xyxy[0] + self.xyxy[2]) / 2.0,
+            (self.xyxy[1] + self.xyxy[3]) / 2.0,
+        )
+
+    @property
+    def area(self) -> float:
+        """Returns area of the bounding box."""
+        return max(0, self.xyxy[2] - self.xyxy[0]) * max(0, self.xyxy[3] - self.xyxy[1])
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -169,7 +184,7 @@ def preprocess_image(
         if orig_img is None:
             raise FileNotFoundError(f"Görsel açılamadı veya bulunamadı: {source_str}")
     elif isinstance(source, np.ndarray):
-        orig_img = source.copy()
+        orig_img = source  # letterbox() below allocates a new array; the caller's frame is never modified
     else:
         # Support PIL Image
         orig_img = cv2.cvtColor(np.array(source), cv2.COLOR_RGB2BGR)
@@ -207,50 +222,94 @@ def scale_coords(
     return coords
 
 
+def _class_aware_nms(
+    boxes_xyxy: np.ndarray,
+    scores: np.ndarray,
+    class_ids: np.ndarray,
+    iou_thres: float,
+    max_det: int = 300,
+    max_wh: float = 7680.0,
+) -> np.ndarray:
+    """
+    Greedy per-class NMS. Mirrors ultralytics' strategy: boxes are shifted by
+    class_id * max_wh so different classes never suppress each other, then a single
+    NMS pass runs over all boxes. Returns kept indices sorted by descending score.
+    """
+    if len(boxes_xyxy) == 0:
+        return np.empty((0,), dtype=np.int64)
+    offsets = class_ids.astype(np.float64)[:, None] * max_wh
+    shifted = boxes_xyxy.astype(np.float64) + offsets
+    xywh = np.empty_like(shifted)
+    xywh[:, 0] = shifted[:, 0]
+    xywh[:, 1] = shifted[:, 1]
+    xywh[:, 2] = shifted[:, 2] - shifted[:, 0]
+    xywh[:, 3] = shifted[:, 3] - shifted[:, 1]
+    keep = cv2.dnn.NMSBoxes(xywh.tolist(), scores.astype(np.float64).tolist(), 0.0, float(iou_thres))
+    keep = np.asarray(keep, dtype=np.int64).reshape(-1)
+    if len(keep) > max_det:
+        keep = keep[:max_det]
+    return keep
+
+
 def postprocess_detections(
-    raw_output: Union[np.ndarray, torch.Tensor],
+    raw_output: Any,
     orig_shape: Tuple[int, int],
     classes: List[str],
     imgsz: int = 640,
     conf_thres: float = 0.25,
     iou_thres: float = 0.45,
     max_det: int = 300,
+    max_nms: int = 30000,
 ) -> List[DetectionBox]:
     """
     Applies NMS and coordinate scaling to model output.
-    raw_output: tensor or array of shape [1, 4 + nc, 8400]
+    raw_output: array (or torch tensor) of shape [1, 4 + nc (+ extra), num_anchors]
+                with boxes as (cx, cy, w, h) in letterboxed pixels and per-class scores.
     """
-    if isinstance(raw_output, np.ndarray):
-        raw_output = torch.from_numpy(raw_output)
+    if not isinstance(raw_output, np.ndarray):
+        # torch.Tensor (or anything array-like) without importing torch here
+        if hasattr(raw_output, "detach"):
+            raw_output = raw_output.detach().cpu().numpy()
+        else:
+            raw_output = np.asarray(raw_output)
 
     if raw_output.ndim == 2:
-        raw_output = raw_output.unsqueeze(0)
+        raw_output = raw_output[None]
 
     nc = len(classes)
-    # Perform NMS
-    preds = non_max_suppression(
-        raw_output,
-        conf_thres=conf_thres,
-        iou_thres=iou_thres,
-        nc=nc,
-        max_det=max_det,
-    )
-
     boxes: List[DetectionBox] = []
-    if len(preds) == 0 or len(preds[0]) == 0:
+    if raw_output.shape[0] == 0 or nc == 0:
         return boxes
 
-    det = preds[0].cpu().numpy()
-    # det: [N, 6] -> [x1, y1, x2, y2, conf, cls_id]
-    det[:, :4] = scale_coords(det[:, :4], (imgsz, imgsz), orig_shape)
+    pred = raw_output[0]                       # [4 + nc (+nm), anchors]
+    cls_scores = pred[4:4 + nc]                # [nc, anchors]
+    conf = cls_scores.max(axis=0)
+    candidates = np.flatnonzero(conf > conf_thres)
+    if candidates.size == 0:
+        return boxes
 
-    for row in det:
-        x1, y1, x2, y2, conf, cls_id = row
+    conf = conf[candidates]
+    cls_ids = cls_scores[:, candidates].argmax(axis=0)
+    cx, cy, bw, bh = (pred[i, candidates].astype(np.float32) for i in range(4))
+    xyxy = np.stack([cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2], axis=1)
+
+    order = np.argsort(-conf, kind="stable")[:max_nms]
+    xyxy, conf, cls_ids = xyxy[order], conf[order], cls_ids[order]
+
+    keep = _class_aware_nms(xyxy, conf, cls_ids, iou_thres=iou_thres, max_det=max_det)
+    if keep.size == 0:
+        return boxes
+
+    det_xyxy = scale_coords(xyxy[keep].copy(), (imgsz, imgsz), orig_shape)
+    det_conf = conf[keep]
+    det_cls = cls_ids[keep]
+
+    for (x1, y1, x2, y2), score, cls_id in zip(det_xyxy, det_conf, det_cls):
         cls_idx = int(cls_id)
         cls_name = classes[cls_idx] if cls_idx < len(classes) else f"class_{cls_idx}"
         boxes.append(DetectionBox(
-            xyxy=[int(round(x1)), int(round(y1)), int(round(x2)), int(round(y2))],
-            conf=float(conf),
+            xyxy=[int(round(float(x1))), int(round(float(y1))), int(round(float(x2))), int(round(float(y2)))],
+            conf=float(score),
             cls_id=cls_idx,
             cls_name=cls_name,
         ))

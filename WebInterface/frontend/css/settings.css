@@ -1,0 +1,139 @@
+/* Settings page. */
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  align-items: start;
+  max-width: 1280px;
+  padding-bottom: 64px;
+}
+
+.settings-card {
+  padding: 18px;
+}
+
+.settings-card > .card-title {
+  margin-bottom: 16px;
+}
+
+.settings-card .field:last-child,
+.settings-card .switch-row:last-child {
+  margin-bottom: 0;
+}
+
+.switch-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.switch-title {
+  display: block;
+  font-weight: 500;
+}
+
+.threshold-scale {
+  display: flex;
+  height: 22px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 22px;
+  text-align: center;
+}
+
+.threshold-scale > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.threshold-scale .is-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.threshold-scale .is-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.threshold-scale .is-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.storage {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.storage-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.storage .hint {
+  margin-top: 8px;
+}
+
+.storage-orphans {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-advanced > summary {
+  margin-bottom: 0;
+}
+
+.settings-advanced[open] > summary {
+  margin-bottom: 8px;
+}
+
+.settings-advanced > .hint {
+  margin-bottom: 16px;
+}
+
+.settings-advanced .info-list {
+  margin-bottom: 16px;
+}
+
+.save-bar {
+  position: fixed;
+  right: 24px;
+  bottom: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 10px 16px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+  font-size: 13.5px;
+}
+
+@media (max-width: 640px) {
+  .settings {
+    grid-template-columns: 1fr;
+  }
+
+  .save-bar {
+    right: 12px;
+    bottom: 64px;
+    left: 12px;
+  }
+}
