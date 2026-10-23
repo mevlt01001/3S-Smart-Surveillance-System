@@ -1,128 +1,125 @@
 # Smart Surveillance System (AegisVision)
 
-IP kameraları tek arayüzde toplayan, olağandışı hareketleri ve düz cümleyle tanımlanan kural
-ihlallerini yakalayıp videosu, fotoğrafı ve birkaç cümlelik özetiyle kaydeden güvenlik izleme sistemi.
+A security surveillance system that aggregates IP cameras into a unified interface, detects unusual activity and natural language rule violations, and logs them with video clips, snapshots, and concise text summaries.
 
-- **Canlı izleme:** 1 / 4 / 6 / 12'li kamera duvarı; alarm veren kamera vurgulanır.
-- **Olağandışı hareket algılama:** kural tanımlamadan çalışır (kavga, panik, koşma…).
-- **Kural bölgeleri:** görüntüde bölge çizin, ne olunca haber almak istediğinizi yazın
-  ("Baret takmayan biri girerse", "Gece 22:00 ile 06:00 arasında biri girerse") ya da listeden seçin.
-  Sistem yapamadığı bir isteği söyler; kurallar yalnızca belirlediğiniz saatlerde çalışabilir.
-- **Engel izleme:** acil çıkış, yangın dolabı gibi boş kalması gereken yerler.
-- **Olay kaydı:** olay boyunca tek video, olay anı fotoğrafı, yazılı özet, operatör kararı.
-- **Raporlar:** güne, kurala ve kameraya göre olay sayıları, hatalı alarm oranı; yazdırılabilir.
+- **Live Monitoring:** 1 / 4 / 6 / 12 camera wall grid; cameras with active alarms are highlighted.
+- **Anomaly Detection:** Works without rule definitions (fights, panic, running, etc.).
+- **Rule Zones:** Draw regions on the camera feed and define trigger criteria in natural language
+  ("If someone without a hard hat enters", "If someone enters between 22:00 and 06:00") or select from presets.
+  The system indicates if a request is unsupported; rules can be scheduled to run only during designated hours.
+- **Obstruction Monitoring:** Monitors areas that must remain clear, such as emergency exits and fire hose cabinets.
+- **Event Logging:** Single continuous video per event, snapshot at time of incident, text summary, and operator review.
+- **Reports:** Event counts by date, rule, and camera, false alarm rates; printable.
 
-## Arayüz
+## Interface
 
-| Canlı izleme | Olaylar |
+| Live Monitoring | Events |
 | --- | --- |
-| ![Canlı izleme duvarı](docs/images/canli-izleme.jpg) | ![Olay listesi](docs/images/olaylar.jpg) |
-| Kamera duvarı; düzen, bölge ve tespit katmanları üst çubuktan seçilir. | Kaydedilen olaylar; arama, süzme ve tek tıkla doğru / hatalı kararı. |
+| ![Live monitoring wall](docs/images/canli-izleme.jpg) | ![Events list](docs/images/olaylar.jpg) |
+| Camera wall grid; layout, zones, and detection overlays can be toggled from the top bar. | Recorded events; search, filter, and one-click true / false alarm review. |
 
-| Olay penceresi | Kural düzenleyici |
+| Event Details | Rule Editor |
 | --- | --- |
-| ![Olay penceresi](docs/images/olay-penceresi.jpg) | ![Kural düzenleyici](docs/images/kural-duzenleyici.jpg) |
-| Olay videosu, kısa yazılı özet ve operatör kararı. | Görüntüde bölge çizilir, ne olunca haber verileceği düz cümleyle yazılır. |
+| ![Event modal](docs/images/olay-penceresi.jpg) | ![Rule editor](docs/images/kural-duzenleyici.jpg) |
+| Event video, concise text summary, and operator review. | Draw zones on video feed and define trigger criteria in plain language. |
 
-| Kameralar | Ayarlar |
+| Cameras | Settings |
 | --- | --- |
-| ![Kameralar](docs/images/kameralar.jpg) | ![Ayarlar](docs/images/ayarlar.jpg) |
-| Ağda kamera arama, elle ekleme, durum ve düzenleme. | Algılama hassasiyeti, kayıt süresi ve depolama alanı. |
+| ![Cameras](docs/images/kameralar.jpg) | ![Settings](docs/images/ayarlar.jpg) |
+| Network camera discovery, manual addition, status monitoring, and editing. | Detection sensitivity, recording duration, and storage management. |
 
-Görüntüler `Camera_System_Simulator` ile oynatılan test videolarından alınmıştır.
+Screenshots are captured from test video playback via `Camera_System_Simulator`.
 
-## Hızlı başlangıç
+## Quick Start
 
-Gereksinimler: Linux, NVIDIA ekran kartı, Docker + NVIDIA Container Toolkit, Python 3.10, ffmpeg.
-Ayrıntılar ve model dosyalarının kurulumu: [docs/02-kurulum.md](docs/02-kurulum.md).
+Requirements: Linux, NVIDIA GPU, Docker + NVIDIA Container Toolkit, Python 3.10, ffmpeg.
+Detailed setup instructions and model file installation: [docs/02-kurulum.md](docs/02-kurulum.md).
 
 ```bash
 conda create -p ./.conda python=3.10 -y && ./.conda/bin/pip install -r requirements.txt
 ```
 ```bash
-cp .env.example .env        # dil modeli servisinin anahtarını yazın (isteğe bağlı)
+cp .env.example .env        # Set the LLM service API key (optional)
 ```
 ```bash
-./Object_Detection/start_triton_docker.sh                        # 1. analiz sunucusu
+./Object_Detection/start_triton_docker.sh                        # 1. Start inference server
 ```
 ```bash
-cd Camera_System_Simulator && ./start.sh --dir ../TestVideoSet   # 2. gerçek kamera yoksa
+cd Camera_System_Simulator && ./start.sh --dir ../TestVideoSet   # 2. If no physical cameras are available
 ```
 ```bash
 ./WebInterface/run.sh                                            # 3. http://localhost:8500
 ```
 
-Arayüzde: **Kameralar → Ağda kamera ara → Tümünü ekle**, sonra **Canlı İzleme**.
+In the web interface: **Cameras → Scan network for cameras → Add all**, then navigate to **Live Monitoring**.
 
-## Belgeler
+## Documentation
 
 | | |
 | :--- | :--- |
-| [Genel bakış](docs/01-genel-bakis.md) | Sistem ne yapar, parçaları, terimler |
-| [Kurulum ve çalıştırma](docs/02-kurulum.md) | Gereksinimler, modeller, başlatma, portlar |
-| [Kullanım kılavuzu](docs/03-kullanim-kilavuzu.md) | Arayüzün beş sayfası, adım adım |
-| [Mimari](docs/04-mimari.md) | Süreçler, iş parçacıkları, veri akışı, tasarım kararları |
-| [Sunucu modülleri](docs/05-backend.md) | `WebInterface/backend` modül başvurusu |
-| [API başvurusu](docs/06-api.md) | Bütün uç noktalar, örnek istek ve yanıtlar |
-| [Arayüz kodu](docs/07-frontend.md) | `WebInterface/frontend` yapısı ve kuralları |
-| [Kurallar ve analiz](docs/08-kurallar-ve-analiz.md) | Kural derleme, koşul türleri, olay yaşam döngüsü, özetler |
-| [Veri ve yapılandırma](docs/09-veri-ve-yapilandirma.md) | Dosyalar, kayıt biçimleri, ayarlar, ortam değişkenleri |
-| [Geliştirme ve test](docs/10-gelistirme-ve-test.md) | Geliştirme düzeni, sistem testi, sık yapılan değişiklikler |
-| [Sorun giderme](docs/11-sorun-giderme.md) | Belirtiye göre çözümler, bilinen sınırlar |
+| [Overview](docs/01-genel-bakis.md) | What the system does, components, terminology |
+| [Installation & Setup](docs/02-kurulum.md) | Requirements, models, startup procedure, ports |
+| [User Guide](docs/03-kullanim-kilavuzu.md) | Step-by-step guide for the five interface pages |
+| [Architecture](docs/04-mimari.md) | Processes, threads, data flow, design decisions |
+| [Backend Modules](docs/05-backend.md) | `WebInterface/backend` module reference |
+| [API Reference](docs/06-api.md) | All endpoints, example requests and responses |
+| [Frontend Architecture](docs/07-frontend.md) | `WebInterface/frontend` structure and conventions |
+| [Rules and Analytics](docs/08-kurallar-ve-analiz.md) | Rule compilation, condition types, event lifecycle, summaries |
+| [Data and Configuration](docs/09-veri-ve-yapilandirma.md) | Files, storage formats, settings, environment variables |
+| [Development and Testing](docs/10-gelistirme-ve-test.md) | Development workflow, system testing, common modifications |
+| [Troubleshooting](docs/11-sorun-giderme.md) | Symptom-based solutions, known limitations |
 
-## Depo düzeni
+## Repository Layout
 
-| Dizin | İçerik |
+| Directory | Content |
 | :--- | :--- |
-| `WebInterface/` | **Ürün:** web sunucusu (`backend/`), arayüz (`frontend/`), sistem testi (`tests/`). |
-| `Rule_Generator_LLM/` | Kural derleyici, nesne takibi, koşul değerlendirici, olay özetleyici, dil modeli servis ayarları. |
-| `Object_Detection/` | Nesne tespiti kitaplığı ve Triton model deposu. |
-| `Anomaly_Detection/` | Anomali modelinin eğitim kodu (git alt modülü; çalışan sistemin parçası değil). |
-| `Camera_System_Simulator/` | Geliştirme için sahte kameralar (RTSP + ONVIF). |
-| `TestVideoSet/` | Simülatörün yayınladığı örnek videolar (depoda tutulmaz). |
-| `docs/` | Belgeler. |
+| `WebInterface/` | **Product:** Web server (`backend/`), UI (`frontend/`), system tests (`tests/`). |
+| `Rule_Generator_LLM/` | Rule compiler, object tracking, condition evaluator, event summarizer, LLM service configs. |
+| `Object_Detection/` | Object detection library and Triton model repository. |
+| `Anomaly_Detection/` | Anomaly model training code (git submodule; not part of the runtime system). |
+| `Camera_System_Simulator/` | Simulated cameras for development (RTSP + ONVIF). |
+| `TestVideoSet/` | Sample videos streamed by the simulator (not tracked in repository). |
+| `docs/` | Documentation. |
 
-## Veri akışı
+## Data Flow
 
 ```
-kamera (RTSP) ──► camera_service ──► tarayıcı (WebSocket ile canlı görüntü)
+Camera (RTSP) ──► camera_service ──► Browser (Live view via WebSocket)
                        │
-                       ├─► anomaly_service ──► Triton: anomaly_detector ──► skor ──► olay
+                       ├─► anomaly_service ──► Triton: anomaly_detector ──► Score ──► Event
                        │
-                       └─► live_detection_service ──► Triton: nesne tespiti ──► kural değerlendirme ──► olay
+                       └─► live_detection_service ──► Triton: Object Detection ──► Rule Evaluation ──► Event
 
-olay ──► event_journal (kayıt) + evidence_store (video, fotoğraf) + vlm_summarizer (kısa özet)
-     ──► event_stream ──► açık sayfalar
+Event ──► event_journal (persistence) + evidence_store (video, snapshot) + vlm_summarizer (brief summary)
+      ──► event_stream ──► Open browser pages
 ```
 
-## Test
+## Testing
 
 ```bash
-.conda/bin/python WebInterface/tests/system_check.py --sim-ip <bu makinenin IP adresi>
+.conda/bin/python WebInterface/tests/system_check.py --sim-ip <IP address of this machine>
 ```
 
-Kendi portunda, geçici veriyle ayrı bir sunucu başlatır ve arayüzle API'nin tamamını sınar (134
-denetim); çalışan sisteme dokunmaz. Her değişiklikten sonra koşulmalıdır.
+Spins up an isolated server instance with temporary data on its own port and tests the entire web interface and API (134 checks); does not touch the running system. Should be run after every change.
 
-Sistemin **ne kadar doğru çalıştığını** ölçmek ayrı bir iştir: `WebInterface/tests/accuracy_check.py`
-etiketli test videolarını sisteme kamera gibi oynatır ve yakalanan olayı, kaçanı, yanlış alarmı sayar
-(bkz. [docs/10](docs/10-gelistirme-ve-test.md#doğruluk-ölçümü)).
+Measuring **system accuracy** is handled separately: `WebInterface/tests/accuracy_check.py`
+streams labeled test videos into the system like cameras and counts detected events, missed detections, and false alarms
+(see [docs/10](docs/10-gelistirme-ve-test.md#doğruluk-ölçümü)).
 
-Aynı test her push'ta GitHub Actions üzerinde de koşar (`.github/workflows/ci.yml`); orada kamera ve
-ekran kartı olmadığı için canlı video bölümü atlanır, kalan 112 denetim çalışır.
+The same check runs on every push via GitHub Actions (`.github/workflows/ci.yml`); since cameras and
+GPUs are not available in CI, the live video portion is skipped and the remaining 112 checks are executed.
 
-`Object_Detection/run_tests.py` model yükler ve birkaç GB bellek ister; canlı sistem çalışırken koşmayın.
+`Object_Detection/run_tests.py` loads models and requires several gigabytes of GPU memory; do not run while the live system is active.
 
-## Devralan geliştirici için
+## Developer Handoff Notes
 
-- **Erişim anahtarı.** Anahtar yalnızca `.env` dosyasındadır ve depoya girmez. Ancak daha önce
-  kullanılan anahtar **git geçmişinde durmaktadır**; yenilenmelidir.
-- **Kimlik doğrulama yok.** Arayüz ve API ağdaki herkese açıktır; yerel ağ dışına açılmadan önce ele alınmalı.
-- **Veri JSON dosyalarında.** Tek sunucu için tasarlanmıştır (atomik yazım, dizin kilidi); çok
-  sunuculu kurulum için veritabanına taşınması gerekir.
-- **Hâlâ uzun olan işlevler.** `Rule_Generator_LLM/compiler.py: _normalize_plan_data` (~230 satır),
-  `live_detection_service.py: _process_camera` (~190 satır), `camera_service.py: probe_and_register`
-  (~125 satır). Çalışıyorlar; ilk ikisi yalnızca gerçek model yanıtlarıyla sınanabildiği için
-  bölünmeleri ayrı bir iş olarak ele alınmalı.
-- **Sınanmayanlar.** Gerçek donanım kameraları, Firefox, günlerce kesintisiz çalışma.
-  Tam liste: [docs/11-sorun-giderme.md](docs/11-sorun-giderme.md), "Bilinen sınırlar".
+- **Access Key / API Key:** Keys reside only in `.env` and are never committed. However, a previously
+  used key **remains in git history**; it must be rotated.
+- **No Authentication:** The web UI and API are accessible to anyone on the network; this must be addressed before exposing beyond a local network.
+- **JSON File-Based Storage:** Designed for a single-server setup (atomic writes, directory lock);
+  must be migrated to a database for multi-server deployments.
+- **Large Functions Remaining:** `Rule_Generator_LLM/compiler.py: _normalize_plan_data` (~230 lines),
+  `live_detection_service.py: _process_camera` (~190 lines), `camera_service.py: probe_and_register`
+  (~125 lines). They are functional; refactoring them should be handled as a separate task since the first two can only be tested with real model outputs.
+- **Untested Areas:** Physical camera hardware, Firefox, continuous multi-day operation.
+  Full list: [docs/11-sorun-giderme.md](docs/11-sorun-giderme.md#bilinen-sınırlar) ("Known limitations").
