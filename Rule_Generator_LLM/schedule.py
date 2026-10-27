@@ -16,7 +16,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 ALL_DAYS = [0, 1, 2, 3, 4, 5, 6]
-_DAY_NAMES = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
+_DAY_NAMES = {"tr": ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"],
+              "en": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]}
+_WORDS = {"tr": {"every": "Her gün", "weekdays": "Hafta içi", "weekend": "Hafta sonu", "all_day": "Tüm gün"},
+          "en": {"every": "Every day", "weekdays": "Weekdays", "weekend": "Weekends", "all_day": "All day"}}
 _CLOCK = re.compile(r"^([01]?\d|2[0-3])[:.]([0-5]\d)$")
 
 
@@ -65,18 +68,20 @@ def is_active(schedule: Optional[Dict[str, Any]], now: Optional[datetime] = None
     return clock < end and (now.weekday() - 1) % 7 in days
 
 
-def describe(schedule: Optional[Dict[str, Any]]) -> str:
-    """'22:00–06:00 · Hafta içi' for the rule list; '' for a rule that always runs."""
+def describe(schedule: Optional[Dict[str, Any]], lang: str = "tr") -> str:
+    """'22:00–06:00 · Hafta içi' (or '· Weekdays' in English) for the rule list; '' for a rule that always runs."""
     if not has_window(schedule):
         return ""
+    lang = "en" if lang == "en" else "tr"
+    words = _WORDS[lang]
     days: List[int] = schedule.get("days") or ALL_DAYS
     if days == ALL_DAYS:
-        which = "Her gün"
+        which = words["every"]
     elif days == [0, 1, 2, 3, 4]:
-        which = "Hafta içi"
+        which = words["weekdays"]
     elif days == [5, 6]:
-        which = "Hafta sonu"
+        which = words["weekend"]
     else:
-        which = ", ".join(_DAY_NAMES[day] for day in days)
-    hours = "Tüm gün" if schedule["start"] == schedule["end"] else f"{schedule['start']}–{schedule['end']}"
+        which = ", ".join(_DAY_NAMES[lang][day] for day in days)
+    hours = words["all_day"] if schedule["start"] == schedule["end"] else f"{schedule['start']}–{schedule['end']}"
     return f"{hours} · {which}"

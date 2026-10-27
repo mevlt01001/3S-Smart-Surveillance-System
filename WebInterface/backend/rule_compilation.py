@@ -202,11 +202,11 @@ def status_of(rule: Dict[str, Any]) -> str:
     return "pending" if is_available() else "unavailable"
 
 
-def rule_view(rule: Dict[str, Any], slim: bool = False) -> Dict[str, Any]:
+def rule_view(rule: Dict[str, Any], slim: bool = False, lang: str = "tr") -> Dict[str, Any]:
     """API representation of a rule. `slim` replaces the bulky plan data by a short summary (list views)."""
     view = dict(rule)
     view["compile_status"] = status_of(rule)
-    view["schedule_text"] = rule_schedule.describe(rule.get("schedule"))
+    view["schedule_text"] = rule_schedule.describe(rule.get("schedule"), lang)
     # False while the rule is switched on but outside its working hours
     view["active_now"] = bool(rule.get("enabled", True)) and rule_schedule.is_active(rule.get("schedule"))
     # Why the request cannot be turned into a rule, in words for the operator
@@ -228,7 +228,7 @@ def rule_view(rule: Dict[str, Any], slim: bool = False) -> Dict[str, Any]:
                 "conditions": [condition.get("type") for condition in plan.get("conditions", [])],
                 "status": (zone.get("compile_meta") or {}).get("status") or plan.get("status"),
                 # What the plan does, in one sentence for the operator
-                "text": manual_rules.describe_plan(plan),
+                "text": manual_rules.describe_plan(plan, lang),
                 # Set when the rule is only the closest thing to what was asked
                 "note": plan.get("user_note"),
             }

@@ -4,6 +4,7 @@
  */
 
 import { getEventStats, getSystemStats } from "./api.js";
+import { locale, t } from "./i18n.js";
 import { showToast } from "./ui.js";
 
 const STATUS_POLL_MS = 5000;
@@ -24,7 +25,7 @@ export function subscribeSystemStats(listener) {
 function startClock() {
   const clock = document.getElementById("clock");
   const tick = () => {
-    clock.textContent = new Date().toLocaleTimeString("tr-TR", { hour12: false });
+    clock.textContent = new Date().toLocaleTimeString(locale, { hour12: false });
   };
   tick();
   setInterval(tick, 1000);
@@ -41,12 +42,12 @@ function setOnline(next) {
       banner.id = "connection-banner";
       banner.className = "connection-banner";
       banner.setAttribute("role", "alert");
-      banner.textContent = "Sunucu bağlantısı koptu. Ekrandaki bilgiler güncel olmayabilir; yeniden bağlanılıyor…";
+      banner.textContent = t("Sunucu bağlantısı koptu. Ekrandaki bilgiler güncel olmayabilir; yeniden bağlanılıyor…");
       document.body.appendChild(banner);
     }
   } else {
     if (banner) banner.remove();
-    showToast("Sunucu bağlantısı yeniden kuruldu.", "success", 3000);
+    showToast(t("Sunucu bağlantısı yeniden kuruldu."), "success", 3000);
   }
 }
 
@@ -55,16 +56,16 @@ function renderStatus(stats) {
   const dot = box.querySelector(".status-dot");
   const text = document.getElementById("system-status-text");
   let state = "is-ok";
-  let label = "Sistem çalışıyor";
-  let detail = "Kameralar izleniyor, analiz çalışıyor.";
+  let label = t("Sistem çalışıyor");
+  let detail = t("Kameralar izleniyor, analiz çalışıyor.");
   if (!stats) {
     state = "is-danger";
-    label = "Bağlantı yok";
-    detail = "Sunucuya ulaşılamıyor.";
+    label = t("Bağlantı yok");
+    detail = t("Sunucuya ulaşılamıyor.");
   } else if (!stats.triton || stats.triton.status !== "READY") {
     state = "is-danger";
-    label = "Analiz durdu";
-    detail = "Analiz sunucusuna ulaşılamıyor. Canlı görüntü çalışır; olay algılama ve kurallar durur.";
+    label = t("Analiz durdu");
+    detail = t("Analiz sunucusuna ulaşılamıyor. Canlı görüntü çalışır; olay algılama ve kurallar durur.");
   }
   dot.className = `status-dot ${state}`;
   text.textContent = label;
@@ -81,7 +82,7 @@ export async function refreshEventsBadge() {
     const pending = Number(stats.unlabeled_count) || 0;
     badge.hidden = pending === 0;
     badge.textContent = pending > 99 ? "99+" : String(pending);
-    badge.title = `${pending} incelenmemiş olay`;
+    badge.title = t("{n} incelenmemiş olay", { n: pending });
   } catch (_) {
     /* the status line already reports connection problems */
   }

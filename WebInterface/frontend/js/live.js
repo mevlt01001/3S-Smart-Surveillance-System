@@ -5,6 +5,8 @@
 
 import { captureReference, getLiveState, getSettings, listCameras, listEvents, listRules, snapshotUrl } from "./api.js";
 import { eventSeconds, eventTitle, levelBadge, openEventDetail } from "./event-detail.js";
+import { locale, t } from "./i18n.js";
+import { alarmText } from "./labels.js";
 import { clearOverlay, drawOverlay } from "./overlay.js";
 import { navigate } from "./router.js";
 import { startStream } from "./stream.js";
@@ -77,12 +79,12 @@ function tileState(cameraId) {
   const rule = detections[cameraId];
   if (state && state.stream_live === false) {
     return state.stream_connecting || state.stream_standby
-      ? { level: "connecting", text: "Bağlanıyor…" }
-      : { level: "offline", text: "Sinyal yok" };
+      ? { level: "connecting", text: t("Bağlanıyor…") }
+      : { level: "offline", text: t("Sinyal yok") };
   }
-  if (rule && rule.alarm) return { level: "danger", text: rule.alarm_text || "Kural ihlali" };
-  if (state && state.analyzed && state.tier === "critical") return { level: "danger", text: "Kritik hareket" };
-  if (state && state.analyzed && state.tier === "warning") return { level: "warn", text: "Şüpheli hareket" };
+  if (rule && rule.alarm) return { level: "danger", text: alarmText(rule.alarm_text) || t("Kural ihlali") };
+  if (state && state.analyzed && state.tier === "critical") return { level: "danger", text: t("Kritik hareket") };
+  if (state && state.analyzed && state.tier === "warning") return { level: "warn", text: t("Şüpheli hareket") };
   return { level: "ok", text: "" };
 }
 
@@ -94,10 +96,10 @@ function visibleCameras() {
 
 /* --------------------------------------------------------------- Rendering */
 function tileHTML(camera) {
-  const name = escapeHTML(camera.name || "Kamera");
+  const name = escapeHTML(camera.name || t("Kamera"));
   const referenceButton = changeZonesFor(camera.id).length
     ? `<button type="button" class="tile-button has-text" data-action="reference"
-               title="Bölgenin şu anki boş hâlini karşılaştırma görüntüsü olarak kaydet">Referans al</button>`
+               title="${t("Bölgenin şu anki boş hâlini karşılaştırma görüntüsü olarak kaydet")}">${t("Referans al")}</button>`
     : "";
   return `
     <article class="tile" data-camera="${escapeHTML(camera.id)}">
@@ -109,8 +111,8 @@ function tileHTML(camera) {
       </header>
       <footer class="tile-actions">
         ${referenceButton}
-        <button type="button" class="tile-button" data-action="snapshot" title="Fotoğraf çek ve indir" aria-label="Fotoğraf çek">${icon("photo")}</button>
-        <button type="button" class="tile-button" data-action="focus" title="${focusedId ? "Tüm kameralara dön" : "Bu kamerayı büyüt"}" aria-label="Büyüt">${icon(focusedId ? "live" : "expand")}</button>
+        <button type="button" class="tile-button" data-action="snapshot" title="${t("Fotoğraf çek ve indir")}" aria-label="${t("Fotoğraf çek")}">${icon("photo")}</button>
+        <button type="button" class="tile-button" data-action="focus" title="${t(focusedId ? "Tüm kameralara dön" : "Bu kamerayı büyüt")}" aria-label="${t("Büyüt")}">${icon(focusedId ? "live" : "expand")}</button>
       </footer>
     </article>`;
 }
@@ -120,16 +122,16 @@ function emptyHTML() {
     return `
       <div class="empty">
         ${icon("camera")}
-        <p class="empty-title">Henüz kamera eklenmedi</p>
-        <p>Canlı izlemeye başlamak için önce bir kamera ekleyin.</p>
-        <div class="empty-actions"><button type="button" class="btn btn-primary" data-action="go-cameras">Kamera ekle</button></div>
+        <p class="empty-title">${t("Henüz kamera eklenmedi")}</p>
+        <p>${t("Canlı izlemeye başlamak için önce bir kamera ekleyin.")}</p>
+        <div class="empty-actions"><button type="button" class="btn btn-primary" data-action="go-cameras">${t("Kamera ekle")}</button></div>
       </div>`;
   }
   return `
     <div class="empty">
       ${icon("check")}
-      <p class="empty-title">Şu anda alarm veren kamera yok</p>
-      <p>Bir kamera uyarı verdiğinde veya sinyali kesildiğinde burada görünür.</p>
+      <p class="empty-title">${t("Şu anda alarm veren kamera yok")}</p>
+      <p>${t("Bir kamera uyarı verdiğinde veya sinyali kesildiğinde burada görünür.")}</p>
     </div>`;
 }
 
@@ -141,7 +143,7 @@ function render() {
   const focused = cameras.find((camera) => camera.id === focusedId);
   $("#live-focus-bar").hidden = !focused;
   $("#live-history").hidden = !focused;
-  if (focused) $("#live-focus-name").textContent = focused.name || "Kamera";
+  if (focused) $("#live-focus-name").textContent = focused.name || t("Kamera");
   setActiveLayout(focused ? "" : layout);
 
   const container = grid();
@@ -181,7 +183,7 @@ function applyStates() {
   const total = cameras.length;
   const online = cameras.filter((camera) => tileState(camera.id).level !== "offline").length;
   const count = $("#live-count");
-  count.textContent = total ? `${online}/${total} çevrimiçi` : "";
+  count.textContent = total ? t("{online}/{total} çevrimiçi", { online, total }) : "";
   count.className = `badge ${online === total ? "is-ok" : "is-warn"}`;
 }
 
@@ -298,11 +300,11 @@ async function takeSnapshot(cameraId) {
   const camera = cameras.find((item) => item.id === cameraId);
   try {
     const response = await fetch(snapshotUrl(cameraId));
-    if (!response.ok) throw new Error("görüntü alınamadı");
+    if (!response.ok) throw new Error(t("görüntü alınamadı"));
     const stamp = new Date().toISOString().replace(/[-:]/g, "").replace("T", "_").slice(0, 15);
     const name = String((camera && camera.name) || cameraId).replace(/[^\w-]+/g, "_").slice(0, 40);
     downloadBlob(await response.blob(), `${name}_${stamp}.jpg`);
-    showToast("Fotoğraf indirildi.", "success", 2500);
+    showToast(t("Fotoğraf indirildi."), "success", 2500);
   } catch (err) {
     showError("Fotoğraf çekilemedi", err);
   }
@@ -323,9 +325,9 @@ async function takeReference(cameraId, button) {
   }
   button.disabled = false;
   if (saved === zones.length) {
-    showToast("Referans görüntü kaydedildi. Bölge artık izleniyor.", "success");
+    showToast(t("Referans görüntü kaydedildi. Bölge artık izleniyor."), "success");
   } else {
-    showToast(`Referans kaydedilemedi: ${lastError || "kamera görüntüsü yok"}`, "error", 6000);
+    showToast(t("Referans kaydedilemedi: {reason}", { reason: t(lastError || "kamera görüntüsü yok") }), "error", 6000);
   }
 }
 
@@ -370,7 +372,7 @@ function renderHistory() {
     const worst = entries
       .filter((entry) => entry.timestamp < to && (entry.is_ongoing || entry.timestamp + eventSeconds(entry) >= from))
       .sort((a, b) => (weight[b.tier] || 0) - (weight[a.tier] || 0))[0];
-    const time = new Date(from * 1000).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+    const time = new Date(from * 1000).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
     if (!worst) return `<span class="timeline-segment" title="${time}"></span>`;
     const level = worst.tier === "critical" ? "is-danger" : "is-warn";
     return `<button type="button" class="timeline-segment ${level}" data-event="${escapeHTML(worst.id)}"
@@ -382,9 +384,9 @@ function renderHistory() {
         <button type="button" class="history-item" data-event="${escapeHTML(entry.id)}">
           ${levelBadge(entry)}
           <span class="history-title">${escapeHTML(eventTitle(entry))}</span>
-          <span class="history-time">${escapeHTML(entry.date_str || "")} ${escapeHTML(entry.timestamp_str || "")}${entry.is_ongoing ? " · sürüyor" : eventSeconds(entry) ? ` · ${formatDuration(eventSeconds(entry))}` : ""}</span>
+          <span class="history-time">${escapeHTML(entry.date_str || "")} ${escapeHTML(entry.timestamp_str || "")}${entry.is_ongoing ? ` · ${t("sürüyor")}` : eventSeconds(entry) ? ` · ${formatDuration(eventSeconds(entry))}` : ""}</span>
         </button>`).join("")
-    : `<p class="hint">Bu kamerada kayıtlı olay yok.</p>`;
+    : `<p class="hint">${t("Bu kamerada kayıtlı olay yok.")}</p>`;
 }
 
 function onHistoryClick(event) {
@@ -448,13 +450,13 @@ export async function mount(params = {}) {
   mounted = true;
   if (!wired) wire();
   if (params.cameraId) focusedId = params.cameraId;
-  if (!cameras.length) grid().innerHTML = `<div class="loading"><div class="spinner"></div><span>Kameralar yükleniyor…</span></div>`;
+  if (!cameras.length) grid().innerHTML = `<div class="loading"><div class="spinner"></div><span>${t("Kameralar yükleniyor…")}</span></div>`;
 
   try {
     await Promise.all([loadCamerasAndRules(), loadWallSettings()]);
   } catch (err) {
     if (!mounted) return;
-    grid().innerHTML = `<div class="empty"><p class="empty-title">Kameralar yüklenemedi</p><p>${escapeHTML(err.message)}</p></div>`;
+    grid().innerHTML = `<div class="empty"><p class="empty-title">${t("Kameralar yüklenemedi")}</p><p>${escapeHTML(err.message)}</p></div>`;
     renderedIds = "load-failed"; // the first successful poll rebuilds the wall
     startPolling();
     return;

@@ -3,6 +3,8 @@
  * so pages never build URLs or parse error bodies themselves.
  */
 
+import { lang, t } from "./i18n.js";
+
 /** Error carrying the reason given by the server, ready to be shown to the user. */
 export class ApiError extends Error {
   constructor(message, status = 0) {
@@ -33,13 +35,14 @@ async function request(path, { method = "GET", body, timeoutMs = 15000 } = {}) {
   try {
     response = await fetch(path, {
       method,
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      // The server words a few texts itself (what a rule does, its working hours) in this language
+      headers: body === undefined ? { "Accept-Language": lang } : { "Content-Type": "application/json", "Accept-Language": lang },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });
   } catch (err) {
     const timedOut = err && err.name === "AbortError";
-    throw new ApiError(timedOut ? "Sunucu zamanında yanıt vermedi" : "Sunucuya ulaşılamıyor");
+    throw new ApiError(t(timedOut ? "Sunucu zamanında yanıt vermedi" : "Sunucuya ulaşılamıyor"));
   } finally {
     clearTimeout(timer);
   }
@@ -51,7 +54,7 @@ async function request(path, { method = "GET", body, timeoutMs = 15000 } = {}) {
     /* empty or non-JSON body */
   }
   if (!response.ok) {
-    throw new ApiError(errorDetail(payload, `İstek başarısız oldu (${response.status})`), response.status);
+    throw new ApiError(errorDetail(payload, t("İstek başarısız oldu ({status})", { status: response.status })), response.status);
   }
   return payload;
 }

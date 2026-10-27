@@ -4,11 +4,12 @@
  */
 
 import { getEventFrames, labelEvent, listEvents, summarizeEvent } from "./api.js";
-import { levelOf } from "./labels.js";
+import { t } from "./i18n.js";
+import { alarmText, levelOf } from "./labels.js";
 import { navigate } from "./router.js";
 import { refreshEventsBadge } from "./shell.js";
 import {
-  $, $$, NO_IMAGE, closeModal, escapeHTML, formatDuration, openModal, showError, showImage, showToast,
+  $, $$, NO_IMAGE, closeModal, escapeHTML, formatDuration, formatPercent, openModal, showError, showImage, showToast,
 } from "./ui.js";
 
 const MODAL_ID = "modal-event";
@@ -27,9 +28,9 @@ export const isRuleEvent = (entry) =>
 /** Short title of an event: the broken rule, or what the summary says happened. */
 export function eventTitle(entry) {
   if (isRuleEvent(entry)) {
-    return entry.rule_title || String(entry.anomaly_type || "").replace("Kural İhlali:", "").trim() || "Kural ihlali";
+    return entry.rule_title || String(entry.anomaly_type || "").replace("Kural İhlali:", "").trim() || t("Kural ihlali");
   }
-  return summaryHeadline(entry).replace(/[.!]+$/, "") || entry.anomaly_type || "Olağandışı hareket";
+  return summaryHeadline(entry).replace(/[.!]+$/, "") || t(entry.anomaly_type || "Olağandışı hareket");
 }
 
 /**
@@ -41,7 +42,7 @@ export const eventSeconds = (entry) => Number(entry.incident_sec) || Number(entr
 /** Text and colour class of the badge that tells how serious an event is. */
 export function levelInfo(entry) {
   const level = levelOf(entry.tier);
-  return { text: isRuleEvent(entry) ? "Kural ihlali" : level.label, className: `badge ${level.badge}` };
+  return { text: isRuleEvent(entry) ? t("Kural ihlali") : level.label, className: `badge ${level.badge}` };
 }
 
 export function levelBadge(entry) {
@@ -50,8 +51,8 @@ export function levelBadge(entry) {
 }
 
 /** What the summary concluded about the footage, in the words used in lists and exports. */
-export const VERDICT_LABELS = { confirmed: "Doğrulandı", normal: "Olağan görünüyor", unclear: "Belirsiz" };
-const ORDINARY_NOTE = "Özete göre görüntüde olağandışı bir şey görünmüyor. Videoyu izleyip kendiniz karar verin.";
+export const VERDICT_LABELS = { confirmed: t("Doğrulandı"), normal: t("Olağan görünüyor"), unclear: t("Belirsiz") };
+const ORDINARY_NOTE = t("Özete göre görüntüde olağandışı bir şey görünmüyor. Videoyu izleyip kendiniz karar verin.");
 
 /** Muted badge for an alarm whose footage looked ordinary to the summary; "" for every other event. */
 export function verdictBadge(entry) {
@@ -72,7 +73,9 @@ export function summaryDetail(entry) {
   return match ? match[1].trim() : "";
 }
 
-const inlineMarkup = (text) => escapeHTML(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+// The summary is written in Turkish by the summarizer; its one fixed label follows the interface language
+const inlineMarkup = (text) =>
+  escapeHTML(text.replace("**Öneri:**", `**${t("Öneri:")}**`)).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
 /**
  * Turns the summary text (paragraphs, "- " bullets, **bold**) into safe HTML. The headline is
@@ -109,18 +112,18 @@ function formatSummary(text, headlineIsTitle = false) {
 
 /* --------------------------------------------------------------- Rendering */
 function renderFacts(entry) {
-  const facts = [["Kamera", escapeHTML(entry.camera_name || entry.camera_id)]];
+  const facts = [[t("Kamera"), escapeHTML(entry.camera_name || entry.camera_id)]];
   const start = entry.start_time_str || entry.timestamp_str || "";
   const end = entry.is_ongoing ? "" : entry.end_time_str || "";
   let when = end && end !== start ? `${start} – ${end}` : start;
-  if (entry.is_ongoing) when += " (sürüyor)";
+  if (entry.is_ongoing) when += ` (${t("sürüyor")})`;
   else if (eventSeconds(entry)) when += ` · ${formatDuration(eventSeconds(entry))}`;
-  facts.push(["Saat", escapeHTML(when)]);
+  facts.push([t("Saat"), escapeHTML(when)]);
   if (isRuleEvent(entry)) {
-    const detail = entry.rule_description || entry.message || "";
-    if (detail) facts.push(["Kural", escapeHTML(detail)]);
+    const detail = alarmText(entry.rule_description || entry.message || "");
+    if (detail) facts.push([t("Kural"), escapeHTML(detail)]);
   } else {
-    facts.push(["Hareket seviyesi", `%${Math.round(Number(entry.score) || 0)}`]);
+    facts.push([t("Hareket seviyesi"), formatPercent(Math.round(Number(entry.score) || 0))]);
   }
   $("#event-facts").innerHTML = facts.map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join("");
 }
@@ -130,10 +133,10 @@ function renderSummary(entry) {
   const button = $("#event-summarize");
   button.hidden = !entry.clip_url;
   button.disabled = entry.ai_status === "generating";
-  button.textContent = entry.ai_summary ? "Yeniden oluştur" : "Özet oluştur";
+  button.textContent = t(entry.ai_summary ? "Yeniden oluştur" : "Özet oluştur");
 
   if (entry.ai_status === "generating") {
-    text.innerHTML = `<div class="loading"><div class="spinner"></div><span>Video inceleniyor, özet birazdan burada görünecek…</span></div>`;
+    text.innerHTML = `<div class="loading"><div class="spinner"></div><span>${t("Video inceleniyor, özet birazdan burada görünecek…")}</span></div>`;
   } else if (entry.ai_summary) {
     text.innerHTML = formatSummary(entry.ai_summary, !isRuleEvent(entry));
   } else {
@@ -141,7 +144,7 @@ function renderSummary(entry) {
     if (entry.is_ongoing) reason = "Olay sürüyor. Özet, olay bittikten sonra yazılır.";
     else if (!entry.clip_url) reason = "Bu olayın videosu olmadığı için özet yazılamıyor.";
     else if (entry.ai_status === "error" || entry.ai_status === "interrupted") reason = "Özet yazılamadı. Yeniden deneyebilirsiniz.";
-    text.innerHTML = `<p class="hint">${reason}</p>`;
+    text.innerHTML = `<p class="hint">${t(reason)}</p>`;
   }
 }
 
@@ -214,7 +217,7 @@ async function requestSummary() {
     follow();
   } catch (err) {
     update({ ...current, ai_status: previous });
-    showError("Özet başlatılamadı", err);
+    showError(t("Özet başlatılamadı"), err);
   }
 }
 
@@ -222,11 +225,11 @@ async function toggleFrames() {
   const strip = $("#event-frames");
   if (!strip.hidden) {
     strip.hidden = true;
-    $("#event-frames-toggle").textContent = "Kareleri göster";
+    $("#event-frames-toggle").textContent = t("Kareleri göster");
     return;
   }
   strip.hidden = false;
-  $("#event-frames-toggle").textContent = "Kareleri gizle";
+  $("#event-frames-toggle").textContent = t("Kareleri gizle");
   strip.innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
   const entryId = current.id;
   try {
@@ -235,14 +238,14 @@ async function toggleFrames() {
     const frames = data.frames || [];
     strip.innerHTML = frames.length
       ? frames.map((frame, index) => {
-          const second = data.timestamps && data.timestamps[index] !== undefined ? `${data.timestamps[index]} sn` : "";
+          const second = data.timestamps && data.timestamps[index] !== undefined ? `${data.timestamps[index]} ${t("sn")}` : "";
           return `<button type="button" class="event-frame" data-caption="${escapeHTML(second)}">
                     <img src="data:image/jpeg;base64,${frame}" alt="Kare ${index + 1}"><span>${escapeHTML(second)}</span>
                   </button>`;
         }).join("")
-      : `<p class="hint">Bu videodan kare alınamadı.</p>`;
+      : `<p class="hint">${t("Bu videodan kare alınamadı.")}</p>`;
   } catch (err) {
-    strip.innerHTML = `<p class="hint">Kareler alınamadı: ${escapeHTML(err.message)}</p>`;
+    strip.innerHTML = `<p class="hint">${t("Kareler alınamadı: {reason}", { reason: escapeHTML(t(err.message)) })}</p>`;
   }
 }
 
@@ -329,7 +332,7 @@ export function openEventDetail(entry, changed = () => {}) {
   current = entry;
   onChange = changed;
   $("#event-frames").hidden = true;
-  $("#event-frames-toggle").textContent = "Kareleri göster";
+  $("#event-frames-toggle").textContent = t("Kareleri göster");
   $("#event-speed").textContent = "1×";
   render(entry);
   openModal(MODAL_ID);

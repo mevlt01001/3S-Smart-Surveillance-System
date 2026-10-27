@@ -3,6 +3,8 @@
  * Pages use these instead of talking to the DOM for cross-cutting concerns.
  */
 
+import { locale, t } from "./i18n.js";
+
 /* ------------------------------------------------------------ HTML helpers */
 const HTML_ENTITIES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 
@@ -26,17 +28,24 @@ export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 /* -------------------------------------------------------------- Formatters */
+/** A percentage as the language writes it: "%11,8" in Turkish, "11.8%" in English. */
+export function formatPercent(value) {
+  const number = Number(value || 0).toLocaleString(locale, { maximumFractionDigits: 1 });
+  return locale === "tr-TR" ? `%${number}` : `${number}%`;
+}
+
 export function formatDuration(seconds) {
   const total = Math.round(Number(seconds) || 0);
-  if (total < 60) return `${total} sn`;
+  const [s, m, h] = [t("sn"), t("dk"), t("sa")];
+  if (total < 60) return `${total} ${s}`;
   if (total >= 3600) {
     const hours = Math.floor(total / 3600);
     const minutes = Math.round((total % 3600) / 60);
-    return minutes ? `${hours} sa ${minutes} dk` : `${hours} sa`;
+    return minutes ? `${hours} ${h} ${minutes} ${m}` : `${hours} ${h}`;
   }
   const minutes = Math.floor(total / 60);
   const rest = total % 60;
-  return rest ? `${minutes} dk ${rest} sn` : `${minutes} dk`;
+  return rest ? `${minutes} ${m} ${rest} ${s}` : `${minutes} ${m}`;
 }
 
 /** Hides the password of an rtsp:// or http:// address for on-screen display. */
@@ -89,7 +98,7 @@ export const NO_IMAGE =
   encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><rect width="320" height="180" fill="#131822"/>` +
       `<g fill="none" stroke="#56627a" stroke-width="3"><rect x="126" y="62" width="68" height="50" rx="6"/><circle cx="160" cy="87" r="13"/></g>` +
-      `<text x="160" y="140" fill="#56627a" font-family="sans-serif" font-size="13" text-anchor="middle">Görüntü yok</text></svg>`
+      `<text x="160" y="140" fill="#56627a" font-family="sans-serif" font-size="13" text-anchor="middle">${t("Görüntü yok")}</text></svg>`
   );
 
 /* ------------------------------------------------------------------ Toasts */
@@ -116,12 +125,13 @@ export function showToast(message, type = "info", durationMs = 4000) {
 
   const text = document.createElement("div");
   text.className = "toast-message";
-  text.textContent = message;
+  // Fixed messages may be passed untranslated; t() leaves an already translated text as it is
+  text.textContent = t(message);
 
   const close = document.createElement("button");
   close.type = "button";
   close.className = "toast-close";
-  close.setAttribute("aria-label", "Kapat");
+  close.setAttribute("aria-label", t("Kapat"));
   close.textContent = "×";
   close.addEventListener("click", () => toast.remove());
 
@@ -132,7 +142,8 @@ export function showToast(message, type = "info", durationMs = 4000) {
 
 /** Shows the reason of a failed action. */
 export const showError = (prefix, err) =>
-  showToast(`${prefix}: ${(err && err.message) || "bilinmeyen hata"}`, "error", 6000);
+  // Messages of the server are Turkish sentences; the known ones have an English entry
+  showToast(`${t(prefix)}: ${t((err && err.message) || "bilinmeyen hata")}`, "error", 6000);
 
 /* ------------------------------------------------------------------ Modals */
 const focusBeforeModal = new WeakMap();
@@ -183,7 +194,7 @@ export function initModals() {
  * @param {{title: string, message: string, confirmText?: string, danger?: boolean}} options
  * @returns {Promise<boolean>}
  */
-export function confirmDialog({ title, message, confirmText = "Onayla", danger = false }) {
+export function confirmDialog({ title, message, confirmText = t("Onayla"), danger = false }) {
   return new Promise((resolve) => {
     const modal = document.createElement("div");
     modal.className = "modal is-open";
@@ -191,12 +202,12 @@ export function confirmDialog({ title, message, confirmText = "Onayla", danger =
     modal.setAttribute("aria-modal", "true");
     modal.innerHTML = `
       <div class="modal-dialog">
-        <header class="modal-header"><h2>${escapeHTML(title)}</h2></header>
-        <div class="modal-body"><p class="confirm-message">${escapeHTML(message)}</p></div>
+        <header class="modal-header"><h2>${escapeHTML(t(title))}</h2></header>
+        <div class="modal-body"><p class="confirm-message">${escapeHTML(t(message))}</p></div>
         <footer class="modal-footer">
           <span class="toolbar-spacer"></span>
-          <button type="button" class="btn" data-answer="no">Vazgeç</button>
-          <button type="button" class="btn ${danger ? "btn-danger" : "btn-primary"}" data-answer="yes">${escapeHTML(confirmText)}</button>
+          <button type="button" class="btn" data-answer="no">${t("Vazgeç")}</button>
+          <button type="button" class="btn ${danger ? "btn-danger" : "btn-primary"}" data-answer="yes">${escapeHTML(t(confirmText))}</button>
         </footer>
       </div>`;
     const previous = document.activeElement;
@@ -246,7 +257,7 @@ export async function withBusy(button, busyText, task) {
   if (!button) return task();
   const original = button.innerHTML;
   button.disabled = true;
-  button.textContent = busyText;
+  button.textContent = t(busyText);
   try {
     return await task();
   } finally {

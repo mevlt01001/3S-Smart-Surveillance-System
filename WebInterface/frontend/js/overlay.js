@@ -4,6 +4,7 @@
  * mapped onto the area the picture really occupies inside its letter-boxed element.
  */
 
+import { t } from "./i18n.js";
 import { classLabel } from "./labels.js";
 
 const FONT = '600 11px system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -59,7 +60,7 @@ function drawRuleZone(ctx, canvas, area, zone) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
   const first = zone.points[0];
-  drawLabel(ctx, canvas, zone.name || "Bölge", area.x + first.x * area.width, area.y + first.y * area.height - 19, COLORS.zone);
+  drawLabel(ctx, canvas, zone.name || t("Bölge"), area.x + first.x * area.width, area.y + first.y * area.height - 19, COLORS.zone);
 }
 
 function drawChangeZone(ctx, canvas, area, zone, result) {
@@ -67,22 +68,22 @@ function drawChangeZone(ctx, canvas, area, zone, result) {
   let status = "";
   if (!result || !result.has_reference) {
     color = COLORS.muted;
-    status = "referans bekleniyor";
+    status = t("referans bekleniyor");
   } else if (result.alarm_level === "alarm") {
     color = COLORS.danger;
-    status = "engel var";
+    status = t("engel var");
   } else if (result.alarm_level === "warning") {
     color = COLORS.warn;
-    status = "değişiklik var";
+    status = t("değişiklik var");
   }
   tracePolygon(ctx, area, zone.points);
   ctx.setLineDash([6, 4]);
   ctx.strokeStyle = color;
-  ctx.lineWidth = status === "engel var" ? 2 : 1.5;
+  ctx.lineWidth = result && result.alarm_level === "alarm" ? 2 : 1.5;
   ctx.stroke();
   ctx.setLineDash([]);
   const first = zone.points[0];
-  const name = zone.name || "Bölge";
+  const name = zone.name || t("Bölge");
   drawLabel(ctx, canvas, status ? `${name}: ${status}` : name, area.x + first.x * area.width, area.y + first.y * area.height - 19, color);
 }
 

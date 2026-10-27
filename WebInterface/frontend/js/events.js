@@ -7,6 +7,8 @@ import {
   eventSeconds, eventTitle, isRuleEvent, levelBadge, levelInfo, openEventDetail, summaryDetail, summaryHeadline, syncEventDetail,
   verdictBadge, VERDICT_LABELS,
 } from "./event-detail.js";
+import { t } from "./i18n.js";
+import { alarmText } from "./labels.js";
 import { refreshEventsBadge } from "./shell.js";
 import {
   $, NO_IMAGE, bindSegmented, confirmDialog, downloadBlob, escapeHTML, formatDuration, icon, setHTML, showError, showToast,
@@ -15,7 +17,7 @@ import {
 const LAYOUT_KEY = "aegis.events.layout";
 const MAX_ENTRIES = 300;
 const NEW_HIGHLIGHT_MS = 6000;
-const REVIEW_LABELS = { correct: "Doğru alarm", false_positive: "Hatalı alarm" };
+const REVIEW_LABELS = { correct: t("Doğru alarm"), false_positive: t("Hatalı alarm") };
 
 let entries = [];
 let filters = { search: "", camera: "", time: "all", kind: "all", review: "all" };
@@ -59,18 +61,18 @@ function filteredEntries() {
 /* --------------------------------------------------------------- Rendering */
 // The headline of the summary is the title of a movement alarm, so its description is the next line
 const describe = (entry) =>
-  (isRuleEvent(entry) ? summaryHeadline(entry) || entry.rule_description || "" : summaryDetail(entry));
+  (isRuleEvent(entry) ? summaryHeadline(entry) || alarmText(entry.rule_description) : summaryDetail(entry));
 
 function durationText(entry) {
-  if (entry.is_ongoing) return "Sürüyor";
+  if (entry.is_ongoing) return t("Sürüyor");
   return eventSeconds(entry) ? formatDuration(eventSeconds(entry)) : "";
 }
 
 function reviewButtons(entry) {
   const current = reviewOf(entry);
   return `
-    <button type="button" class="chip ${current === "correct" ? "is-active is-ok" : ""}" data-action="label" data-label="correct" title="Bu alarm doğruydu">${icon("check")} Doğru</button>
-    <button type="button" class="chip ${current === "false_positive" ? "is-active is-muted" : ""}" data-action="label" data-label="false_positive" title="Bu alarm hatalıydı">${icon("close")} Hatalı</button>`;
+    <button type="button" class="chip ${current === "correct" ? "is-active is-ok" : ""}" data-action="label" data-label="correct" title="${t("Bu alarm doğruydu")}">${icon("check")} ${t("Doğru")}</button>
+    <button type="button" class="chip ${current === "false_positive" ? "is-active is-muted" : ""}" data-action="label" data-label="false_positive" title="${t("Bu alarm hatalıydı")}">${icon("close")} ${t("Hatalı")}</button>`;
 }
 
 function cardHTML(entry) {
@@ -78,7 +80,7 @@ function cardHTML(entry) {
   const duration = durationText(entry);
   return `
     <article class="event-card is-${escapeHTML(entry.tier || "normal")} ${freshIds.has(entry.id) ? "is-new" : ""}" data-event="${escapeHTML(entry.id)}">
-      <button type="button" class="event-thumb" data-action="open" aria-label="Olayı aç">
+      <button type="button" class="event-thumb" data-action="open" aria-label="${t("Olayı aç")}">
         <img src="${escapeHTML(entry.snapshot_url || NO_IMAGE)}" alt="" loading="lazy">
         ${entry.clip_url ? `<span class="event-play">${icon("play")}</span>` : ""}
         ${duration ? `<span class="event-duration">${duration}</span>` : ""}
@@ -110,10 +112,10 @@ function emptyHTML() {
   return `
     <div class="empty">
       ${icon(nothingRecorded ? "events" : "search")}
-      <p class="empty-title">${nothingRecorded ? "Henüz kayıtlı olay yok" : "Aramanıza uyan olay yok"}</p>
-      <p>${nothingRecorded
+      <p class="empty-title">${t(nothingRecorded ? "Henüz kayıtlı olay yok" : "Aramanıza uyan olay yok")}</p>
+      <p>${t(nothingRecorded
         ? "Bir alarm oluştuğunda videosu ve fotoğrafıyla birlikte burada görünür."
-        : "Filtreleri değiştirerek yeniden deneyin."}</p>
+        : "Filtreleri değiştirerek yeniden deneyin.")}</p>
     </div>`;
 }
 
@@ -136,9 +138,11 @@ function renderPager(total, pageCount) {
 function renderSummary(shown) {
   const unreviewed = entries.filter((entry) => reviewOf(entry) === "unlabeled").length;
   const critical = entries.filter((entry) => entry.tier === "critical").length;
-  const parts = [shown === entries.length ? `${entries.length} olay` : `${shown} olay gösteriliyor (toplam ${entries.length})`];
-  if (critical) parts.push(`${critical} kritik`);
-  if (unreviewed) parts.push(`${unreviewed} incelenmemiş`);
+  const parts = [shown === entries.length
+    ? t("{n} olay", { n: entries.length })
+    : t("{shown} olay gösteriliyor (toplam {total})", { shown, total: entries.length })];
+  if (critical) parts.push(t("{n} kritik", { n: critical }));
+  if (unreviewed) parts.push(t("{n} incelenmemiş", { n: unreviewed }));
   $("#events-summary").textContent = entries.length ? parts.join(" · ") : "";
 }
 
@@ -154,7 +158,7 @@ function render() {
   } else if (layout === "table") {
     setHTML(list, `
       <div class="table-wrap"><table class="table events-table">
-        <thead><tr><th>Zaman</th><th>Kamera</th><th>Olay</th><th>Seviye</th><th>Süre</th><th>Karar</th></tr></thead>
+        <thead><tr><th>${t("Zaman")}</th><th>${t("Kamera")}</th><th>${t("Olay")}</th><th>${t("Seviye")}</th><th>${t("Süre")}</th><th>${t("Karar")}</th></tr></thead>
         <tbody>${visible.map(rowHTML).join("")}</tbody>
       </table></div>`);
   } else {
@@ -168,7 +172,7 @@ function render() {
 function renderCameraFilter() {
   const select = $("#events-camera");
   const names = new Map(entries.map((entry) => [entry.camera_id, entry.camera_name || entry.camera_id]));
-  const options = `<option value="">Tüm kameralar</option>` + Array.from(names, ([cameraId, name]) =>
+  const options = `<option value="">${t("Tüm kameralar")}</option>` + Array.from(names, ([cameraId, name]) =>
     `<option value="${escapeHTML(cameraId)}">${escapeHTML(name)}</option>`).join("");
   if (select.dataset.rendered === options) return;
   select.innerHTML = options;
@@ -205,7 +209,7 @@ async function load() {
     entries = (await listEvents({ limit: MAX_ENTRIES })).journal || [];
     render();
   } catch (err) {
-    setHTML($("#events-list"), `<div class="empty"><p class="empty-title">Olaylar yüklenemedi</p><p>${escapeHTML(err.message)}</p></div>`);
+    setHTML($("#events-list"), `<div class="empty"><p class="empty-title">${t("Olaylar yüklenemedi")}</p><p>${escapeHTML(err.message)}</p></div>`);
   }
 }
 
@@ -213,9 +217,9 @@ async function loadFleetNotice() {
   try {
     const fleet = await getFleetStatus();
     if (fleet.analysis_enabled === false) {
-      fleetNotice = "Olağandışı hareket algılama Ayarlar’dan kapatılmış. Yalnızca kural ihlalleri kaydedilir.";
+      fleetNotice = t("Olağandışı hareket algılama Ayarlar’dan kapatılmış. Yalnızca kural ihlalleri kaydedilir.");
     } else if (fleet.offline_count > 0) {
-      fleetNotice = `${fleet.offline_count} kameradan görüntü alınamıyor; bu kameralarda olay algılanamaz.`;
+      fleetNotice = t("{n} kameradan görüntü alınamıyor; bu kameralarda olay algılanamaz.", { n: fleet.offline_count });
     } else {
       fleetNotice = "";
     }
@@ -280,18 +284,18 @@ function exportEvents() {
     return;
   }
   const cell = (value) => `"${String(value ?? "").replace(/"/g, '""').replace(/\s+/g, " ")}"`;
-  const lines = [["Tarih", "Saat", "Kamera", "Olay", "Seviye", "Süre (sn)", "Karar", "Özet", "Özetin değerlendirmesi"].map(cell).join(";")];
+  const lines = [["Tarih", "Saat", "Kamera", "Olay", "Seviye", "Süre (sn)", "Karar", "Özet", "Özetin değerlendirmesi"].map((name) => cell(t(name))).join(";")];
   rows.forEach((entry) => {
     lines.push([
       entry.date_str, entry.timestamp_str, entry.camera_name, eventTitle(entry), levelInfo(entry).text,
-      entry.is_ongoing ? "sürüyor" : eventSeconds(entry) || "", REVIEW_LABELS[entry.operator_label] || "İncelenmedi", describe(entry),
+      entry.is_ongoing ? t("sürüyor") : eventSeconds(entry) || "", REVIEW_LABELS[entry.operator_label] || t("İncelenmedi"), describe(entry),
       VERDICT_LABELS[entry.ai_verdict] || "",
     ].map(cell).join(";"));
   });
   const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
   // The byte-order mark makes spreadsheet programs read the Turkish characters correctly
-  downloadBlob(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }), `olaylar_${stamp}.csv`);
-  showToast(`${rows.length} olay dışa aktarıldı.`, "success");
+  downloadBlob(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }), `${t("olaylar")}_${stamp}.csv`);
+  showToast(t("{n} olay dışa aktarıldı.", { n: rows.length }), "success");
 }
 
 async function clearAll() {
@@ -301,7 +305,7 @@ async function clearAll() {
   }
   const confirmed = await confirmDialog({
     title: "Tüm olaylar silinsin mi?",
-    message: `${entries.length} olay kaydı, videoları ve fotoğraflarıyla birlikte kalıcı olarak silinecek. Bu işlem geri alınamaz.`,
+    message: t("{n} olay kaydı, videoları ve fotoğraflarıyla birlikte kalıcı olarak silinecek. Bu işlem geri alınamaz.", { n: entries.length }),
     confirmText: "Tümünü sil",
     danger: true,
   });

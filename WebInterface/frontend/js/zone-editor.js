@@ -4,6 +4,8 @@
  * a zone fits the picture at any size. The editor knows nothing about the surrounding form.
  */
 
+import { t } from "./i18n.js";
+
 export const ZONE_COLORS = ["#ff8533", "#38bdf8", "#34d399", "#c084fc", "#f43f5e", "#fbbf24"];
 
 const MIN_POINTS = 3;
@@ -80,7 +82,7 @@ export function createZoneEditor(canvas, { onChange, canDraw, onReject = () => {
     const centre = zone.points.reduce((sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }), { x: 0, y: 0 });
     const { x, y } = toPixels({ x: centre.x / zone.points.length, y: centre.y / zone.points.length });
     ctx.font = LABEL_FONT;
-    const label = zone.name || `Bölge ${index + 1}`;
+    const label = zone.name || t("Bölge {n}", { n: index + 1 });
     const width = ctx.measureText(label).width + 16;
     ctx.fillStyle = "rgba(8, 11, 17, 0.85)";
     ctx.fillRect(x - width / 2, y - 11, width, 22);
@@ -134,7 +136,7 @@ export function createZoneEditor(canvas, { onChange, canDraw, onReject = () => {
     }
     const zone = {
       id: `zone_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      name: `Bölge ${zones.length + 1}`,
+      name: t("Bölge {n}", { n: zones.length + 1 }),
       description: "",
       zone_type: "detection",
       points: draft,

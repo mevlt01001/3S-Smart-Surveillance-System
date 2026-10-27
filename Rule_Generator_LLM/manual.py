@@ -13,13 +13,13 @@ from .schema import DetectionPlan
 
 # What the form offers to look for: label, detector and the classes that stand for it
 SUBJECTS: Dict[str, Dict[str, Any]] = {
-    "person": {"label": "Kişi", "model": "coco_detector", "classes": ["person"]},
-    "vehicle": {"label": "Araç", "model": "coco_detector", "classes": ["car", "truck", "bus", "motorcycle"]},
-    "no_hardhat": {"label": "Baretsiz kişi", "model": "safety_detector", "classes": ["NO-Hardhat"]},
-    "no_vest": {"label": "Yeleksiz kişi", "model": "safety_detector", "classes": ["NO-Safety Vest"]},
-    "forklift": {"label": "Forklift", "model": "yoloe_detector",
+    "person": {"label": "Kişi", "label_en": "Person", "model": "coco_detector", "classes": ["person"]},
+    "vehicle": {"label": "Araç", "label_en": "Vehicle", "model": "coco_detector", "classes": ["car", "truck", "bus", "motorcycle"]},
+    "no_hardhat": {"label": "Baretsiz kişi", "label_en": "Person without a hard hat", "model": "safety_detector", "classes": ["NO-Hardhat"]},
+    "no_vest": {"label": "Yeleksiz kişi", "label_en": "Person without a safety vest", "model": "safety_detector", "classes": ["NO-Safety Vest"]},
+    "forklift": {"label": "Forklift", "label_en": "Forklift", "model": "yoloe_detector",
                  "classes": ["forklift", "reach truck", "pallet jack", "industrial lifter", "fork truck"]},
-    "bag": {"label": "Çanta veya bavul", "model": "coco_detector", "classes": ["backpack", "suitcase", "handbag"]},
+    "bag": {"label": "Çanta veya bavul", "label_en": "Bag or suitcase", "model": "coco_detector", "classes": ["backpack", "suitcase", "handbag"]},
 }
 
 # When to alert: label, whether a number is needed and what it means
@@ -97,7 +97,64 @@ def _seconds(value: Optional[float]) -> str:
     return f"{seconds:g} saniye"
 
 
-def describe_plan(plan: Optional[Dict[str, Any]]) -> str:
+# Detector classes as an English-speaking operator would say them
+_CLASS_LABELS_EN = {
+    "person": "person", "hardhat": "hard hat", "no-hardhat": "person without a hard hat", "safety vest": "safety vest",
+    "no-safety vest": "person without a safety vest", "mask": "mask", "no-mask": "person without a mask",
+    "safety cone": "safety cone", "machinery": "machinery", "vehicle": "vehicle", "car": "car", "truck": "truck",
+    "bus": "bus", "motorcycle": "motorcycle", "bicycle": "bicycle", "backpack": "backpack", "suitcase": "suitcase",
+    "handbag": "handbag", "forklift": "forklift",
+}
+
+
+def _names_en(classes) -> str:
+    labels = [_CLASS_LABELS_EN.get(str(name).strip().lower(), str(name)) for name in classes]
+    return ", ".join(dict.fromkeys(labels))
+
+
+def _seconds_en(value: Optional[float]) -> str:
+    seconds = float(value or 0)
+    if seconds >= 120 and seconds % 60 == 0:
+        return f"{int(seconds // 60)} minutes"
+    return f"{seconds:g} second" + ("" if seconds == 1 else "s")
+
+
+def _plural_en(who: str) -> str:
+    """'person' -> 'people', 'bag or suitcase' -> 'bags or suitcases'; a list of classes stays as it is."""
+    if "," in who:
+        return who
+    if " or " in who:
+        return " or ".join(_plural_en(part) for part in who.split(" or "))
+    if who.startswith("person"):
+        return "people" + who[len("person"):]
+    head, _, rest = who.partition(" ")
+    plural = head + ("es" if head.endswith(("s", "sh", "ch", "x")) else "s")
+    return f"{plural} {rest}".strip()
+
+
+def _describe_en(kind: str, condition: Dict[str, Any], who: str) -> Optional[str]:
+    """The English counterpart of one condition of describe_plan."""
+    duration = condition.get("duration_sec")
+    if kind in ("zone_presence", "unauthorized_object", "line_crossing"):
+        return f"{who} seen in the zone"
+    if kind == "zone_absence" and condition.get("required"):
+        return f"{_names_en(condition['required'])} missing on a {_names_en([condition.get('subject') or 'person'])} in the zone"
+    if kind == "zone_absence":
+        return f"no {who} in the zone for {_seconds_en(duration)}" if duration else f"no {who} in the zone"
+    if kind == "loitering":
+        return f"{who} stays in the zone longer than {_seconds_en(duration or 30)}"
+    if kind == "object_count":
+        threshold = int(condition.get("count_threshold") or 0)
+        operator = str(condition.get("count_operator") or "gt").lower()
+        if operator in ("gt", "gte"):
+            return f"more than {threshold if operator == 'gt' else max(threshold - 1, 0)} {_plural_en(who)} in the zone"
+        if operator in ("lt", "lte"):
+            return f"fewer than {threshold if operator == 'lt' else threshold + 1} {_plural_en(who)} in the zone"
+        return f"exactly {threshold} {_plural_en(who)} in the zone"
+    return None
+
+
+def describe_plan(plan: Optional[Dict[str, Any]], lang: str = "tr") -> str:
     """What a stored plan does, as one sentence for the operator ('' when there is no plan)."""
     if not plan:
         return ""
@@ -115,6 +172,11 @@ def describe_plan(plan: Optional[Dict[str, Any]]) -> str:
         wanted = {str(name).lower() for name in classes}
         choice = next((subject for subject in SUBJECTS.values()
                        if len(subject["classes"]) > 1 and {name.lower() for name in subject["classes"]} == wanted), None)
+        if lang == "en":
+            part = _describe_en(kind, condition, choice["label_en"].lower() if choice else _names_en(classes))
+            if part:
+                parts.append(part)
+            continue
         who = choice["label"].lower() if choice else _names(classes)
         duration = condition.get("duration_sec")
         if kind in ("zone_presence", "unauthorized_object", "line_crossing"):
@@ -134,5 +196,5 @@ def describe_plan(plan: Optional[Dict[str, Any]]) -> str:
                 parts.append(f"bölgede {_ablative(threshold if operator == 'lt' else threshold + 1)} az {who} olunca")
             else:
                 parts.append(f"bölgede tam {threshold} {who} olunca")
-    sentence = " veya ".join(dict.fromkeys(parts))
+    sentence = (" or " if lang == "en" else " veya ").join(dict.fromkeys(parts))
     return sentence[:1].upper() + sentence[1:] if sentence else ""

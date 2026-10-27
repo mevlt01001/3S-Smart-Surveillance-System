@@ -4,6 +4,7 @@
  */
 
 import { createRule, deleteRule, listCameras, listRules, recompileRule, snapshotUrl, updateRule } from "./api.js";
+import { t } from "./i18n.js";
 import { describePlan } from "./labels.js";
 import { $, $$, bindSegmented, confirmDialog, escapeHTML, icon, isAnyModalOpen, setHTML, showError, showToast, withBusy } from "./ui.js";
 import { ZONE_COLORS, createZoneEditor } from "./zone-editor.js";
@@ -13,18 +14,18 @@ const DEFAULT_ACTIONS = ["alert_screen", "snapshot"];
 
 /** How the preparation state of a rule is shown; states that need no attention have no entry. */
 const STATUS_BADGES = {
-  compiling: { className: "is-info is-busy", text: "Hazırlanıyor", hint: "Açıklamanız işleniyor. Kural birkaç saniye içinde çalışmaya başlar." },
-  fallback: { className: "is-warn", text: "Genel ayarla çalışıyor", hint: "Açıklama tam çözümlenemedi; kural genel bir ayarla çalışıyor. Açıklamayı sadeleştirin veya yeniden deneyin.", retry: true },
-  pending: { className: "is-warn", text: "Hazır değil", hint: "Bu kural henüz hazırlanmadı.", retry: true },
-  unavailable: { className: "is-danger", text: "Hazırlanamadı", hint: "Kural hazırlama servisine ulaşılamadı. Kural şu anda çalışmıyor.", retry: true },
-  error: { className: "is-danger", text: "Hazırlanamadı", hint: "Kural hazırlanırken hata oluştu. Kural şu anda çalışmıyor.", retry: true },
-  unsupported: { className: "is-danger", text: "Yapılamıyor", hint: "Bu istek kameradan anlaşılabilecek bir duruma çevrilemedi. Kural çalışmıyor." },
+  compiling: { className: "is-info is-busy", text: t("Hazırlanıyor"), hint: t("Açıklamanız işleniyor. Kural birkaç saniye içinde çalışmaya başlar.") },
+  fallback: { className: "is-warn", text: t("Genel ayarla çalışıyor"), hint: t("Açıklama tam çözümlenemedi; kural genel bir ayarla çalışıyor. Açıklamayı sadeleştirin veya yeniden deneyin."), retry: true },
+  pending: { className: "is-warn", text: t("Hazır değil"), hint: t("Bu kural henüz hazırlanmadı."), retry: true },
+  unavailable: { className: "is-danger", text: t("Hazırlanamadı"), hint: t("Kural hazırlama servisine ulaşılamadı. Kural şu anda çalışmıyor."), retry: true },
+  error: { className: "is-danger", text: t("Hazırlanamadı"), hint: t("Kural hazırlanırken hata oluştu. Kural şu anda çalışmıyor."), retry: true },
+  unsupported: { className: "is-danger", text: t("Yapılamıyor"), hint: t("Bu istek kameradan anlaşılabilecek bir duruma çevrilemedi. Kural çalışmıyor.") },
 };
 
 /** Badge of a rule's preparation state; a request the system cannot serve carries its own explanation. */
 function statusOf(rule) {
   const status = STATUS_BADGES[rule.compile_status];
-  return status && rule.compile_note ? { ...status, hint: `${rule.compile_note} Kural çalışmıyor; açıklamayı değiştirin.` } : status;
+  return status && rule.compile_note ? { ...status, hint: `${rule.compile_note} ${t("Kural çalışmıyor; açıklamayı değiştirin.")}` } : status;
 }
 
 let rules = [];
@@ -51,12 +52,12 @@ function zoneSummaryHTML(rule) {
   return zones.map((zone, index) => {
     const summary = zone.plan_summary || {};
     const what = zone.zone_type === "change_detection"
-      ? "Engel veya değişiklik izleniyor"
+      ? t("Engel veya değişiklik izleniyor")
       : summary.text || describePlan(zone.plan_summary) || zone.description || "";
     // Shown when the rule is only the closest thing to what was asked for
     const note = zone.plan_summary && zone.plan_summary.note
       ? `<span class="cell-sub rule-note">${icon("info")} ${escapeHTML(zone.plan_summary.note)}</span>` : "";
-    return `<span class="cell-sub rule-zone"><i class="zone-dot" style="--zone-color: ${ZONE_COLORS[(zone.color_idx ?? index) % ZONE_COLORS.length]}"></i>${escapeHTML(zone.name || "Bölge")}: ${escapeHTML(what)}</span>${note}`;
+    return `<span class="cell-sub rule-zone"><i class="zone-dot" style="--zone-color: ${ZONE_COLORS[(zone.color_idx ?? index) % ZONE_COLORS.length]}"></i>${escapeHTML(zone.name || t("Bölge"))}: ${escapeHTML(what)}</span>${note}`;
   }).join("");
 }
 
@@ -64,15 +65,15 @@ function rowHTML(rule) {
   const status = statusOf(rule);
   const badges = [];
   if (rule.camera_missing) {
-    badges.push(`<span class="badge is-warn" title="Bu kuralın kamerası silinmiş. Düzenleyip başka bir kameraya taşıyabilirsiniz.">Kamerası yok</span>`);
+    badges.push(`<span class="badge is-warn" title="${t("Bu kuralın kamerası silinmiş. Düzenleyip başka bir kameraya taşıyabilirsiniz.")}">${t("Kamerası yok")}</span>`);
   } else if (status) {
     badges.push(`<span class="badge ${status.className}" title="${escapeHTML(status.hint)}">${status.text}</span>`);
   }
   if (rule.enabled !== false && rule.active_now === false) {
-    badges.push(`<span class="badge is-muted" title="Kural açık, ancak şu an çalışma saatlerinin dışında olduğu için denetlenmiyor.">Saat dışında</span>`);
+    badges.push(`<span class="badge is-muted" title="${t("Kural açık, ancak şu an çalışma saatlerinin dışında olduğu için denetlenmiyor.")}">${t("Saat dışında")}</span>`);
   }
-  const hours = rule.schedule_text ? `<span class="cell-sub rule-hours">Çalışma saatleri: ${escapeHTML(rule.schedule_text)}</span>` : "";
-  const where = rule.scope === "system" ? "Tüm kameralar" : rule.camera_name || "Kamera";
+  const hours = rule.schedule_text ? `<span class="cell-sub rule-hours">${t("Çalışma saatleri:")} ${escapeHTML(rule.schedule_text)}</span>` : "";
+  const where = rule.scope === "system" ? t("Tüm kameralar") : rule.camera_name || t("Kamera");
   return `
     <tr data-rule="${escapeHTML(rule.id)}">
       <td>
@@ -81,12 +82,12 @@ function rowHTML(rule) {
         ${hours}
       </td>
       <td>${escapeHTML(where)}</td>
-      <td><input type="checkbox" class="switch" data-action="toggle" ${rule.enabled !== false ? "checked" : ""} aria-label="Kural açık" title="Kuralı aç veya kapat"></td>
+      <td><input type="checkbox" class="switch" data-action="toggle" ${rule.enabled !== false ? "checked" : ""} aria-label="${t("Kural açık")}" title="${t("Kuralı aç veya kapat")}"></td>
       <td>
         <div class="cell-actions">
           ${status && status.retry ? `<button type="button" class="btn btn-sm" data-action="retry">Yeniden dene</button>` : ""}
-          <button type="button" class="btn-icon" data-action="edit" title="Düzenle" aria-label="Düzenle">${icon("edit")}</button>
-          <button type="button" class="btn-icon is-danger" data-action="delete" title="Sil" aria-label="Sil">${icon("trash")}</button>
+          <button type="button" class="btn-icon" data-action="edit" title="${t("Düzenle")}" aria-label="${t("Düzenle")}">${icon("edit")}</button>
+          <button type="button" class="btn-icon is-danger" data-action="delete" title="${t("Sil")}" aria-label="${t("Sil")}">${icon("trash")}</button>
         </div>
       </td>
     </tr>`;
@@ -94,20 +95,20 @@ function rowHTML(rule) {
 
 function renderList() {
   const active = rules.filter((rule) => rule.enabled !== false).length;
-  $("#rules-summary").textContent = rules.length ? `${rules.length} kural · ${active} açık` : "";
+  $("#rules-summary").textContent = rules.length ? t("{n} kural · {active} açık", { n: rules.length, active }) : "";
   if (!rules.length) {
     setHTML($("#rules-list"), `
       <div class="empty">
         ${icon("rules")}
-        <p class="empty-title">Henüz kural yok</p>
-        <p>Bir kameranın görüntüsünde bölge çizip orada ne olunca haber almak istediğinizi yazın.</p>
-        <div class="empty-actions"><button type="button" class="btn btn-primary" data-action="new">İlk kuralı oluştur</button></div>
+        <p class="empty-title">${t("Henüz kural yok")}</p>
+        <p>${t("Bir kameranın görüntüsünde bölge çizip orada ne olunca haber almak istediğinizi yazın.")}</p>
+        <div class="empty-actions"><button type="button" class="btn btn-primary" data-action="new">${t("İlk kuralı oluştur")}</button></div>
       </div>`);
     return;
   }
   setHTML($("#rules-list"), `
     <div class="table-wrap"><table class="table">
-      <thead><tr><th>Kural</th><th>Kamera</th><th>Açık</th><th></th></tr></thead>
+      <thead><tr><th>${t("Kural")}</th><th>${t("Kamera")}</th><th>${t("Açık")}</th><th></th></tr></thead>
       <tbody>${rules.map(rowHTML).join("")}</tbody>
     </table></div>`);
 }
@@ -118,13 +119,13 @@ async function loadList() {
   try {
     data = await listRules();
   } catch (err) {
-    setHTML($("#rules-list"), `<div class="empty"><p class="empty-title">Kurallar yüklenemedi</p><p>${escapeHTML(err.message)}</p></div>`);
+    setHTML($("#rules-list"), `<div class="empty"><p class="empty-title">${t("Kurallar yüklenemedi")}</p><p>${escapeHTML(err.message)}</p></div>`);
     return;
   }
   rules = data.rules || [];
   const notice = $("#rules-notice");
   notice.hidden = data.compiler_available !== false;
-  notice.textContent = "Kural hazırlama servisine ulaşılamıyor. Yeni kurallar kaydedilir, ancak servis geri gelene kadar çalışmaz.";
+  notice.textContent = t("Kural hazırlama servisine ulaşılamıyor. Yeni kurallar kaydedilir, ancak servis geri gelene kadar çalışmaz.");
   renderList();
   announceSavedRule();
   // While a rule is being prepared, keep its status fresh
@@ -141,9 +142,9 @@ function announceSavedRule() {
   const status = statusOf(rule);
   const notes = (rule.zones || []).map((zone) => zone.plan_summary && zone.plan_summary.note).filter(Boolean);
   if (status) showToast(`“${rule.title}”: ${status.hint}`, "warning", 12000);
-  else if (notes.length) showToast(`“${rule.title}” çalışıyor, ancak istediğinizden farklı: ${notes.join(" ")}`, "warning", 15000);
-  else if (rule.enabled !== false && rule.active_now === false) showToast(`“${rule.title}” hazır; çalışma saatleri (${rule.schedule_text}) gelince denetlenmeye başlar.`, "info", 8000);
-  else if (rule.enabled !== false) showToast(`“${rule.title}” çalışıyor.`, "success");
+  else if (notes.length) showToast(t("“{title}” çalışıyor, ancak istediğinizden farklı: {notes}", { title: rule.title, notes: notes.join(" ") }), "warning", 15000);
+  else if (rule.enabled !== false && rule.active_now === false) showToast(t("“{title}” hazır; çalışma saatleri ({hours}) gelince denetlenmeye başlar.", { title: rule.title, hours: rule.schedule_text }), "info", 8000);
+  else if (rule.enabled !== false) showToast(t("“{title}” çalışıyor.", { title: rule.title }), "success");
 }
 
 async function onListClick(event) {
@@ -182,7 +183,7 @@ async function onListClick(event) {
   } else if (button.dataset.action === "delete") {
     const confirmed = await confirmDialog({
       title: "Kural silinsin mi?",
-      message: `“${rule.title}” kuralı silinecek. Daha önce kaydedilmiş olaylar korunur.`,
+      message: t("“{title}” kuralı silinecek. Daha önce kaydedilmiş olaylar korunur.", { title: rule.title }),
       confirmText: "Sil",
       danger: true,
     });
@@ -207,9 +208,9 @@ function renderZoneFields() {
         <span class="chip zone-chip ${selected && selected.id === zone.id ? "is-active" : ""}" data-zone="${escapeHTML(zone.id)}">
           <i class="zone-dot" style="--zone-color: ${ZONE_COLORS[(zone.colorIndex ?? index) % ZONE_COLORS.length]}"></i>
           <button type="button" class="zone-chip-name" data-action="select">${escapeHTML(zone.name)}</button>
-          <button type="button" class="zone-chip-remove" data-action="remove" title="Bu bölgeyi sil" aria-label="Bölgeyi sil">×</button>
+          <button type="button" class="zone-chip-remove" data-action="remove" title="${t("Bu bölgeyi sil")}" aria-label="${t("Bölgeyi sil")}">×</button>
         </span>`).join("")
-    : `<span class="hint">Henüz bölge çizilmedi. Soldaki görüntüye tıklayarak başlayın.</span>`);
+    : `<span class="hint">${t("Henüz bölge çizilmedi. Soldaki görüntüye tıklayarak başlayın.")}</span>`);
 
   $("#zone-fields").disabled = !selected;
   const mode = selected ? zoneMode(selected) : "detection";
@@ -231,11 +232,11 @@ function renderZoneFields() {
   let status = "Bölge çizmek için görüntüye tıklayın";
   if (scope === "camera" && !cameraId) status = "Önce bir kamera ekleyin";
   else if (points >= 3) status = "Bitince “Bölgeyi tamamla”ya basın";
-  else if (points > 0) status = `En az ${3 - points} nokta daha işaretleyin`;
+  else if (points > 0) status = t("En az {n} nokta daha işaretleyin", { n: 3 - points });
   else if (zones.length) status = "";
   const statusBox = $("#zone-canvas-status");
   statusBox.hidden = !status;
-  statusBox.textContent = status;
+  statusBox.textContent = t(status);
 }
 
 /** How a zone is defined: by a sentence, by choices from lists, or as an obstacle zone. */
@@ -243,10 +244,10 @@ const zoneMode = (zone) => (zone.zone_type === "change_detection" ? "change_dete
 
 /** What the number of a list-defined rule means, by the chosen condition (none: no number needed). */
 const MANUAL_VALUES = {
-  waiting: { label: "Kaç saniyeden uzun kalınca?", fallback: 30 },
-  absence: { label: "Kaç saniye boyunca yokken?", fallback: 10 },
-  more_than: { label: "Kaçtan fazla olunca?", fallback: 3 },
-  fewer_than: { label: "Kaçtan az olunca?", fallback: 1 },
+  waiting: { label: t("Kaç saniyeden uzun kalınca?"), fallback: 30 },
+  absence: { label: t("Kaç saniye boyunca yokken?"), fallback: 10 },
+  more_than: { label: t("Kaçtan fazla olunca?"), fallback: 3 },
+  fewer_than: { label: t("Kaçtan az olunca?"), fallback: 1 },
 };
 
 function renderManualFields(manual) {
@@ -329,13 +330,13 @@ async function openEditor(rule) {
     return;
   }
   editingId = rule ? rule.id : null;
-  $("#rule-editor-title").textContent = rule ? "Kuralı düzenle" : "Yeni kural";
+  $("#rule-editor-title").textContent = t(rule ? "Kuralı düzenle" : "Yeni kural");
   $("#rule-title").value = rule ? rule.title : "";
 
   const select = $("#rule-camera");
   select.innerHTML = cameras.length
     ? cameras.map((camera) => `<option value="${escapeHTML(camera.id)}">${escapeHTML(camera.name || camera.ip)}</option>`).join("")
-    : `<option value="">Kamera yok</option>`;
+    : `<option value="">${t("Kamera yok")}</option>`;
   const ruleCamera = rule && cameras.some((camera) => camera.id === rule.camera_id) ? rule.camera_id : null;
   cameraId = ruleCamera || (cameras[0] && cameras[0].id) || null;
   select.value = cameraId || "";
@@ -347,7 +348,7 @@ async function openEditor(rule) {
   $("#rule-editor-panel").hidden = false;
   editor.setZones(((rule && rule.zones) || []).map((zone, index) => ({
     id: zone.id || `zone_${index}`,
-    name: zone.name || `Bölge ${index + 1}`,
+    name: zone.name || t("Bölge {n}", { n: index + 1 }),
     description: zone.description || "",
     zone_type: zone.zone_type || "detection",
     manual: zone.manual || null,
@@ -411,7 +412,7 @@ function buildRule() {
     && !(Number(zone.manual.value) >= 0 && zone.manual.value !== null && zone.manual.value !== ""));
   if (unfinished) {
     editor.select(unfinished.id);
-    showToast(`“${unfinished.name}” bölgesi için süreyi ya da sayıyı yazın.`, "warning");
+    showToast(t("“{name}” bölgesi için süreyi ya da sayıyı yazın.", { name: unfinished.name }), "warning");
     $("#manual-value").focus();
     return null;
   }
@@ -422,7 +423,7 @@ function buildRule() {
   const undescribed = zones.find((zone) => zoneMode(zone) === "detection" && !(zone.description || "").trim());
   if (undescribed) {
     editor.select(undescribed.id);
-    showToast(`“${undescribed.name}” bölgesinde ne olunca haber verileceğini yazın.`, "warning");
+    showToast(t("“{name}” bölgesinde ne olunca haber verileceğini yazın.", { name: undescribed.name }), "warning");
     $("#zone-description").focus();
     return null;
   }
@@ -430,7 +431,7 @@ function buildRule() {
   const camera = cameras.find((item) => item.id === cameraId);
   const zoneBodies = zones.map((zone, index) => ({
     id: zone.id,
-    name: zone.name || `Bölge ${index + 1}`,
+    name: zone.name || t("Bölge {n}", { n: index + 1 }),
     // The server writes the description of a list-defined zone from its choices
     description: zone.manual ? "" : (zone.description || "").trim(),
     ...(zone.manual ? { manual: zone.manual } : {}),
@@ -515,7 +516,7 @@ function wireEditor() {
     if (button.dataset.action === "remove") editor.removeZone(chip.dataset.zone);
     else editor.select(chip.dataset.zone);
   });
-  $("#zone-name").addEventListener("input", (event) => editor.updateSelected({ name: event.target.value.trim() || "Bölge" }));
+  $("#zone-name").addEventListener("input", (event) => editor.updateSelected({ name: event.target.value.trim() || t("Bölge") }));
   $("#zone-description").addEventListener("input", (event) => editor.updateSelected({ description: event.target.value }));
   $("#zone-type").addEventListener("change", (event) => {
     const mode = event.target.value;

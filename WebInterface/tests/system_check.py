@@ -798,6 +798,50 @@ def test_tracking_and_rule_logic():
     check("a request the system cannot serve is refused with the explanation", refused == "Ses alamam.", refused)
 
 
+def test_translations():
+    print("\n[14] Interface translations (no server needed)")
+    import glob
+    import re
+    from html.parser import HTMLParser
+
+    frontend = os.path.join(PROJECT_ROOT, "WebInterface", "frontend")
+    with open(os.path.join(frontend, "js", "i18n-en.js"), encoding="utf-8") as f:
+        source = f.read()
+    body = source.split("// catalogue:begin", 1)[1].split("// catalogue:end", 1)[0]
+    catalogue = json.loads(body.strip().removeprefix("export default").strip().rstrip(";"))
+    check("the English catalogue is valid JSON between its markers", isinstance(catalogue, dict) and len(catalogue) > 100,
+          f"{len(catalogue)} entries")
+
+    wanted = set()
+    for path in glob.glob(os.path.join(frontend, "js", "*.js")):
+        if path.endswith(("i18n.js", "i18n-en.js")):
+            continue
+        with open(path, encoding="utf-8") as f:
+            code = f.read()
+        wanted.update(m.group(1) for m in re.finditer(r'\bt\(\s*"((?:[^"\\]|\\.)*)"', code))
+        for m in re.finditer(r'\bt\([^()"]*\?\s*"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"', code):
+            wanted.update(m.groups())
+    missing = sorted(text for text in wanted if text not in catalogue)
+    check("every text passed to t() has an English entry", not missing, "; ".join(missing[:5]))
+
+    class Page(HTMLParser):
+        texts, skip = set(), 0
+        def handle_starttag(self, tag, attrs):
+            self.skip += tag in ("script", "style", "svg")
+            self.texts.update(v.strip() for k, v in attrs if k in ("placeholder", "title", "aria-label", "alt") and v)
+        def handle_endtag(self, tag):
+            self.skip -= tag in ("script", "style", "svg")
+        def handle_data(self, data):
+            if not self.skip and data.strip():
+                self.texts.add(data.strip())
+    page = Page()
+    with open(os.path.join(frontend, "index.html"), encoding="utf-8") as f:
+        page.feed(f.read())
+    words = re.compile(r"[a-zçğıöşü]{2,}", re.IGNORECASE)
+    untranslated = sorted(text for text in page.texts if words.search(text) and text not in catalogue)
+    check("every text of index.html has an English entry", not untranslated, "; ".join(untranslated[:5]))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sim-ip", default=os.environ.get("SIM_IP", ""), help="IP the camera simulator advertises (default: auto-detect)")
@@ -834,6 +878,7 @@ def main():
             test_shutdown_and_single_instance(srv)
             test_summary_shaping()
             test_tracking_and_rule_logic()
+            test_translations()
     except Exception as e:  # a crash of the harness is a failure, never a silent pass
         import traceback
         traceback.print_exc()

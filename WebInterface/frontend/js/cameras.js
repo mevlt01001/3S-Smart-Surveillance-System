@@ -6,6 +6,7 @@
 import {
   addCamera, deleteCamera, getFleetStatus, listCameras, reconnectCamera, scanNetwork, snapshotUrl, updateCamera,
 } from "./api.js";
+import { t } from "./i18n.js";
 import { startStream } from "./stream.js";
 import {
   $, $$, bindSegmented, closeModal, confirmDialog, copyText, escapeHTML, icon, maskCredentials, openModal, setHTML,
@@ -41,31 +42,32 @@ const addressOf = (device) => (Number(device.port) === 80 ? String(device.ip) : 
 function connectionState(camera) {
   const stream = fleet[camera.id] || camera;
   if (camera.status === "auth_error") {
-    return { level: "is-danger", text: "Şifre hatalı", hint: "Kullanıcı adı veya şifre yanlış. “Elle ekle” ile aynı adresi doğru bilgilerle yeniden ekleyin." };
+    return { level: "is-danger", text: t("Şifre hatalı"), hint: t("Kullanıcı adı veya şifre yanlış. “Elle ekle” ile aynı adresi doğru bilgilerle yeniden ekleyin.") };
   }
-  if (stream.stream_live !== false) return { level: "is-ok", text: "Canlı", hint: "" };
-  if (stream.stream_connecting) return { level: "is-busy", text: "Bağlanıyor…", hint: "" };
-  if (stream.stream_standby) return { level: "is-ok", text: "Hazır", hint: "" };
-  return { level: "is-danger", text: "Sinyal yok", hint: camera.status === "online"
+  if (stream.stream_live !== false) return { level: "is-ok", text: t("Canlı"), hint: "" };
+  if (stream.stream_connecting) return { level: "is-busy", text: t("Bağlanıyor…"), hint: "" };
+  if (stream.stream_standby) return { level: "is-ok", text: t("Hazır"), hint: "" };
+  return { level: "is-danger", text: t("Sinyal yok"), hint: t(camera.status === "online"
     ? "Kameradan görüntü gelmiyor. Kameranın açık ve ağa bağlı olduğunu kontrol edin."
-    : "Kameraya ulaşılamıyor. Adresini ve ağ bağlantısını kontrol edin." };
+    : "Kameraya ulaşılamıyor. Adresini ve ağ bağlantısını kontrol edin.") };
 }
 
 function announceResult(camera, verb) {
   const name = camera.name || camera.ip;
-  if (camera.status === "online") showToast(`“${name}” ${verb}.`, "success");
-  else if (camera.status === "auth_error") showToast(`“${name}” ${verb}, ancak kullanıcı adı veya şifre yanlış.`, "warning", 7000);
-  else showToast(`“${name}” ${verb}, ancak kameraya ulaşılamıyor. Adresini kontrol edin.`, "warning", 7000);
+  const params = { name, verb: t(verb) };
+  if (camera.status === "online") showToast(t("“{name}” {verb}.", params), "success");
+  else if (camera.status === "auth_error") showToast(t("“{name}” {verb}, ancak kullanıcı adı veya şifre yanlış.", params), "warning", 7000);
+  else showToast(t("“{name}” {verb}, ancak kameraya ulaşılamıyor. Adresini kontrol edin.", params), "warning", 7000);
 }
 
 /* --------------------------------------------------------------- Rendering */
 function actionsHTML() {
   return `
-    <button type="button" class="btn-icon" data-action="edit" title="Adını ve açıklamasını düzenle" aria-label="Düzenle">${icon("edit")}</button>
-    <button type="button" class="btn-icon" data-action="reconnect" title="Yeniden bağlan" aria-label="Yeniden bağlan">${icon("refresh")}</button>
-    <button type="button" class="btn-icon" data-action="info" title="Kamera bilgileri" aria-label="Kamera bilgileri">${icon("info")}</button>
+    <button type="button" class="btn-icon" data-action="edit" title="${t("Adını ve açıklamasını düzenle")}" aria-label="${t("Düzenle")}">${icon("edit")}</button>
+    <button type="button" class="btn-icon" data-action="reconnect" title="${t("Yeniden bağlan")}" aria-label="${t("Yeniden bağlan")}">${icon("refresh")}</button>
+    <button type="button" class="btn-icon" data-action="info" title="${t("Kamera bilgileri")}" aria-label="${t("Kamera bilgileri")}">${icon("info")}</button>
     <span class="toolbar-spacer"></span>
-    <button type="button" class="btn-icon is-danger" data-action="delete" title="Kamerayı sil" aria-label="Kamerayı sil">${icon("trash")}</button>`;
+    <button type="button" class="btn-icon is-danger" data-action="delete" title="${t("Kamerayı sil")}" aria-label="${t("Kamerayı sil")}">${icon("trash")}</button>`;
 }
 
 function cardHTML(camera) {
@@ -73,7 +75,7 @@ function cardHTML(camera) {
   const name = escapeHTML(camera.name || camera.ip);
   return `
     <article class="camera-card" data-camera="${escapeHTML(camera.id)}">
-      <button type="button" class="camera-thumb" data-action="edit" aria-label="${name} kamerasını düzenle">
+      <button type="button" class="camera-thumb" data-action="edit" aria-label="${t("{name} kamerasını düzenle", { name })}">
         <img class="camera-snapshot" src="${snapshotUrl(camera.id, thumbnailStamp)}" alt="" loading="lazy">
       </button>
       <div class="camera-info">
@@ -89,7 +91,7 @@ function rowHTML(camera) {
   const state = connectionState(camera);
   return `
     <tr data-camera="${escapeHTML(camera.id)}">
-      <td><button type="button" class="camera-thumb is-small" data-action="edit" aria-label="Düzenle"><img class="camera-snapshot" src="${snapshotUrl(camera.id, thumbnailStamp)}" alt="" loading="lazy"></button></td>
+      <td><button type="button" class="camera-thumb is-small" data-action="edit" aria-label="${t("Düzenle")}"><img class="camera-snapshot" src="${snapshotUrl(camera.id, thumbnailStamp)}" alt="" loading="lazy"></button></td>
       <td><strong>${escapeHTML(camera.name || camera.ip)}</strong><span class="cell-sub">${escapeHTML(camera.description || "")}</span></td>
       <td><span class="camera-state ${state.level}" title="${escapeHTML(state.hint)}"><span class="status-dot ${state.level}"></span> ${state.text}</span></td>
       <td>${escapeHTML(addressOf(camera))}</td>
@@ -99,24 +101,24 @@ function rowHTML(camera) {
 
 function render() {
   const online = cameras.filter((camera) => connectionState(camera).level !== "is-danger").length;
-  $("#cameras-summary").textContent = cameras.length ? `${cameras.length} kamera · ${online} çevrimiçi` : "";
+  $("#cameras-summary").textContent = cameras.length ? t("{n} kamera · {online} çevrimiçi", { n: cameras.length, online }) : "";
   const list = $("#cameras-list");
   list.className = layout === "list" || !cameras.length ? "" : "camera-grid";
   if (!cameras.length) {
     setHTML(list, `
       <div class="empty">
         ${icon("camera")}
-        <p class="empty-title">Henüz kamera yok</p>
-        <p>Ağınızdaki kameraları otomatik bulabilir veya adresini yazarak ekleyebilirsiniz.</p>
+        <p class="empty-title">${t("Henüz kamera yok")}</p>
+        <p>${t("Ağınızdaki kameraları otomatik bulabilir veya adresini yazarak ekleyebilirsiniz.")}</p>
         <div class="empty-actions">
-          <button type="button" class="btn btn-primary" data-action="scan">Ağda kamera ara</button>
+          <button type="button" class="btn btn-primary" data-action="scan">${t("Ağda kamera ara")}</button>
           <button type="button" class="btn" data-action="add">Elle ekle</button>
         </div>
       </div>`);
   } else if (layout === "list") {
     setHTML(list, `
       <div class="table-wrap"><table class="table">
-        <thead><tr><th></th><th>Kamera</th><th>Durum</th><th>Adres</th><th></th></tr></thead>
+        <thead><tr><th></th><th>${t("Kamera")}</th><th>${t("Durum")}</th><th>${t("Adres")}</th><th></th></tr></thead>
         <tbody>${cameras.map(rowHTML).join("")}</tbody>
       </table></div>`);
   } else {
@@ -131,7 +133,7 @@ async function load() {
     render();
   } catch (err) {
     if (!cameras.length) {
-      setHTML($("#cameras-list"), `<div class="empty"><p class="empty-title">Kameralar yüklenemedi</p><p>${escapeHTML(err.message)}</p></div>`);
+      setHTML($("#cameras-list"), `<div class="empty"><p class="empty-title">${t("Kameralar yüklenemedi")}</p><p>${escapeHTML(err.message)}</p></div>`);
     }
   }
 }
@@ -173,7 +175,7 @@ function refreshSnapshots() {
 async function removeCamera(camera) {
   const confirmed = await confirmDialog({
     title: "Kamera silinsin mi?",
-    message: `“${camera.name || camera.ip}” kamerası ve bu kameraya tanımlı kurallar silinecek. Kaydedilmiş olaylar korunur.`,
+    message: t("“{name}” kamerası ve bu kameraya tanımlı kurallar silinecek. Kaydedilmiş olaylar korunur.", { name: camera.name || camera.ip }),
     confirmText: "Kamerayı sil",
     danger: true,
   });
@@ -181,7 +183,7 @@ async function removeCamera(camera) {
   try {
     const result = await deleteCamera(camera.id);
     const removedRules = (result && result.removed_rules) || 0;
-    showToast(removedRules ? `Kamera ve ${removedRules} kuralı silindi.` : "Kamera silindi.", "success");
+    showToast(removedRules ? t("Kamera ve {n} kuralı silindi.", { n: removedRules }) : t("Kamera silindi."), "success");
   } catch (err) {
     showError("Kamera silinemedi", err);
   }
@@ -206,13 +208,13 @@ function showInfo(camera) {
     ["Durum", `${state.text}${state.hint ? ` — ${escapeHTML(state.hint)}` : ""}`],
     ["Marka / model", escapeHTML([camera.manufacturer, camera.model].filter(Boolean).join(" ") || "—")],
     ["Adres", `<span class="mono">${escapeHTML(addressOf(camera))}</span>`],
-    ["Görüntü", escapeHTML(`${camera.resolution || "—"} · ${stream.stream_fps ? Math.round(stream.stream_fps) : camera.framerate || "—"} kare/sn · ${camera.encoding || "—"}`)],
+    ["Görüntü", escapeHTML(`${camera.resolution || "—"} · ${stream.stream_fps ? Math.round(stream.stream_fps) : camera.framerate || "—"} ${t("kare/sn")} · ${camera.encoding || "—"}`)],
     ["Seri numarası", `<span class="mono">${escapeHTML(camera.serial_number || "—")}</span>`],
     ["Yazılım sürümü", `<span class="mono">${escapeHTML(camera.firmware_version || "—")}</span>`],
     ["Yayın adresi", `<span class="mono">${escapeHTML(maskCredentials(camera.stream_uri) || "—")}</span>
-       ${camera.stream_uri ? `<button type="button" class="btn btn-sm" data-copy="${escapeHTML(camera.stream_uri)}">${icon("copy")} Kopyala</button>` : ""}`],
+       ${camera.stream_uri ? `<button type="button" class="btn btn-sm" data-copy="${escapeHTML(camera.stream_uri)}">${icon("copy")} ${t("Kopyala")}</button>` : ""}`],
   ];
-  $("#camera-info").innerHTML = rows.map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join("");
+  $("#camera-info").innerHTML = rows.map(([label, value]) => `<dt>${t(label)}</dt><dd>${value}</dd>`).join("");
   openModal("modal-camera-info");
 }
 
@@ -299,7 +301,7 @@ async function scan() {
   scanning = true;
   $("#scan-again").disabled = true;
   $("#scan-results").innerHTML = "";
-  scanStatus(`<div class="loading"><div class="spinner"></div><span>Ağdaki kameralar aranıyor…</span></div>`);
+  scanStatus(`<div class="loading"><div class="spinner"></div><span>${t("Ağdaki kameralar aranıyor…")}</span></div>`);
 
   let devices = [];
   try {
@@ -307,7 +309,7 @@ async function scan() {
     devices = result.devices || [];
     renderScanResults(devices);
   } catch (err) {
-    scanStatus(`<p class="notice is-danger">Arama yapılamadı: ${escapeHTML(err.message)}</p>`);
+    scanStatus(`<p class="notice is-danger">${t("Arama yapılamadı: {reason}", { reason: escapeHTML(t(err.message)) })}</p>`);
   } finally {
     scanning = false;
     $("#scan-again").disabled = false;
@@ -318,23 +320,23 @@ function renderScanResults(devices) {
   const registered = new Set(cameras.map(deviceKey));
   const fresh = devices.filter((device) => !registered.has(deviceKey(device)));
   if (!devices.length) {
-    scanStatus(`<p class="hint">Ağda kamera bulunamadı. Kameranın açık ve aynı ağda olduğundan emin olun ya da “Elle ekle”yi kullanın.</p>`);
+    scanStatus(`<p class="hint">${t("Ağda kamera bulunamadı. Kameranın açık ve aynı ağda olduğundan emin olun ya da “Elle ekle”yi kullanın.")}</p>`);
     return;
   }
   scanStatus(`
     <div class="scan-head">
-      <strong>${devices.length} kamera bulundu${fresh.length ? "" : " — hepsi zaten ekli"}</strong>
-      ${fresh.length > 1 ? `<button type="button" class="btn btn-primary btn-sm" data-action="add-all">Tümünü ekle (${fresh.length})</button>` : ""}
+      <strong>${t("{n} kamera bulundu", { n: devices.length })}${fresh.length ? "" : ` — ${t("hepsi zaten ekli")}`}</strong>
+      ${fresh.length > 1 ? `<button type="button" class="btn btn-primary btn-sm" data-action="add-all">${t("Tümünü ekle ({n})", { n: fresh.length })}</button>` : ""}
     </div>`);
   $("#scan-results").innerHTML = devices.map((device) => `
     <div class="scan-item" data-device="${escapeHTML(deviceKey(device))}">
       <div>
-        <strong>${escapeHTML(device.name || device.hardware || "Kamera")}</strong>
+        <strong>${escapeHTML(device.name || device.hardware || t("Kamera"))}</strong>
         <span class="cell-sub">${escapeHTML(addressOf(device))}</span>
       </div>
       ${registered.has(deviceKey(device))
-        ? `<span class="badge is-ok">Zaten ekli</span>`
-        : `<button type="button" class="btn btn-sm" data-action="add-device">Ekle</button>`}
+        ? `<span class="badge is-ok">${t("Zaten ekli")}</span>`
+        : `<button type="button" class="btn btn-sm" data-action="add-device">${t("Ekle")}</button>`}
     </div>`).join("");
   foundDevices = new Map(devices.map((device) => [deviceKey(device), device]));
 }
@@ -355,7 +357,7 @@ async function addFoundDevice(item) {
       name: device.name,
     });
     const badge = { online: ["is-ok", "Eklendi"], auth_error: ["is-warn", "Şifre hatalı"] }[camera.status] || ["is-warn", "Ulaşılamıyor"];
-    button.outerHTML = `<span class="badge ${badge[0]}">${badge[1]}</span>`;
+    button.outerHTML = `<span class="badge ${badge[0]}">${t(badge[1])}</span>`;
     return camera;
   } catch (err) {
     button.disabled = false;
@@ -382,8 +384,8 @@ async function onScanClick(event) {
       else problems += 1;
     }
     button.hidden = true;
-    if (problems) showToast(`${added} kamera eklendi, ${problems} kamerada sorun var. Kullanıcı adı ve şifreyi kontrol edin.`, "warning", 7000);
-    else showToast(`${added} kamera eklendi.`, "success");
+    if (problems) showToast(t("{added} kamera eklendi, {problems} kamerada sorun var. Kullanıcı adı ve şifreyi kontrol edin.", { added, problems }), "warning", 7000);
+    else showToast(t("{n} kamera eklendi.", { n: added }), "success");
   }
   load();
 }

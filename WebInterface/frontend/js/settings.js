@@ -5,8 +5,9 @@
  */
 
 import { cleanOrphanClips, getSettings, getStorage, resetSettings, saveSettings } from "./api.js";
+import { lang, setLanguage, t } from "./i18n.js";
 import { subscribeSystemStats } from "./shell.js";
-import { $, $$, confirmDialog, escapeHTML, showError, showToast, withBusy } from "./ui.js";
+import { $, $$, confirmDialog, escapeHTML, formatPercent, showError, showToast, withBusy } from "./ui.js";
 
 const NORMAL = "anomaly.threshold_normal";
 const WARNING = "anomaly.threshold_warning";
@@ -51,7 +52,8 @@ function renderOutputs() {
     const input = control(output.dataset.output);
     if (!input) return;
     const unit = output.dataset.unit || "";
-    output.textContent = unit === "%" ? `%${input.value}` : `${input.value}${unit}`;
+    // The unit is written with its leading space in the page (" sn", " MB"): only the word is translated
+    output.textContent = unit === "%" ? formatPercent(input.value) : `${input.value}${unit.replace(/\S+/, (word) => t(word))}`;
   });
   const normal = Number(control(NORMAL).value);
   const warning = Number(control(WARNING).value);
@@ -96,21 +98,23 @@ async function loadStorage() {
   try {
     storage = await getStorage();
   } catch (_) {
-    $("#storage-text").textContent = "Depolama bilgisi alınamadı.";
+    $("#storage-text").textContent = t("Depolama bilgisi alınamadı.");
     return;
   }
   const percent = storage.max_storage_mb ? Math.min(100, Math.round((storage.clip_mb / storage.max_storage_mb) * 100)) : 0;
-  $("#storage-percent").textContent = `%${percent}`;
+  $("#storage-percent").textContent = formatPercent(percent);
   const bar = $("#storage-fill");
   bar.style.width = `${percent}%`;
   bar.classList.toggle("is-high", percent >= 90);
   $("#storage-text").textContent =
-    `${storage.clip_count} video, ${Math.round(storage.clip_mb)} MB / ${storage.max_storage_mb} MB · ${storage.snapshot_count} fotoğraf`;
+    t("{clips} video, {used} MB / {limit} MB · {snapshots} fotoğraf", {
+      clips: storage.clip_count, used: Math.round(storage.clip_mb), limit: storage.max_storage_mb, snapshots: storage.snapshot_count,
+    });
 
   const orphans = storage.orphan_clip_count || 0;
   $("#storage-orphans").hidden = orphans === 0;
   $("#storage-orphans-text").textContent =
-    `${orphans} video (${Math.round(storage.orphan_clip_mb)} MB) hiçbir olaya bağlı değil; yalnızca yer kaplıyor.`;
+    t("{n} video ({mb} MB) hiçbir olaya bağlı değil; yalnızca yer kaplıyor.", { n: orphans, mb: Math.round(storage.orphan_clip_mb) });
 }
 
 async function cleanStorage() {
@@ -123,7 +127,7 @@ async function cleanStorage() {
   if (!confirmed) return;
   try {
     const result = await withBusy($("#storage-clean"), "Siliniyor…", cleanOrphanClips);
-    showToast(`${result.deleted_count} video silindi, ${result.freed_mb} MB yer açıldı.`, "success");
+    showToast(t("{n} video silindi, {mb} MB yer açıldı.", { n: result.deleted_count, mb: result.freed_mb }), "success");
   } catch (err) {
     showError("Temizlenemedi", err);
   }
@@ -136,7 +140,7 @@ function renderSystemInfo(stats) {
   const gpu = stats.gpu || {};
   const milliseconds = (value) => (value == null ? "—" : `${Math.round(value)} ms`);
   const rows = [
-    ["Analiz sunucusu", analysis.status === "READY" ? "Çalışıyor" : "Ulaşılamıyor"],
+    ["Analiz sunucusu", t(analysis.status === "READY" ? "Çalışıyor" : "Ulaşılamıyor")],
     ["Hareket analizi süresi", milliseconds(analysis.anomaly_detection_latency_ms)],
     ["Kural analizi süresi", milliseconds(analysis.object_detection_latency_ms)],
   ];
@@ -147,7 +151,7 @@ function renderSystemInfo(stats) {
       ["Sıcaklık", `${gpu.temperature_c} °C`],
     );
   }
-  $("#system-info").innerHTML = rows.map(([label, value]) => `<dt>${label}</dt><dd>${escapeHTML(value)}</dd>`).join("");
+  $("#system-info").innerHTML = rows.map(([label, value]) => `<dt>${t(label)}</dt><dd>${escapeHTML(value)}</dd>`).join("");
 }
 
 /* ----------------------------------------------------------------- Actions */
@@ -194,6 +198,11 @@ function wire() {
   $("#settings-discard").addEventListener("click", () => fill(saved));
   $("#settings-reset").addEventListener("click", reset);
   $("#storage-clean").addEventListener("click", cleanStorage);
+  // The language is chosen per device as well; the page reloads to draw everything in it
+  $("#language-options").addEventListener("click", (event) => {
+    const option = event.target.closest("[data-lang]");
+    if (option && option.dataset.lang !== lang) setLanguage(option.dataset.lang);
+  });
   // The theme is this device's own choice: it applies at once and is not part of the saved settings
   $("#theme-options").addEventListener("click", (event) => {
     const option = event.target.closest("[data-theme-name]");
@@ -204,6 +213,7 @@ function wire() {
 }
 
 function renderTheme() {
+  $$("#language-options [data-lang]").forEach((option) => option.classList.toggle("is-active", option.dataset.lang === lang));
   const current = window.aegisTheme.get();
   $$("#theme-options [data-theme-name]").forEach((option) => {
     option.setAttribute("aria-checked", String(option.dataset.themeName === current));

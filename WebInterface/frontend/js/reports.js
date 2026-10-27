@@ -5,7 +5,8 @@
  */
 
 import { getReport } from "./api.js";
-import { $, bindSegmented, escapeHTML, formatDuration, setHTML } from "./ui.js";
+import { locale, t } from "./i18n.js";
+import { $, bindSegmented, escapeHTML, formatDuration, formatPercent, setHTML } from "./ui.js";
 
 const MAX_AXIS_LABELS = 8;
 
@@ -13,19 +14,21 @@ let days = 7;
 let wired = false;
 let requestId = 0;
 
-const number = (value) => Number(value || 0).toLocaleString("tr-TR");
+const number = (value) => Number(value || 0).toLocaleString(locale);
 
 /* ------------------------------------------------------------------ Tiles */
 function tilesHTML(report) {
   const totals = report.totals;
   const reviewed = totals.correct + totals.false_positive;
   const tiles = [
-    ["Toplam olay", number(totals.events), `${report.from_text} tarihinden beri`],
-    ["Kural ihlali", number(totals.rule), ""],
-    [report.movement_label, number(totals.movement), ""],
-    ["İncelenmeyi bekleyen", number(totals.unreviewed), totals.events ? `${number(reviewed)} olay incelendi` : ""],
-    ["Hatalı alarm oranı", totals.false_alarm_pct === null ? "—" : `%${String(totals.false_alarm_pct).replace(".", ",")}`,
-      reviewed ? `incelenen ${number(reviewed)} olayın ${number(totals.false_positive)} tanesi` : "Henüz incelenen olay yok"],
+    [t("Toplam olay"), number(totals.events), t("{date} tarihinden beri", { date: report.from_text })],
+    [t("Kural ihlali"), number(totals.rule), ""],
+    [t(report.movement_label), number(totals.movement), ""],
+    [t("İncelenmeyi bekleyen"), number(totals.unreviewed), totals.events ? t("{n} olay incelendi", { n: number(reviewed) }) : ""],
+    [t("Hatalı alarm oranı"), totals.false_alarm_pct === null ? "—" : formatPercent(totals.false_alarm_pct),
+      reviewed
+        ? t("incelenen {n} olayın {k} tanesi", { n: number(reviewed), k: number(totals.false_positive) })
+        : t("Henüz incelenen olay yok")],
   ];
   return tiles.map(([label, value, note]) => `
     <div class="stat-tile">
@@ -53,7 +56,7 @@ function renderChart(report) {
     const segment = (count, kind) => (count ? `<span class="bar-segment is-${kind}" style="--size: ${(count / top) * 100}%"></span>` : "");
     return `
       <div class="bar-column" tabindex="0" data-index="${index}"
-           aria-label="${escapeHTML(bucket.label)}: ${bucket.rule} kural ihlali, ${bucket.movement} ${escapeHTML(report.movement_label.toLocaleLowerCase("tr"))}">
+           aria-label="${escapeHTML(t("{label}: {rule} kural ihlali, {movement} olağandışı hareket", { label: bucket.label, rule: bucket.rule, movement: bucket.movement }))}">
         <div class="bar-stack">${segment(bucket.movement, "movement")}${segment(bucket.rule, "rule")}</div>
         <span class="bar-label">${index % labelEvery === 0 ? escapeHTML(bucket.label) : ""}</span>
       </div>`;
@@ -70,8 +73,8 @@ function showTooltip(column) {
   }
   tooltip.innerHTML = `
     <strong>${escapeHTML(bucket.label)}</strong>
-    <span><i class="legend-swatch is-rule"></i>Kural ihlali <b>${number(bucket.rule)}</b></span>
-    <span><i class="legend-swatch is-movement"></i>${escapeHTML(current.movement_label)} <b>${number(bucket.movement)}</b></span>`;
+    <span><i class="legend-swatch is-rule"></i>${t("Kural ihlali")} <b>${number(bucket.rule)}</b></span>
+    <span><i class="legend-swatch is-movement"></i>${escapeHTML(t(current.movement_label))} <b>${number(bucket.movement)}</b></span>`;
   tooltip.hidden = false;
   const chart = $("#report-bars").getBoundingClientRect();
   const box = column.getBoundingClientRect();
@@ -84,22 +87,22 @@ function showTooltip(column) {
 const decisionCells = (row) => `<td>${number(row.correct)}</td><td>${number(row.false_positive)}</td><td>${number(row.unreviewed)}</td>`;
 
 function rulesTableHTML(rows) {
-  if (!rows.length) return `<p class="hint">Bu dönemde kural ihlali kaydedilmedi.</p>`;
+  if (!rows.length) return `<p class="hint">${t("Bu dönemde kural ihlali kaydedilmedi.")}</p>`;
   return `
     <div class="table-wrap"><table class="table">
-      <thead><tr><th>Kural</th><th>İhlal</th><th>Toplam süre</th><th>Doğru</th><th>Hatalı</th><th>İncelenmedi</th></tr></thead>
+      <thead><tr><th>${t("Kural")}</th><th>${t("İhlal")}</th><th>${t("Toplam süre")}</th><th>${t("Doğru")}</th><th>${t("Hatalı")}</th><th>${t("İncelenmedi")}</th></tr></thead>
       <tbody>${rows.map((row) => `
-        <tr><td>${escapeHTML(row.name)}${row.ongoing ? ` <span class="badge is-warn">Sürüyor</span>` : ""}</td>
+        <tr><td>${escapeHTML(row.name)}${row.ongoing ? ` <span class="badge is-warn">${t("Sürüyor")}</span>` : ""}</td>
             <td>${number(row.events)}</td><td>${row.total_sec ? formatDuration(row.total_sec) : "—"}</td>${decisionCells(row)}</tr>`).join("")}
       </tbody>
     </table></div>`;
 }
 
 function camerasTableHTML(rows, movementLabel) {
-  if (!rows.length) return `<p class="hint">Bu dönemde olay kaydedilmedi.</p>`;
+  if (!rows.length) return `<p class="hint">${t("Bu dönemde olay kaydedilmedi.")}</p>`;
   return `
     <div class="table-wrap"><table class="table">
-      <thead><tr><th>Kamera</th><th>Olay</th><th>Kural ihlali</th><th>${escapeHTML(movementLabel)}</th><th>Doğru</th><th>Hatalı</th><th>İncelenmedi</th></tr></thead>
+      <thead><tr><th>${t("Kamera")}</th><th>${t("Olay")}</th><th>${t("Kural ihlali")}</th><th>${escapeHTML(t(movementLabel))}</th><th>${t("Doğru")}</th><th>${t("Hatalı")}</th><th>${t("İncelenmedi")}</th></tr></thead>
       <tbody>${rows.map((row) => `
         <tr><td>${escapeHTML(row.name)}</td><td>${number(row.events)}</td><td>${number(row.rule)}</td>
             <td>${number(row.events - row.rule)}</td>${decisionCells(row)}</tr>`).join("")}
@@ -109,10 +112,10 @@ function camerasTableHTML(rows, movementLabel) {
 
 function bucketsTableHTML(report) {
   const rows = report.buckets.filter((bucket) => bucket.rule + bucket.movement > 0);
-  if (!rows.length) return `<p class="hint">Bu dönemde olay kaydedilmedi.</p>`;
+  if (!rows.length) return `<p class="hint">${t("Bu dönemde olay kaydedilmedi.")}</p>`;
   return `
     <div class="table-wrap"><table class="table">
-      <thead><tr><th>${report.days === 1 ? "Saat" : "Gün"}</th><th>Kural ihlali</th><th>${escapeHTML(report.movement_label)}</th><th>Toplam</th></tr></thead>
+      <thead><tr><th>${t(report.days === 1 ? "Saat" : "Gün")}</th><th>${t("Kural ihlali")}</th><th>${escapeHTML(t(report.movement_label))}</th><th>${t("Toplam")}</th></tr></thead>
       <tbody>${rows.map((bucket) => `
         <tr><td>${escapeHTML(bucket.label)}</td><td>${number(bucket.rule)}</td><td>${number(bucket.movement)}</td><td>${number(bucket.rule + bucket.movement)}</td></tr>`).join("")}
       </tbody>
@@ -122,7 +125,8 @@ function bucketsTableHTML(report) {
 function verdictLine(verdict) {
   if (!verdict.compared) return "";
   const percent = Math.round((verdict.agreed / verdict.compared) * 100);
-  return `Olay özetlerinin “gerçek / olağan” değerlendirmesi, incelediğiniz ${number(verdict.compared)} olayın ${number(verdict.agreed)} tanesinde sizin kararınızla aynıydı (%${percent}).`;
+  return t("Olay özetlerinin “gerçek / olağan” değerlendirmesi, incelediğiniz {n} olayın {k} tanesinde sizin kararınızla aynıydı ({percent}).",
+    { n: number(verdict.compared), k: number(verdict.agreed), percent: formatPercent(percent) });
 }
 
 /* ------------------------------------------------------------------- Page */
@@ -134,7 +138,7 @@ function render(report) {
   const notice = $("#report-notice");
   notice.hidden = !report.incomplete;
   setHTML($("#report-tiles"), tilesHTML(report));
-  $("#report-chart-title").textContent = report.days === 1 ? "Saatlere göre olaylar" : "Günlere göre olaylar";
+  $("#report-chart-title").textContent = t(report.days === 1 ? "Saatlere göre olaylar" : "Günlere göre olaylar");
   renderChart(report);
   setHTML($("#report-buckets-table"), bucketsTableHTML(report));
   setHTML($("#report-rules"), rulesTableHTML(report.by_rule));
@@ -150,7 +154,7 @@ async function load() {
     const report = await getReport(days);
     if (mine === requestId) render(report);
   } catch (err) {
-    setHTML($("#report-tiles"), `<div class="empty"><p class="empty-title">Rapor yüklenemedi</p><p>${escapeHTML(err.message)}</p></div>`);
+    setHTML($("#report-tiles"), `<div class="empty"><p class="empty-title">${t("Rapor yüklenemedi")}</p><p>${escapeHTML(err.message)}</p></div>`);
   }
 }
 
@@ -164,7 +168,7 @@ function wire() {
   $("#report-table-toggle").addEventListener("click", (event) => {
     const table = $("#report-buckets-table");
     table.hidden = !table.hidden;
-    event.currentTarget.textContent = table.hidden ? "Tablo olarak göster" : "Tabloyu gizle";
+    event.currentTarget.textContent = t(table.hidden ? "Tablo olarak göster" : "Tabloyu gizle");
   });
   const chart = $("#report-chart");
   const columnOf = (event) => event.target.closest(".bar-column");

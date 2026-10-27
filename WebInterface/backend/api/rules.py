@@ -3,7 +3,7 @@
 import asyncio
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 
 from Rule_Generator_LLM import schedule as rule_schedule
 
@@ -18,6 +18,11 @@ router = APIRouter(prefix="/api/rules", tags=["rules"])
 SYSTEM_SCOPE_NAME = "Tüm kameralar"
 
 
+def _language(accept_language: Optional[str]) -> str:
+    """The interface language of the request: "en" when the page asks for English, otherwise "tr"."""
+    return "en" if (accept_language or "").strip().lower().startswith("en") else "tr"
+
+
 def _require_rule(rule_id: str) -> dict:
     rule = rules_service.get_by_id(rule_id)
     if not rule:
@@ -26,9 +31,10 @@ def _require_rule(rule_id: str) -> dict:
 
 
 @router.get("")
-async def list_rules(camera_id: Optional[str] = None, full: bool = False):
+async def list_rules(camera_id: Optional[str] = None, full: bool = False, accept_language: Optional[str] = Header(None)):
     """All rules, optionally of one camera. `full` includes the compiled plans."""
-    rules = [rule_compilation.rule_view(rule, slim=not full) for rule in rules_service.get_all(camera_id=camera_id)]
+    lang = _language(accept_language)
+    rules = [rule_compilation.rule_view(rule, slim=not full, lang=lang) for rule in rules_service.get_all(camera_id=camera_id)]
     return {
         "success": True,
         "count": len(rules),
@@ -46,7 +52,7 @@ def _with_manual_plans(zones: list) -> list:
 
 
 @router.post("")
-async def create_rule(req: CreateRuleRequest):
+async def create_rule(req: CreateRuleRequest, accept_language: Optional[str] = Header(None)):
     """Stores a rule; the descriptions of its zones are compiled in the background."""
     if not req.title.strip():
         raise HTTPException(status_code=422, detail="Kural başlığı boş olamaz.")
@@ -66,16 +72,16 @@ async def create_rule(req: CreateRuleRequest):
         schedule=rule_schedule.normalize(req.schedule, source="user"),
     )
     rule_compilation.start(rule["id"])
-    return {"success": True, "rule": rule_compilation.rule_view(rule, slim=True)}
+    return {"success": True, "rule": rule_compilation.rule_view(rule, slim=True, lang=_language(accept_language))}
 
 
 @router.get("/{rule_id}")
-async def get_rule(rule_id: str):
-    return {"success": True, "rule": rule_compilation.rule_view(_require_rule(rule_id))}
+async def get_rule(rule_id: str, accept_language: Optional[str] = Header(None)):
+    return {"success": True, "rule": rule_compilation.rule_view(_require_rule(rule_id), lang=_language(accept_language))}
 
 
 @router.put("/{rule_id}")
-async def update_rule(rule_id: str, req: UpdateRuleRequest):
+async def update_rule(rule_id: str, req: UpdateRuleRequest, accept_language: Optional[str] = Header(None)):
     """Changes the given fields of a rule (switching it on / off, zones, camera…)."""
     existing = _require_rule(rule_id)
     updates = {key: value for key, value in req.model_dump().items() if value is not None}
@@ -108,7 +114,7 @@ async def update_rule(rule_id: str, req: UpdateRuleRequest):
     if "zones" in updates:
         # Only zones whose description is new or changed are compiled
         rule_compilation.start(rule_id)
-    return {"success": True, "rule": rule_compilation.rule_view(updated, slim=True)}
+    return {"success": True, "rule": rule_compilation.rule_view(updated, slim=True, lang=_language(accept_language))}
 
 
 @router.delete("/{rule_id}")
