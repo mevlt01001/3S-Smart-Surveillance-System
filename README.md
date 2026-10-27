@@ -1,14 +1,14 @@
-<p align="center"><img src="docs/images/logo.svg" width="96" alt="3S logo"></p>
+<p align="center"><img src="docs/images/logo.svg" width="96" alt="Smart Surveillance System logo"></p>
 
-# 3S — Smart Surveillance System
+# Smart Surveillance System
 
-**3S turns ordinary IP cameras into an active security system.** It brings every camera into
-one interface, detects unusual activity on its own, enforces safety rules written in plain language,
-and records each incident as a complete, reviewable case: one continuous video, the key frame, a short
+**Smart Surveillance System turns ordinary IP cameras into an active security system.** It brings every
+camera into one interface, detects unusual activity on its own, enforces safety rules written in plain
+language, and records each incident as a complete, reviewable case: one continuous video, the key frame, a short
 written summary and the operator's verdict.
 
 Conventional camera systems record everything and understand nothing; someone has to watch the screens
-or search hours of footage after the fact. 3S does the watching. Operators look only at what
+or search hours of footage after the fact. The system does the watching. Operators look only at what
 needs their attention, and every alarm arrives with the evidence needed to act on it.
 
 ---
@@ -194,7 +194,7 @@ the live system is serving.
 
 ## Status and known limitations
 
-3S is a working pre-production system. Before it is installed on a customer network:
+Smart Surveillance System is a working pre-production system. Before it is installed on a customer network:
 
 - **Authentication:** the interface and API have no login, roles or HTTPS yet; anyone on the network can
   use them. This is the first item of the next phase, together with alert notifications.

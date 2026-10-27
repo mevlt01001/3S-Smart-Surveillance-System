@@ -2,7 +2,7 @@
 
 ## Sistem ne yapar
 
-3S (Smart Surveillance System), ağdaki IP kameraları tek bir web arayüzünde toplar ve görüntüyü iki yoldan sürekli inceler:
+Smart Surveillance System, ağdaki IP kameraları tek bir web arayüzünde toplar ve görüntüyü iki yoldan sürekli inceler:
 
 1. **Olağandışı hareket algılama.** Her kameranın son karelerini bir anomali modeline verir. Kavga, panik,
    koşma gibi olağan akışa uymayan hareketlerde olay kaydı açar.

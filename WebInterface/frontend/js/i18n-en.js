@@ -5,7 +5,6 @@
  */
 // catalogue:begin
 export default {
-  "3S": "3S",
   "Smart Surveillance System": "Smart Surveillance System",
   "Ana menü": "Main menu",
   "Canlı İzleme": "Live view",

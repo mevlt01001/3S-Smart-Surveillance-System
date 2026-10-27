@@ -2,7 +2,7 @@
 
 ## What the system does
 
-3S (Smart Surveillance System) gathers the IP cameras of a network into one web interface and examines their video
+Smart Surveillance System gathers the IP cameras of a network into one web interface and examines their video
 continuously in two ways:
 
 1. **Unusual activity detection.** The latest frames of every camera are given to an anomaly model.

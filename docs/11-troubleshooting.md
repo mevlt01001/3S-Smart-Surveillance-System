@@ -14,7 +14,7 @@ curl -s localhost:8500/api/anomaly/status | python3 -m json.tool
 
 | Symptom | Cause | Fix |
 | :--- | :--- | :--- |
-| "Another 3S server is using this data directory (…)" | A server with the same data directory is running. | Find it with `pgrep -fa uvicorn` and stop it, or give a different `AEGIS_DATA_DIR`. |
+| "Another Smart Surveillance System server is using this data directory (…)" | A server with the same data directory is running. | Find it with `pgrep -fa uvicorn` and stop it, or give a different `AEGIS_DATA_DIR`. |
 | `Address already in use` | Port 8500 is taken. | Stop the old process. |
 | `ModuleNotFoundError` | Wrong Python or a missing package. | Use `./WebInterface/run.sh`; `./.conda/bin/pip install -r requirements.txt`. |
 | It starts but restarts at once | `--reload` saw a Python file change. | Expected behaviour. |

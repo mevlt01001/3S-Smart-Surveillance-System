@@ -55,7 +55,7 @@ def acquire_instance_lock(wait_sec: float = 20.0) -> None:
             if time.time() >= deadline:
                 handle.close()
                 raise RuntimeError(
-                    f"Bu veri dizinini ({DATA_DIR}) kullanan başka bir 3S sunucusu çalışıyor. "
+                    f"Bu veri dizinini ({DATA_DIR}) kullanan başka bir Smart Surveillance System sunucusu çalışıyor. "
                     "Önce onu durdurun veya AEGIS_DATA_DIR ile farklı bir veri dizini verin."
                 )
             time.sleep(0.25)

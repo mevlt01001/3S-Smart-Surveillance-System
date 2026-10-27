@@ -32,25 +32,12 @@
   flex-shrink: 0;
 }
 
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.15;
-}
-
 .brand-name {
-  font-size: 16px;
+  min-width: 0;
+  font-size: 13px;
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: 0.01em;
-}
-
-.brand-full {
-  overflow: hidden;
-  color: var(--text-3);
-  font-size: 11px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .nav {
@@ -169,7 +156,7 @@ body.is-offline .content {
     padding: 0;
   }
 
-  .brand-text,
+  .brand-name,
   .nav-item > span:not(.nav-badge),
   .system-status-text {
     display: none;

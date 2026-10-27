@@ -1,4 +1,4 @@
-# 3S Smart Surveillance System — Python bağımlılıkları (Python 3.10).
+# Smart Surveillance System — Python bağımlılıkları (Python 3.10).
 # Sürümler, sistemin sınandığı ortamdan alınmıştır.
 #
 #   pip install -r requirements.txt

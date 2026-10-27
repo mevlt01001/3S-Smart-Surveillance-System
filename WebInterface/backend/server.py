@@ -1,5 +1,5 @@
 """
-3S (Smart Surveillance System) backend application.
+Smart Surveillance System backend application.
 
 Creates the FastAPI app, wires the API routers and the web interface, and makes sure the
 process starts alone on its data directory and stops promptly.
@@ -78,7 +78,7 @@ async def lifespan(_app: FastAPI):
     camera_service.shutdown()
 
 
-app = FastAPI(title="3S API", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="Smart Surveillance System API", version="2.0.0", lifespan=lifespan)
 
 # JSON, scripts and styles are compressed; JPEG frames, MP4 clips and event streams pass through
 app.add_middleware(GZipMiddleware, minimum_size=1024)
