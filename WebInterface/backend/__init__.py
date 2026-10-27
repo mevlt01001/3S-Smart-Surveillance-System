@@ -1,5 +1,5 @@
 """
-AegisVision backend package.
+3S (Smart Surveillance System) backend package.
 
 OpenCV reads its configuration from the environment when it is first imported, so it is
 set here, before any module of the package can import it.

@@ -1,4 +1,4 @@
-# AegisVision Belgeleri
+# 3S Belgeleri
 
 Bu dizin sistemi, işletilmesinden kodunun değiştirilmesine kadar anlatır. Bölümler kodun bugünkü
 hâlini yansıtır; bir davranışı değiştirdiğinizde onu anlatan bölümü aynı commit'te güncelleyin —

@@ -13,7 +13,7 @@ curl -s localhost:8500/api/anomaly/status | python3 -m json.tool
 
 | Belirti | Neden | Çözüm |
 | :--- | :--- | :--- |
-| "Bu veri dizinini (…) kullanan başka bir AegisVision sunucusu çalışıyor" | Aynı veri diziniyle bir sunucu açık. | `pgrep -fa uvicorn` ile bulun, durdurun; ya da farklı `AEGIS_DATA_DIR` verin. |
+| "Bu veri dizinini (…) kullanan başka bir 3S sunucusu çalışıyor" | Aynı veri diziniyle bir sunucu açık. | `pgrep -fa uvicorn` ile bulun, durdurun; ya da farklı `AEGIS_DATA_DIR` verin. |
 | `Address already in use` | 8500 portu dolu. | Eski süreci durdurun. |
 | `ModuleNotFoundError` | Yanlış Python ya da eksik paket. | `./WebInterface/run.sh` kullanın; `./.conda/bin/pip install -r requirements.txt`. |
 | Açılıyor ama hemen yeniden başlıyor | `--reload` bir Python dosyasının değiştiğini gördü. | Beklenen davranış. |

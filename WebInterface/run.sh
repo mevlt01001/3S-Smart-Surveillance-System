@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# AegisVision Commercial Surveillance System WebInterface Launcher
+# 3S Smart Surveillance System: web interface launcher
 # Starts FastAPI + Uvicorn server on port 8500
 # ==============================================================================
 
@@ -11,7 +11,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PYTHON_BIN="${PROJECT_ROOT}/.conda/bin/python"
 
 echo "=================================================================="
-echo " Starting AegisVision Commercial WebInterface Server"
+echo " Starting the 3S web interface server"
 echo " Host: 0.0.0.0 | Port: 8500"
 echo " Target: http://localhost:8500"
 echo "=================================================================="

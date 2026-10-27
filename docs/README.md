@@ -1,4 +1,4 @@
-# AegisVision Documentation
+# 3S Documentation
 
 This directory describes the whole system, from operating it to changing its code. The chapters reflect
 the code as it is; when you change a behaviour, update the chapter that describes it in the same commit —

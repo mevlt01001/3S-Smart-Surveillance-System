@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# AegisVision — TensorRT config.pbtxt Güncelleme & Triton Yeniden Başlatma
+# 3S — TensorRT config.pbtxt Güncelleme & Triton Yeniden Başlatma
 # Dönüşüm tamamlandıktan sonra çalıştırın:
 #   Object_Detection/apply_tensorrt_configs.sh
 # ==============================================================================
@@ -14,7 +14,7 @@ CONTAINER="triton_yoloe_server"
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; RED='\033[0;31m'; NC='\033[0m'
 
 echo ""
-echo -e "${CYAN}=== AegisVision: TensorRT Config Güncelleme ===${NC}"
+echo -e "${CYAN}=== 3S: TensorRT Config Güncelleme ===${NC}"
 echo ""
 
 # Tüm engine'ların mevcut olup olmadığını kontrol et

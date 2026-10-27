@@ -57,7 +57,7 @@ export async function navigate(name, params = {}) {
       else item.removeAttribute("aria-current");
     });
     document.getElementById("page-title").textContent = view.title;
-    document.title = `${view.title} · AegisVision`;
+    document.title = `${view.title} · 3S`;
     document.getElementById("content").scrollTop = 0;
     if (location.hash !== `#${target}`) history.pushState(null, "", `#${target}`);
 

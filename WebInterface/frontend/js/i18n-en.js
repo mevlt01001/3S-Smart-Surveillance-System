@@ -5,7 +5,8 @@
  */
 // catalogue:begin
 export default {
-  "AegisVision": "AegisVision",
+  "3S": "3S",
+  "Smart Surveillance System": "Smart Surveillance System",
   "Ana menü": "Main menu",
   "Canlı İzleme": "Live view",
   "Olaylar": "Events",

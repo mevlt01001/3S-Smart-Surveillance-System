@@ -1,6 +1,6 @@
-# AegisVision — Web Interface and Server
+# 3S — Web Interface and Server
 
-> This is a short guide to the web layer, the part of AegisVision that operators use and that ties every
+> This is a short guide to the web layer, the part of 3S that operators use and that ties every
 > other component together. The full documentation is in [`docs/`](../docs/README.md) (English; Turkish in [`docs/tr/`](../docs/tr/README.md)).
 
 The web layer discovers IP cameras on the network, streams them live, runs unusual-activity analysis and

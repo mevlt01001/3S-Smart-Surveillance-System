@@ -1,6 +1,6 @@
 # Object Detection
 
-This package gives AegisVision its eyes for rules. Every rule a user writes — "no one without a hard hat",
+This package gives 3S its eyes for rules. Every rule a user writes — "no one without a hard hat",
 "no forklift in this lane", "no bag left here" — is ultimately answered by the detectors served from here.
 
 Its centrepiece is **YOLOE**, an open-vocabulary detector exported in a **decoupled** form that separates

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-AegisVision end-to-end system check.
+3S end-to-end system check.
 
 Starts a private backend instance (own port + temporary data directory, external LLM
 calls disabled) and exercises the real HTTP / WebSocket / SSE surface. Nothing in the
@@ -148,7 +148,7 @@ def test_static_and_health(c, srv, startup_sec):
     rss = proc_rss_mb(srv.pid)
     check("backend does not load torch (RSS at start < 300 MB)", rss < 300, f"{rss:.0f} MB")
     r = c.get("/")
-    check("index.html is served", r.status_code == 200 and "AegisVision" in r.text)
+    check("index.html is served", r.status_code == 200 and "<title>3S</title>" in r.text)
     check("index is always revalidated (Cache-Control: no-cache)", r.headers.get("cache-control") == "no-cache")
     r = c.get("/ui/js/events.js", headers={"Accept-Encoding": "gzip"})
     check("static JS is gzip-compressed", r.headers.get("content-encoding") == "gzip")
@@ -626,7 +626,7 @@ def test_shutdown_and_single_instance(srv):
         cwd=PROJECT_ROOT, env=env, capture_output=True, text=True, timeout=60,
     )
     check("a second server on the same data directory refuses to start",
-          second.returncode != 0 and "başka bir AegisVision sunucusu" in (second.stderr + second.stdout),
+          second.returncode != 0 and "başka bir 3S sunucusu" in (second.stderr + second.stdout),
           f"exit code {second.returncode}")
     check("the running server is unaffected by the rejected second instance",
           httpx.get(srv.base + "/api/health", timeout=3).status_code == 200)
@@ -860,7 +860,7 @@ def main():
 
     data_dir = tempfile.mkdtemp(prefix="aegis_syscheck_")
     srv = Server(data_dir)
-    print(f"AegisVision system check — data dir {data_dir}")
+    print(f"3S system check — data dir {data_dir}")
     try:
         startup = srv.start()
         print(f"backend ready on {srv.base}")

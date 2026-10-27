@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-AegisVision accuracy measurement.
+3S accuracy measurement.
 
 Plays labelled test videos to a private copy of the system as if they were cameras and
 counts what it does with them: which incidents it catches, which it misses and how often
@@ -288,7 +288,7 @@ def summarize(results, thresholds):
 
 # ------------------------------------------------------------------------ report
 def markdown(results, summary):
-    lines = ["# AegisVision ölçüm raporu", "",
+    lines = ["# 3S ölçüm raporu", "",
              f"Tarih: {time.strftime('%d.%m.%Y %H:%M')} · Eşikler: uyarı {summary['thresholds'].get('normal')}, "
              f"kritik {summary['thresholds'].get('warning')}", "", "## Özet", ""]
     if summary["incidents"]:

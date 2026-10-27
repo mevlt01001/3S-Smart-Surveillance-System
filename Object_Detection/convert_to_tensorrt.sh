@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# AegisVision - ONNX → TensorRT Engine Dönüşüm Scripti
+# 3S - ONNX → TensorRT Engine Dönüşüm Scripti
 # Container: triton_yoloe_server | TRT: 8.6.1 | GPU: GTX 1650 Ti (4 GB)
 # ==============================================================================
 # Çalıştırma: ./Object_Detection/convert_to_tensorrt.sh
@@ -23,7 +23,7 @@ NC='\033[0m'
 
 echo ""
 echo -e "${CYAN}=================================================================${NC}"
-echo -e "${CYAN}  AegisVision — ONNX → TensorRT Engine Dönüşümü${NC}"
+echo -e "${CYAN}  3S — ONNX → TensorRT Engine Dönüşümü${NC}"
 echo -e "${CYAN}  Container: ${CONTAINER} | TRT v8.6.1 | GPU: GTX 1650 Ti${NC}"
 echo -e "${CYAN}=================================================================${NC}"
 echo ""

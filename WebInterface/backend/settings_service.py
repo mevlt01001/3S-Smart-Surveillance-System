@@ -1,5 +1,5 @@
 """
-SETTINGS SERVICE (AegisVision AI Settings & Configuration Engine)
+SETTINGS SERVICE (3S settings and configuration)
 Manages persistent system configuration for Anomaly Inference, Video Recording,
 CCTV/VMS Video Wall behavior, and Triton deployment parameters.
 """
