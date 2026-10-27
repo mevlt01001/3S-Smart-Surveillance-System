@@ -25,7 +25,7 @@ izlenmez; sunucuyu elle yeniden başlatın.
 ```
 
 Betik kendi portunda, **geçici bir veri dizininde**, dış servis çağrıları kapalı ayrı bir sunucu
-başlatır; 134 denetim yapar; arkasını temizler. Çalışan sisteme dokunmaz. Yaklaşık iki dakika sürer.
+başlatır; 137 denetim yapar; arkasını temizler. Çalışan sisteme dokunmaz. Yaklaşık iki dakika sürer.
 Çıkış kodu yalnızca bütün denetimler geçtiyse `0`'dır. `--keep` geçici dizini silmez.
 
 | Bölüm | Neyi doğrular |
@@ -41,6 +41,9 @@ başlatır; 134 denetim yapar; arkasını temizler. Çalışan sisteme dokunmaz.
 | 9. Yük | 300 eşzamanlı istekte hata olmadığı ve p95 < 250 ms. |
 | 10. Kalıcılık | Yeniden başlatmadan sonra kayıtların korunduğu, yarım kalmış olayın "sürüyor" kalmadığı, "tümünü sil"in dosyaları da sildiği. |
 | 11. Kapanma ve tek örnek | Açık bağlantılarla hızlı kapanma; aynı veri dizininde ikinci sunucunun reddedildiği; günlükte hata izi olmadığı. |
+| 12. Özetin biçimlenmesi | Model yanıtlarının başlık + ayrıntı + öneri biçimine zorlandığı ve değerlendirmenin ayıklandığı (model gerekmez). |
+| 13. Takip ve kural mantığı | Nesne takibi, koşul değerlendirme, çalışma saatleri, rapor sayıları ve derleyici yanıtları (model gerekmez). |
+| 14. Arayüz çevirileri | İngilizce kataloğun geçerli olduğu; her `t("…")` metninin ve her `index.html` metninin İngilizce karşılığı bulunduğu (sunucu gerekmez). |
 
 8. bölüm kamera simülatörü çalışıyorsa yürütülür, yoksa `SKIP` olarak raporlanır. Anomali ve engel
 bölgesi denetimleri için analiz sunucusu da çalışmalıdır.
@@ -57,9 +60,9 @@ bölüme bir `check(...)` satırı ekleyin.
 3. Sistem testini koşar.
 
 GitHub'ın makinelerinde ekran kartı, analiz sunucusu ve kamera yoktur. Sistem testi bunu kendisi
-fark eder: canlı video isteyen 8. bölümü `SKIP` olarak raporlar, geri kalan **112 denetimi** koşar
+fark eder: canlı video isteyen 8. bölümü `SKIP` olarak raporlar, geri kalan **115 denetimi** koşar
 (arayüz dosyaları, ayarlar, kamera kaydı, kurallar, olay günlüğü, canlı bildirim, yük, kalıcılık,
-kapanma, özet metninin biçimlenmesi, nesne takibi, kural mantığı, çalışma saatleri ve rapor hesabı). Canlı video, anomali ve engel bölgesi denetimleri (22 denetim) yalnızca simülatör ve Triton
+kapanma, özet metninin biçimlenmesi, nesne takibi, kural mantığı, çalışma saatleri, rapor hesabı ve çeviriler). Canlı video, anomali ve engel bölgesi denetimleri (22 denetim) yalnızca simülatör ve Triton
 çalışan bir makinede koşar; bu yüzden **birleştirmeden önce tam testi geliştirme makinesinde elle
 koşmak hâlâ gereklidir.**
 
@@ -164,7 +167,8 @@ geliştirme makinesinde canlı sistem, simülatör ve Triton çalışırken koş
 - **Kural derleme ve olay özeti**, gerçek dil modeli yanıtı gerektirir; sistem testi bunları kapalı
   koşar. Elle denemek için geliştirme örneğini `EVREN_API_KEY` vermeden (yani `.env`'deki anahtarla)
   başlatın, bir kural kaydedin ve bir olayın özetini yeniden oluşturun.
-- **Arayüzün görsel davranışı** otomatik sınanmaz; yalnızca yapısal tutarlılığı sınanır (bölüm 1).
+- **Arayüzün görsel davranışı** otomatik sınanmaz; yalnızca yapısal tutarlılığı (bölüm 1) ve çeviri
+  kapsamı (bölüm 14) sınanır.
 - **Gerçek donanım kameraları** ile sınama yapılmamıştır; bütün doğrulamalar simülatörle yapılmıştır.
 
 ## Sık yapılan değişiklikler
@@ -176,15 +180,15 @@ geliştirme makinesinde canlı sistem, simülatör ve Triton çalışırken koş
    `api/schemas.py`'ye model ekleyin. Engelleyen çağrıyı `asyncio.to_thread` ile yapın.
 3. `frontend/js/api.js`'e karşılığını ekleyin.
 4. `tests/system_check.py`'ye en az bir başarılı ve bir hatalı durum denetimi ekleyin.
-5. `docs/06-api.md`'yi güncelleyin.
+5. `docs/tr/06-api.md`'yi (ve `docs/06-api.md`'yi) güncelleyin.
 
 ### Yeni bir ayar
 
 1. `settings_service.py`: `DEFAULT_SETTINGS`'e varsayılanı, `_sanitize`'a aralığı ekleyin.
 2. Ayarı okuyan servisin `_load_settings` / `reload_settings` işlevine ekleyin.
 3. `frontend/index.html`: Ayarlar formuna `data-setting="bölüm.alan"` nitelikli bir denetim ekleyin
-   (çoğu zaman JavaScript yazmak gerekmez).
-4. `docs/09-veri-ve-yapilandirma.md`'deki tabloya ekleyin.
+   (çoğu zaman JavaScript yazmak gerekmez) ve İngilizce karşılığını `js/i18n-en.js`'e ekleyin.
+4. `docs/tr/09-veri-ve-yapilandirma.md`'deki tabloya (ve İngilizce bölüme) ekleyin.
 
 ### Yeni bir kural koşulu
 
@@ -192,19 +196,26 @@ geliştirme makinesinde canlı sistem, simülatör ve Triton çalışırken koş
 2. `Rule_Generator_LLM/evaluator.py`: `_evaluate_condition`'a dal ve `_eval_<ad>` işlevi ekleyin;
    ihlal iletisini sade Türkçe yazın.
 3. `Rule_Generator_LLM/prompts.py`: derleyici yönergesine koşulu ve bir örneğini ekleyin.
-4. `frontend/js/labels.js`: `CONDITION_LABELS`'a sade dil karşılığını ekleyin.
-5. `docs/08-kurallar-ve-analiz.md`'deki tabloya ekleyin.
+4. `frontend/js/labels.js`: `CONDITION_LABELS`'a sade dil karşılığını, kataloğa İngilizcesini ekleyin;
+   ihlal iletisi yeniyse `alarmText()`'e bir kalıp ekleyin.
+5. `docs/tr/08-kurallar-ve-analiz.md`'deki tabloya (ve İngilizce bölüme) ekleyin.
 
 ### Yeni bir model sınıfı ya da model
 
-- Sınıf adının arayüzde Türkçe görünmesi için: `frontend/js/labels.js` (`CLASS_LABELS`) ve
-  `Rule_Generator_LLM/evaluator.py` (`_CLASS_LABELS`).
+- Sınıf adının arayüzde sade görünmesi için: `frontend/js/labels.js` (`CLASS_LABELS`) ve katalog
+  karşılığı, `Rule_Generator_LLM/evaluator.py` (`_CLASS_LABELS`) ve `Rule_Generator_LLM/manual.py`
+  (`_CLASS_LABELS_EN`).
 - Derleyicinin sınıfı tanıması için: `Rule_Generator_LLM/compiler.py` başındaki sınıf listeleri.
 - Yeni bir Triton modeli için: `Object_Detection/model_repository/<ad>/config.pbtxt` ve
   `Object_Detection/detector.py`'deki model eşlemesi.
 
 ### Yeni bir arayüz sayfası
 Bkz. [07 — Arayüz kodu](07-frontend.md), "Yeni sayfa eklemek".
+
+### Yeni bir arayüz metni
+Metni Türkçe olarak `t("…")` içine ya da `index.html`'e yazın ve İngilizce karşılığını `js/i18n-en.js`'e
+ekleyin; karşılığı olmayan metni sistem testi (bölüm 14) adıyla gösterir. Bkz.
+[07 — Arayüz kodu](07-frontend.md), "Arayüz dili".
 
 ## Kod kuralları
 
@@ -213,11 +224,16 @@ Bkz. [07 — Arayüz kodu](07-frontend.md), "Yeni sayfa eklemek".
 - Zaman, eşik ve sınır değerleri modül başında adlandırılmış sabittir.
 - Servisler birbirini doğrudan içe aktarır; `api/` yalnızca servisleri çağırır.
 - `print` yerine `logging`; yeni modüllerde günlükçü adı `aegis.<konu>` biçimindedir.
-- Kullanıcıya dönen hata iletileri Türkçe ve eyleme dönüktür.
+- Kullanıcıya dönen hata iletileri Türkçe ve eyleme dönüktür (İngilizce de görünsün diye katalogda
+  karşılıkları bulunur).
 - Diske yazım `paths.atomic_write_json` ile; uzun döngüler `SHUTTING_DOWN` denetler.
 
 **JavaScript / CSS**
 Bkz. [07 — Arayüz kodu](07-frontend.md), "Kurallar".
+
+**Belgeler**
+Bölümler İngilizce (`docs/`) ve Türkçe (`docs/tr/`) olarak bulunur; birindeki değişiklik ötekine de
+yapılmalıdır.
 
 Depoda otomatik biçim denetleyici (ruff, eslint) kurulu değildir; eklenmesi iyi bir ilk iştir.
 

@@ -26,6 +26,7 @@ izleyip "doğru alarm" ya da "hatalı alarm" olarak işaretler.
 | Dışa aktarma | Süzülmüş olay listesi CSV olarak indirilir. |
 | Raporlar | Güne, kurala ve kameraya göre olay sayıları, hatalı alarm oranı, ihlallerin toplam süresi; yazdırılabilir. |
 | Disk yönetimi | Kayıtlar için kota; dolunca en eski videolar silinir. |
+| Diller | Arayüz Türkçe (varsayılan) ya da İngilizce, cihaz başına seçilir; açık, lacivert ve koyu tema. |
 
 ## Parçalar
 
@@ -48,7 +49,7 @@ izleyip "doğru alarm" ya da "hatalı alarm" olarak işaretler.
 | Parça | Dizin | Görev |
 | :--- | :--- | :--- |
 | Web sunucusu | `WebInterface/backend/` | Kameralardan görüntü alır, analizi yürütür, olayları kaydeder, API sunar. |
-| Arayüz | `WebInterface/frontend/` | Tarayıcıda çalışan beş sayfalık uygulama. |
+| Arayüz | `WebInterface/frontend/` | Tarayıcıda çalışan altı sayfalık uygulama. |
 | Kural motoru | `Rule_Generator_LLM/` | Cümleyi plana çevirir, nesneleri kareler arasında izler, planı değerlendirir, olay özetini yazar. |
 | Tespit kitaplığı | `Object_Detection/` | Triton'a nesne tespiti isteği gönderen `YOLODetector` ve model deposu. |
 | Analiz sunucusu | Docker: `triton_yoloe_server` | Dört modeli GPU üzerinde çalıştırır. |

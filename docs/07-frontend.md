@@ -1,232 +1,286 @@
-# 07 — Arayüz kodu
+# 07 — Interface code
 
-Dizin: `WebInterface/frontend/`. Derleme adımı, paket yöneticisi ya da çatı (framework) yoktur:
-tarayıcının kendi ES modülleri, tek bir `index.html` ve düz CSS.
+Directory: `WebInterface/frontend/`. There is no build step, package manager or framework: the browser's
+own ES modules, a single `index.html` and plain CSS.
 
 ```
 frontend/
-├── index.html            Sayfa iskeleti, beş görünüm, pencereler, ikon seti
+├── index.html            Page skeleton, six views, dialogs, icon set
 ├── css/
-│   ├── base.css          Renk ve ölçü değişkenleri, sıfırlama, yazı
-│   ├── components.css    Düğme, form, rozet, kart, tablo, pencere, bildirim…
-│   ├── layout.css        Kenar çubuğu, üst çubuk, içerik alanı, duyarlı düzen
-│   └── live.css  events.css  rules.css  reports.css  cameras.css  settings.css     Sayfaya özgü stiller
+│   ├── base.css          Colour and size variables, reset, typography
+│   ├── components.css    Button, form, badge, card, table, dialog, toast…
+│   ├── layout.css        Sidebar, top bar, content area, responsive layout
+│   └── live.css  events.css  rules.css  reports.css  cameras.css  settings.css     Page-specific styles
 └── js/
-    ├── theme.js          Tema seçimi; stillerden önce yüklenen düz betik
-    ├── main.js           Giriş noktası: ortak parçaları başlatır, sayfaları kaydeder
-    ├── router.js         Adres çubuğuna bağlı sayfa geçişi
-    ├── shell.js          Saat, sistem durumu satırı, olay rozeti, bağlantı uyarısı
-    ├── api.js            Sunucuyla konuşan tek modül
-    ├── ui.js             Kaçışlama, bildirim, pencere, onay, biçimlendirme yardımcıları
-    ├── labels.js         Teknik değerlerin sade dil karşılıkları
-    ├── live.js           Canlı İzleme sayfası
-    ├── stream.js         Bir <img> öğesine canlı video (WebSocket)
-    ├── overlay.js        Görüntü üstü çizimler (bölgeler, tespitler)
-    ├── events.js         Olaylar sayfası
-    ├── event-detail.js   Olay penceresi
-    ├── rules.js          Kurallar sayfası (liste + form)
-    ├── zone-editor.js    Çokgen çizim aracı
-    ├── reports.js        Raporlar sayfası (sayılar, grafik, tablolar, yazdırma)
-    ├── cameras.js        Kameralar sayfası ve pencereleri
-    └── settings.js       Ayarlar sayfası
+    ├── theme.js          Theme choice; a plain script loaded before the styles
+    ├── i18n.js           Interface language: t(), translatePage(), setLanguage()
+    ├── i18n-en.js        English catalogue (Turkish text → English text)
+    ├── main.js           Entry point: starts the shared parts, registers the pages
+    ├── router.js         Page switching tied to the address bar
+    ├── shell.js          Clock, system status line, events badge, connection warning
+    ├── api.js            The only module that talks to the server
+    ├── ui.js             Escaping, toast, dialog, confirm and formatting helpers
+    ├── labels.js         Plain-language names for technical values
+    ├── live.js           Live view page
+    ├── stream.js         Live video into an <img> element (WebSocket)
+    ├── overlay.js        Drawings over the picture (zones, detections)
+    ├── events.js         Events page
+    ├── event-detail.js   Event window
+    ├── rules.js          Rules page (list + form)
+    ├── zone-editor.js    Polygon drawing tool
+    ├── reports.js        Reports page (figures, chart, tables, printing)
+    ├── cameras.js        Cameras page and its dialogs
+    └── settings.js       Settings page
 ```
 
-## Kurallar
+## Rules
 
-Bu kurallar kodun tamamında geçerlidir; yeni kod da bunlara uymalıdır.
+These rules hold across the code; new code must follow them too.
 
-1. **Sunucuyla yalnızca `api.js` konuşur.** Sayfalar `fetch` çağırmaz, adres kurmaz. Yeni bir uç
-   nokta gerekiyorsa `api.js`'e bir işlev eklenir.
-2. **Her sayfa aynı arayüzü dışa verir:** `mount(params)`, `unmount()` ve gerekiyorsa `canLeave()`.
-3. **Görünmeyen sayfa çalışmaz.** `unmount`, sayfanın zamanlayıcılarını, WebSocket ve SSE
-   bağlantılarını kapatır. Sekme arka plana geçince canlı video da durur.
-4. **Olaylar devredilir.** Düğmelere tek tek dinleyici bağlanmaz; kapsayıcıya bir dinleyici konur ve
-   `data-action` niteliğine bakılır. `onclick` niteliği ve `window.*` işlevi yoktur.
-5. **Her dış metin kaçışlanır.** Kamera adı, kural başlığı, sunucu iletisi… HTML'e `escapeHTML` ile
-   yazılır. Bildirimler (`showToast`) düz metindir.
-6. **Görünürlük `hidden` niteliğiyle** değiştirilir, `style.display` ile değil. Durumlar `is-*`
-   sınıflarıyla ifade edilir (`is-active`, `is-danger`, `is-open`…).
-7. **Satır içi stil yoktur.** Tek istisna, veriden gelen bir rengi CSS değişkeni olarak vermektir
+1. **Only `api.js` talks to the server.** Pages do not call `fetch` or build addresses. If a new endpoint
+   is needed, a function is added to `api.js`.
+2. **Every page exports the same interface:** `mount(params)`, `unmount()` and, if needed, `canLeave()`.
+3. **A page that is not visible does not run.** `unmount` closes the page's timers and its WebSocket and
+   SSE connections. Live video also stops when the tab goes to the background.
+4. **Events are delegated.** Listeners are not attached to buttons one by one; one listener sits on the
+   container and looks at the `data-action` attribute. There are no `onclick` attributes and no
+   `window.*` functions.
+5. **Every external text is escaped.** Camera names, rule titles, server messages… are written into HTML
+   through `escapeHTML`. Toasts (`showToast`) are plain text.
+6. **Visibility is changed with the `hidden` attribute**, not with `style.display`. States are expressed
+   with `is-*` classes (`is-active`, `is-danger`, `is-open`…).
+7. **No inline styles.** The only exception is passing a colour that comes from data as a CSS variable
    (`style="--zone-color: …"`).
-8. **Sihirli sayı yoktur.** Süreler ve sınırlar modülün başında adlandırılmış sabittir.
+8. **No magic numbers.** Times and limits are named constants at the top of the module.
+9. **Every text goes through `t()`.** Texts are written in Turkish in the code and have an entry in
+   `i18n-en.js` (see "Interface language").
 
-Sistem testi bunların bir kısmını denetler: `index.html`'de yinelenen `id` olmaması, betiklerin
-`$("#…")` ile aradığı her öğenin sayfada bulunması, bütün modüllerin `/ui/` içinde çözülmesi.
+The system check verifies some of these: no duplicate `id` in `index.html`, every element the scripts
+look up with `$("#…")` exists on the page, every module resolves under `/ui/`, and every text has an
+English entry.
 
-## Sayfa yaşam döngüsü
+## Page life cycle
 
 ```js
 // main.js
-registerView("live", { title: "Canlı İzleme", ...live });   // live.js: mount, unmount
-startRouter("live");                                         // adres boşsa açılacak sayfa
+registerView("live", { title: t("Canlı İzleme"), ...live });   // live.js: mount, unmount
+startRouter("live");                                            // the page to open if the address is empty
 ```
 
-`router.navigate(ad, params)` sırasıyla:
+`router.navigate(name, params)` in order:
 
-1. Geçerli sayfanın `canLeave()` işlevini bekler (kaydedilmemiş değişiklik varsa kullanıcıya sorar).
-2. Geçerli sayfanın `unmount()` işlevini çağırır.
-3. `<section id="view-ad">` dışındaki bölümleri gizler, menüyü ve başlığı günceller, adresi `#ad` yapar.
-4. Yeni sayfanın `mount(params)` işlevini çağırır.
+1. Waits for the current page's `canLeave()` (asks the user if there are unsaved changes).
+2. Calls the current page's `unmount()`.
+3. Hides the sections other than `<section id="view-name">`, updates the menu and the title, sets the
+   address to `#name`.
+4. Calls the new page's `mount(params)`.
 
-`params` bellekte taşınır, adrese yazılmaz. Örnek: olay penceresindeki "Bu kamerayı canlı izle"
-düğmesi `navigate("live", { cameraId })` çağırır.
+`params` travel in memory and are not written into the address. Example: the "Watch this camera live"
+button in the event window calls `navigate("live", { cameraId })`.
 
-Bir sayfanın iskeleti:
+The skeleton of a page:
 
 ```js
 let mounted = false;
 let wired = false;
 
-function wire() {            // dinleyiciler yalnızca bir kez bağlanır
+function wire() {            // listeners are attached only once
   wired = true;
-  $("#ornek-liste").addEventListener("click", onListClick);
+  $("#example-list").addEventListener("click", onListClick);
 }
 
 export function mount() {
   mounted = true;
   if (!wired) wire();
-  load();                    // veriyi her girişte tazele
+  load();                    // refresh the data on every visit
 }
 
 export function unmount() {
   mounted = false;
-  clearInterval(timer);      // açık ne varsa kapat
+  clearInterval(timer);      // close whatever is open
 }
 ```
 
-## Modüller
+## Interface language
+
+Turkish is the source language and the default; English is chosen per device under Settings →
+Appearance.
+
+- **`t(text, params)`** (`i18n.js`) returns the text in the interface language. In English mode it looks
+  the Turkish text up in `i18n-en.js` and falls back to the Turkish when there is no entry. `{name}`
+  placeholders are filled from `params`:
+
+  ```js
+  showToast(t("Kural kaydedildi."));
+  t("{n} olay", { n: 3 });            // "3 events" in English mode
+  ```
+
+  Pass the whole sentence to `t()`, never pieces glued together; word order differs between the two
+  languages.
+- **`translatePage()`** translates the static texts of `index.html` once at start-up: text nodes and the
+  `placeholder`, `title`, `aria-label` and `alt` attributes. Texts are matched as written, ignoring the
+  surrounding white space.
+- **`setLanguage(lang)`** stores the choice in `localStorage` (`aegis-lang`) and reloads the page, so
+  every page is drawn in the new language without re-rendering logic. `lang` and `locale` (`tr-TR` /
+  `en-GB`) are exported for dates and numbers; `formatPercent` and `formatDuration` in `ui.js` follow
+  them.
+- **The catalogue** `i18n-en.js` is a JSON object between the `// catalogue:begin` and
+  `// catalogue:end` markers, so the system check can read it. Keys are the Turkish texts exactly as they
+  appear in the code. A value that continues a sentence keeps its leading space.
+- **The server** writes the rule plan sentences and the working-hours text in the language of the
+  `Accept-Language` header, which `api.js` sends on every request. Server error messages are Turkish and
+  have catalogue entries.
+- **Texts produced at run time in Turkish** — the rule engine's alarm sentences — are rewritten by
+  `alarmText()` in `labels.js`. Texts written once and stored (incident summaries, rule compiler notes,
+  user-entered names) stay in the language they were written in.
+
+Adding a text: write it in Turkish inside `t("…")` (or in `index.html`) and add the entry to
+`i18n-en.js`. The system check (group [14]) fails if any `t("…")` literal or any `index.html` text with
+words has no entry.
+
+## Modules
 
 ### `api.js`
-Her uç nokta için bir işlev. Hepsi aynı `request()` yardımcısını kullanır: zaman aşımı uygular,
-başarısız yanıtı sunucunun `detail` metnini taşıyan bir `ApiError`'a çevirir. Çağıran taraf:
+One function per endpoint. All use the same `request()` helper: it applies a timeout, sends
+`Accept-Language`, and turns a failed response into an `ApiError` carrying the server's `detail` text. The
+caller:
 
 ```js
 try {
   await updateCamera(id, { name });
 } catch (err) {
-  showError("Kamera kaydedilemedi", err);   // "Kamera kaydedilemedi: <sunucunun nedeni>"
+  showError("Kamera kaydedilemedi", err);   // "Camera could not be saved: <the server's reason>"
 }
 ```
 
 ### `ui.js`
 
-| Dışa aktarım | İşlev |
+| Export | Function |
 | :--- | :--- |
-| `escapeHTML`, `icon(ad)`, `setHTML(öğe, html)` | Güvenli HTML; ikon; içerik yalnızca değiştiyse yeniden yazılır. |
-| `$`, `$$` | `querySelector` / `querySelectorAll` kısaltmaları. |
-| `showToast(ileti, tür, süre)`, `showError(önek, hata)` | Geçici bildirim. |
-| `openModal(id)`, `closeModal(id)`, `initModals()`, `isAnyModalOpen()` | Pencereler. Kapatma düğmesi (`data-close`), arka plana tıklama ve `Esc` ortak işlenir; kapanınca öğede `modal:closed` olayı yayınlanır. |
-| `confirmDialog({title, message, confirmText, danger})` | Onay penceresi; `Promise<boolean>`. Tehlikeli işlemde odak "Vazgeç"tedir. |
-| `showImage(src, başlık)` | Tam ekran görsel. |
-| `bindSegmented(grup, nitelik, onChange)` | Düğme grubunu tek seçimli denetim yapar. |
-| `withBusy(düğme, metin, iş)` | İş sürerken düğmeyi kilitler. |
-| `formatDuration`, `maskCredentials`, `copyText`, `downloadBlob`, `NO_IMAGE` | Yardımcılar. |
+| `escapeHTML`, `icon(name)`, `setHTML(element, html)` | Safe HTML; icon; content rewritten only if it changed. |
+| `$`, `$$` | Shorthands for `querySelector` / `querySelectorAll`. |
+| `showToast(message, kind, duration)`, `showError(prefix, error)` | Short-lived notification; both translate their text. |
+| `openModal(id)`, `closeModal(id)`, `initModals()`, `isAnyModalOpen()` | Dialogs. The close button (`data-close`), a click on the backdrop and `Esc` are handled in one place; on close the element emits a `modal:closed` event. |
+| `confirmDialog({title, message, confirmText, danger})` | Confirm dialog; `Promise<boolean>`. For dangerous actions the focus is on "Cancel". |
+| `showImage(src, title)` | Full-screen image. |
+| `bindSegmented(group, attribute, onChange)` | Turns a group of buttons into a single-choice control. |
+| `withBusy(button, text, job)` | Locks the button while the job runs. |
+| `formatDuration`, `formatPercent`, `maskCredentials`, `copyText`, `downloadBlob`, `NO_IMAGE` | Helpers. |
 
-`setHTML`, listelerin her güncellemede baştan çizilmesini önler: üretilen HTML öncekiyle aynıysa
-DOM'a dokunulmaz; böylece fare vurgusu, odak ve kaydırma bozulmaz.
+`setHTML` avoids redrawing lists from scratch on every update: if the generated HTML is the same as
+before, the DOM is left alone, so hover, focus and scroll position are not disturbed.
 
 ### `shell.js`
-5 saniyede bir `/api/system/stats` sorgular. Art arda iki başarısızlıkta "bağlantı koptu" şeridini
-gösterir. Analiz sunucusu yanıt vermiyorsa her sayfanın üstündeki `#analysis-notice` satırını açar
-(kurallar o sırada denetlenmez; kural listesi bunu kendiliğinden göstermez).
-`subscribeSystemStats(dinleyici)` ile başka modüller aynı veriyi alır (Ayarlar'daki sistem durumu). `refreshEventsBadge()` menüdeki incelenmemiş olay sayısını günceller.
+Polls `/api/system/stats` every 5 seconds. After two failures in a row it shows the "connection lost"
+band. If the analysis server does not answer, it opens the `#analysis-notice` line at the top of every
+page (rules are not checked meanwhile; the rule list does not show this by itself).
+`subscribeSystemStats(listener)` lets other modules receive the same data (the system status in
+Settings). `refreshEventsBadge()` updates the number of unreviewed events in the menu.
 
 ### `stream.js`
-`startStream(cameraId, img, maxFps)` → durdurma işlevi. WebSocket'ten gelen her JPEG'i `<img>`'e
-verir. Tarayıcı bir kareyi çözerken yenisi gelirse bekleyen kare değiştirilir ("son kare kazanır");
-böylece yoğun bir sekme kare atlar ama gerçek zamanın gerisine düşmez. Bağlantı koparsa artan
-aralıklarla yeniden dener, bu arada saniyede bir fotoğraf çeker.
+`startStream(cameraId, img, maxFps)` → stop function. Hands every JPEG from the WebSocket to the `<img>`.
+If a new frame arrives while the browser is decoding one, the waiting frame is replaced ("last frame
+wins"); a busy tab therefore drops frames but never falls behind real time. If the connection drops, it
+retries at growing intervals and meanwhile fetches a snapshot once per second.
 
 ### `overlay.js`
-`drawOverlay(canvas, img, sahne)`: kural bölgeleri, tespit kutuları ve engel bölgelerinin durumu.
-Görüntü `object-fit: contain` ile sığdırıldığı için, 0–1 aralığındaki koordinatlar önce görüntünün
-gerçekten kapladığı alana çevrilir.
+`drawOverlay(canvas, img, scene)`: rule zones, detection boxes and the state of obstruction zones. Because
+the picture is fitted with `object-fit: contain`, the 0–1 coordinates are first mapped to the area the
+picture actually covers.
 
 ### `live.js`
-- `/api/live/state` 400 ms'de bir sorgulanır; yanıt gelmeden yenisi gönderilmez.
-- `tileState(id)` bir karonun ne göstereceğine tek yerde karar verir: sinyal yok → kural alarmı →
-  kritik → şüpheli → normal.
-- Karolar `IntersectionObserver` ile izlenir; ekranda olmayan karonun yayını durdurulur.
-- Kamera listesi ya da kurallar başka bir ekrandan değişirse duvar yeniden kurulur.
+- `/api/live/state` is polled every 400 ms; a new request is not sent before the previous one answers.
+- `tileState(id)` decides in one place what a tile shows: no signal → rule alarm → critical →
+  suspicious → normal.
+- Tiles are watched with `IntersectionObserver`; the stream of a tile that is off screen is stopped.
+- If the camera list or the rules change from another screen, the wall is rebuilt.
 
-### `events.js` ve `event-detail.js`
-`events.js` listeyi, süzgeçleri, sayfalamayı ve SSE bağlantısını yönetir; süzme tarayıcıda yapılır
-(en çok 300 olay yüklenir). `event-detail.js` olay penceresidir ve hem Olaylar sayfası hem canlı
-izlemedeki geçmiş tarafından kullanılır: `openEventDetail(olay, değişince)`. Pencere açıkken olay
-sürüyorsa ya da özeti yazılıyorsa 3 saniyede bir kendini tazeler, bu yüzden SSE olmayan sayfada da
-güncel kalır.
+### `events.js` and `event-detail.js`
+`events.js` manages the list, filters, paging and the SSE connection; filtering happens in the browser (at
+most 300 events are loaded). `event-detail.js` is the event window, used both by the Events page and by
+the history in Live view: `openEventDetail(event, onChange)`. While the window is open and the event is
+ongoing or its summary is being written, it refreshes itself every 3 seconds, so it stays current on a
+page without SSE too.
 
-### `rules.js` ve `zone-editor.js`
-`zone-editor.js` yalnızca çizimi bilir: `createZoneEditor(canvas, { onChange, canDraw, onReject })` bir nesne
-döndürür (`setZones`, `getZones`, `getSelected`, `select`, `updateSelected`, `removeZone`,
-`finishDrawing`, `cancelDrawing`, `undo`, `clear`, `resize`, `draftPoints`). Formla ilgili her şey
-`rules.js`'tedir. Köşeler 0–1 aralığında saklanır. Kenarı önceki bir kenarı kesecek köşe kabul
-edilmez (`onReject` çağrılır); dokunmatik ekranda ilk köşeye tıklayıp kapatma alanı daha geniştir.
+### `rules.js` and `zone-editor.js`
+`zone-editor.js` only knows about drawing: `createZoneEditor(canvas, { onChange, canDraw, onReject })`
+returns an object (`setZones`, `getZones`, `getSelected`, `select`, `updateSelected`, `removeZone`,
+`finishDrawing`, `cancelDrawing`, `undo`, `clear`, `resize`, `draftPoints`). Everything about the form is
+in `rules.js`. Corners are stored between 0 and 1. A corner whose edge would cross an earlier edge is
+refused (`onReject` is called); on a touch screen the area for closing the zone by tapping the first
+corner is larger.
 
 ### `cameras.js`
-Liste, ağ taraması, ekleme, düzenleme (canlı önizlemeli), bilgi ve silme. Küçük resimler 2,5
-saniyede bir, önce bellekte yüklenip sonra değiştirilerek tazelenir (titreme olmaz).
+List, network scan, adding, editing (with live preview), details and deleting. Thumbnails refresh every
+2.5 seconds; each is loaded in memory first and then swapped in (no flicker).
 
 ### `settings.js`
-Form geneldir: her denetim hangi ayarı düzenlediğini `data-setting="bölüm.alan"` ile söyler; modül
-ayar adlarını bilmez. Yeni bir ayar eklemek için çoğu zaman yalnızca `index.html`'e bir denetim
-eklemek yeter.
+The form is generic: each control says which setting it edits with `data-setting="section.field"`; the
+module does not know setting names. Adding a new setting usually needs only a control in `index.html`
+(and its catalogue entry).
 
 ```html
 <label for="set-padding">Olay öncesi ve sonrası <output data-output="recording.padding_sec" data-unit=" sn"></output></label>
 <input type="range" id="set-padding" data-setting="recording.padding_sec" min="0.5" max="5" step="0.5">
 ```
 
+The theme and language pickers under Appearance are not settings: they act on this device immediately
+(`window.aegisTheme.set`, `setLanguage`).
+
 ### `labels.js`
-`classLabel("NO-Hardhat")` → "Baretsiz kişi"; `describePlan(plan_summary)` → "Baretsiz kişi — bölgede
-görülünce". Bilinmeyen sınıf adı olduğu gibi gösterilir. Yeni bir model sınıfı eklendiğinde buraya da
-eklenmelidir (aynı sözlüğün sunucu tarafı: `Rule_Generator_LLM/evaluator.py`, `_CLASS_LABELS`).
+`classLabel("NO-Hardhat")` → "Baretsiz kişi" ("Person without a hard hat" in English mode);
+`describePlan(plan_summary)` → "Baretsiz kişi — bölgede görülünce". An unknown class name is shown as it
+is. When a new model class is added, it must be added here too (the server side of the same dictionary:
+`Rule_Generator_LLM/evaluator.py`, `_CLASS_LABELS`; English rule sentences: `Rule_Generator_LLM/manual.py`,
+`_CLASS_LABELS_EN`). `alarmText(text)` rewrites the rule engine's Turkish alarm sentences in English mode.
 
-## Stil sistemi
+## Style system
 
-- Renk, köşe yarıçapı, yazı ve temel ölçüler `base.css`'teki değişkenlerdedir. Yeni bir stil sabit
-  renk yazmaz, değişken kullanır. Tek istisna, video üstündeki yazı ve düğmelerdir (siyah zemin,
-  beyaz yazı): onlar temadan bağımsızdır.
-- **Renk rolleri.** Her tema aynı değişkenleri tanımlar; bir stil rengi rolüne göre seçer:
+- Colours, corner radii, type and basic sizes are variables in `base.css`. A new style does not hard-code
+  colours; it uses variables. The only exception is the text and buttons over video (black background,
+  white text): they do not depend on the theme.
+- **Colour roles.** Every theme defines the same variables; a style chooses a colour by its role:
 
-  | Değişken | Rolü |
+  | Variable | Role |
   | :--- | :--- |
-  | `--bg`, `--surface`, `--surface-2`, `--surface-3`, `--border`, `--border-strong` | Zeminler ve çizgiler |
-  | `--text`, `--text-2`, `--text-3` | Yazı: asıl, ikincil, silik |
-  | `--primary`, `--primary-hover`, `--primary-soft`, `--on-primary` | **Eylem ve denetim rengi:** ana düğme, anahtar, kaydırıcı, odak çerçevesi, seçili etiket |
-  | `--accent`, `--accent-soft`, `--accent-ink`, `--on-accent` | **Marka vurgusu (açık turuncu):** logo, etkin menü öğesi, "buraya bak" vurguları. `--accent-ink` aynı tonun yazı olarak okunabilen koyusudur |
-  | `--ok`, `--warn`, `--danger`, `--info` (+ `-soft`) | Durum renkleri; yazı olarak okunabilir koyulukta |
-  | `--warn-solid`, `--on-warn-solid` | Uyarının dolgu ya da kenarlık hâli (parlak kehribar) ve üstündeki yazı |
-  | `--series-rule`, `--series-movement` | Rapor grafiğinin iki serisi; her temanın zemini için renk körlüğü ayrımı ve kontrastı ölçülmüştür |
+  | `--bg`, `--surface`, `--surface-2`, `--surface-3`, `--border`, `--border-strong` | Backgrounds and lines |
+  | `--text`, `--text-2`, `--text-3` | Text: main, secondary, faint |
+  | `--primary`, `--primary-hover`, `--primary-soft`, `--on-primary` | **Action and control colour:** main button, switch, slider, focus ring, selected label |
+  | `--accent`, `--accent-soft`, `--accent-ink`, `--on-accent` | **Brand accent (light orange):** logo, active menu item, "look here" highlights. `--accent-ink` is the darker shade of the same tone that reads as text |
+  | `--ok`, `--warn`, `--danger`, `--info` (+ `-soft`) | Status colours, dark enough to read as text |
+  | `--warn-solid`, `--on-warn-solid` | The filled or border form of a warning (bright amber) and the text on it |
+  | `--series-rule`, `--series-movement` | The two series of the report chart; colour-blind separation and contrast measured against each theme's background |
 
-- **Temalar.** `<html data-theme="light | navy | dark">`; varsayılan `light` (`:root`'taki değerler).
-  `js/theme.js` sayfanın başında, stillerden önce yüklenen düz bir betiktir (modül değildir): seçimi
-  `localStorage`'dan okur ve ilk karede uygular, `window.aegisTheme.get()` / `.set(ad)` sunar.
-  Açık temada menü laciverttir: `base.css`, `.sidebar` içinde zemin ve yazı değişkenlerini yeniden
-  tanımlar. Yeni tema eklemek: `base.css`'e bir `:root[data-theme="ad"]` bloğu, `theme.js`'teki
-  listeye bir satır ve Ayarlar'daki seçiciye bir düğme.
-- Ortak parçalar `components.css`'tedir: `.btn` (`.btn-primary`, `.btn-danger`, `.btn-sm`),
-  `.btn-icon`, `.input`, `.select`, `.textarea`, `.field`, `.switch`, `.check`, `.badge`, `.chip`,
-  `.segmented`, `.card`, `.toolbar`, `.empty`, `.notice`, `.table`, `.modal`, `.toast`.
-- İkonlar `index.html`'in başındaki SVG kümesindedir; HTML'de `<svg class="icon"><use href="#i-ad"/></svg>`,
-  JS'te `icon("ad")`.
-- Duyarlı düzen: 1100 pikselin altında kenar çubuğu yalnızca ikon gösterir; 640 pikselin altında
-  ekranın altına iner.
+- **Themes.** `<html data-theme="light | navy | dark">`; the default is `light` (the values in `:root`).
+  `js/theme.js` is a plain script (not a module) loaded at the top of the page before the styles: it reads
+  the choice from `localStorage` and applies it on the first frame, and offers `window.aegisTheme.get()` /
+  `.set(name)`. In the light theme the menu is navy: `base.css` redefines the background and text
+  variables inside `.sidebar`. Adding a theme: a `:root[data-theme="name"]` block in `base.css`, a line in
+  the list in `theme.js` and a button in the picker in Settings.
+- Shared parts are in `components.css`: `.btn` (`.btn-primary`, `.btn-danger`, `.btn-sm`), `.btn-icon`,
+  `.input`, `.select`, `.textarea`, `.field`, `.switch`, `.check`, `.badge`, `.chip`, `.segmented`,
+  `.card`, `.toolbar`, `.empty`, `.notice`, `.table`, `.modal`, `.toast`.
+- Icons are in the SVG set at the top of `index.html`; in HTML `<svg class="icon"><use href="#i-name"/></svg>`,
+  in JS `icon("name")`.
+- Responsive layout: below 1100 pixels the sidebar shows icons only; below 640 pixels it moves to the
+  bottom of the screen.
 
-## Yeni sayfa eklemek
+## Adding a page
 
-1. `index.html`: menüye `<a class="nav-item" href="#rapor" data-view="rapor">` ve içerik alanına
-   `<section id="view-rapor" class="view" hidden>` ekleyin.
-2. `js/rapor.js`: `mount` ve `unmount` dışa verin.
-3. `js/main.js`: `registerView("rapor", { title: "Raporlar", ...rapor })`.
-4. Sayfaya özgü stil gerekiyorsa `css/rapor.css` oluşturup `index.html`'e bağlayın.
-5. Gereken uç noktalar için `js/api.js`'e işlev ekleyin.
+1. `index.html`: add `<a class="nav-item" href="#report" data-view="report">` to the menu and
+   `<section id="view-report" class="view" hidden>` to the content area.
+2. `js/report.js`: export `mount` and `unmount`.
+3. `js/main.js`: `registerView("report", { title: t("Raporlar"), ...report })`.
+4. If the page needs its own style, create `css/report.css` and link it from `index.html`.
+5. Add functions to `js/api.js` for the endpoints it needs.
+6. Add the English entries of the new texts to `js/i18n-en.js`.
 
-## Tarayıcıda saklananlar
+## Stored in the browser
 
-| Anahtar | İçerik |
+| Key | Content |
 | :--- | :--- |
-| `aegis.events.layout` | Olaylar: `cards` / `table` |
-| `aegis.cameras.layout` | Kameralar: `grid` / `list` |
-| `aegis-theme` | Tema: `light` / `navy` / `dark` |
-| `aegis-ui-refreshed` (oturum) | Eski önbellekten yenileme döngüsünü önleyen zaman damgası |
+| `aegis.events.layout` | Events: `cards` / `table` |
+| `aegis.cameras.layout` | Cameras: `grid` / `list` |
+| `aegis-theme` | Theme: `light` / `navy` / `dark` |
+| `aegis-lang` | Language: `tr` / `en` |
+| `aegis-ui-refreshed` (session) | Timestamp that prevents a reload loop from an old cache |

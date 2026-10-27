@@ -22,6 +22,7 @@ needs their attention, and every alarm arrives with the evidence needed to act o
 | **Object tracking** | Detections keep a stable identity from frame to frame; a violation must persist for one second before it counts. | One-frame false detections and a momentarily missed helmet no longer raise alarms; waiting time is measured per person. |
 | **Obstruction monitoring** | Watches areas that must stay clear — emergency exits, fire hose cabinets — against a reference picture. | Blocked escape routes are a common, serious and easily overlooked hazard. |
 | **Evidence-grade event records** | One continuous clip per incident, a snapshot of its peak, a short summary and the operator's true / false verdict. A violation that lasts an hour is one event with its real duration. | Every alarm can be verified in seconds, shared and audited later, without scrubbing through raw recordings. |
+| **Two languages** | The interface runs in Turkish or English, chosen per device; a phone can be in English while the control-room screen stays in Turkish. | Operators, managers and visiting auditors each read the system in their own language, with no separate installation. |
 | **Reports** | Events by day, rule and camera; false-alarm rate; total violation time; printable. | Turns monitoring into measurable safety performance that managers and auditors can act on. |
 | **Accuracy measurement** | A harness plays labelled videos to a private copy of the system and counts catches, misses and false alarms. | Every change to detection can be proven better or worse with numbers, not impressions. |
 
@@ -44,8 +45,9 @@ needs their attention, and every alarm arrives with the evidence needed to act o
 | ![Cameras](docs/images/kameralar.jpg) | ![Settings](docs/images/ayarlar.jpg) |
 | Network discovery, manual addition, live status and editing. | Detection sensitivity, recording length, storage and appearance. |
 
-The interface is in Turkish, works on phones as well as desktops, and offers a light theme (default),
-a navy theme and a dark theme. Screenshots show test footage played through the camera simulator.
+The interface is in Turkish (default) and English, chosen per device under Settings → Appearance. It
+works on phones as well as desktops and offers a light theme (default), a navy theme and a dark theme.
+Screenshots show test footage played through the camera simulator.
 
 ---
 
@@ -63,7 +65,7 @@ installation's settings at the time (warning threshold 39, critical 40, incident
 These figures are a first, honest baseline rather than a guarantee: the labels are a draft, the set is
 small (one video moves the catch rate by 9 points), the incident-free footage comes from a single office,
 and the clips are collected footage rather than customer cameras. The full report, including what the
-summaries got right and wrong, is in [docs/10](docs/10-gelistirme-ve-test.md#doğruluk-ölçümü).
+summaries got right and wrong, is in [docs/10](docs/10-development-and-testing.md#accuracy-measurement).
 
 ---
 
@@ -94,7 +96,7 @@ Event ──► event_journal (persistent log) + evidence_store (clip, snapshot)
 ## Quick start
 
 **Requirements:** Linux, an NVIDIA GPU, Docker with the NVIDIA Container Toolkit, Python 3.10 and ffmpeg.
-Model files and detailed setup: [docs/02-kurulum.md](docs/02-kurulum.md).
+Model files and detailed setup: [docs/02-installation.md](docs/02-installation.md).
 
 ```bash
 conda create -p ./.conda python=3.10 -y && ./.conda/bin/pip install -r requirements.txt
@@ -118,21 +120,22 @@ In the interface: **Kameralar → Ağda kamera ara → add the cameras**, then o
 
 ## Documentation
 
-The complete documentation lives in [`docs/`](docs/README.md) and is written in Turkish.
+The complete documentation lives in [`docs/`](docs/README.md), in English, with the same chapters in Turkish
+in [`docs/tr/`](docs/tr/README.md).
 
 | Chapter | Content |
 | :--- | :--- |
-| [01 — Overview](docs/01-genel-bakis.md) | What the system does, its components, terminology |
-| [02 — Installation](docs/02-kurulum.md) | Requirements, models, start-up and shutdown, ports |
-| [03 — User guide](docs/03-kullanim-kilavuzu.md) | Every page of the interface, step by step |
-| [04 — Architecture](docs/04-mimari.md) | Processes, threads, data flow, design decisions |
+| [01 — Overview](docs/01-overview.md) | What the system does, its components, terminology |
+| [02 — Installation](docs/02-installation.md) | Requirements, models, start-up and shutdown, ports |
+| [03 — User guide](docs/03-user-guide.md) | Every page of the interface, step by step; themes and language |
+| [04 — Architecture](docs/04-architecture.md) | Processes, threads, data flow, design decisions |
 | [05 — Backend modules](docs/05-backend.md) | Reference for every module in `WebInterface/backend` |
 | [06 — API reference](docs/06-api.md) | All HTTP, WebSocket and SSE endpoints with examples |
-| [07 — Frontend](docs/07-frontend.md) | Structure, conventions, colour roles and themes |
-| [08 — Rules and analysis](docs/08-kurallar-ve-analiz.md) | Rule compilation, tracking, condition types, event lifecycle, summaries |
-| [09 — Data and configuration](docs/09-veri-ve-yapilandirma.md) | Files on disk, record formats, every setting, environment variables |
-| [10 — Development and testing](docs/10-gelistirme-ve-test.md) | Workflow, system test, accuracy measurement, common changes |
-| [11 — Troubleshooting](docs/11-sorun-giderme.md) | Symptoms, causes and fixes; known limitations |
+| [07 — Frontend](docs/07-frontend.md) | Structure, conventions, interface language, colour roles and themes |
+| [08 — Rules and analysis](docs/08-rules-and-analysis.md) | Rule compilation, tracking, condition types, event lifecycle, summaries |
+| [09 — Data and configuration](docs/09-data-and-configuration.md) | Files on disk, record formats, every setting, environment variables |
+| [10 — Development and testing](docs/10-development-and-testing.md) | Workflow, system test, accuracy measurement, common changes |
+| [11 — Troubleshooting](docs/11-troubleshooting.md) | Symptoms, causes and fixes; known limitations |
 
 ---
 
@@ -157,18 +160,18 @@ The complete documentation lives in [`docs/`](docs/README.md) and is written in 
 ```
 
 The system test starts an isolated server on its own port with temporary data and exercises the whole
-interface and API — **134 checks**, from input validation and live video to tracking logic, working hours
-and report figures. It never touches the running system and should be run after every change.
+interface and API — **137 checks**, from input validation and live video to tracking logic, working hours,
+report figures and translation coverage. It never touches the running system and should be run after every change.
 
 The same test runs on every push through GitHub Actions (`.github/workflows/ci.yml`). The CI machines have
-no cameras or GPU, so the live-video section is skipped there and the remaining **112 checks** run.
+no cameras or GPU, so the live-video section is skipped there and the remaining **115 checks** run.
 
 ```bash
 .conda/bin/python WebInterface/tests/accuracy_check.py --no-summaries
 ```
 
 The accuracy harness answers a different question — not *does it work* but *how well*. Run it before and
-after any change to detection; see [docs/10](docs/10-gelistirme-ve-test.md#doğruluk-ölçümü).
+after any change to detection; see [docs/10](docs/10-development-and-testing.md#accuracy-measurement).
 
 `Object_Detection/run_tests.py` loads models and needs several gigabytes of GPU memory; do not run it while
 the live system is serving.
@@ -200,7 +203,7 @@ AegisVision is a working pre-production system. Before it is installed on a cust
 - **Summary verdict:** the summaries' "real / ordinary" judgement is not reliable enough to suppress
   alarms (measured; see above). It is shown as information only.
 - **Untested:** physical camera hardware, Firefox, continuous multi-day operation. Full list:
-  [docs/11](docs/11-sorun-giderme.md#bilinen-sınırlar).
+  [docs/11](docs/11-troubleshooting.md#known-limits).
 - **Long functions left as they are:** `Rule_Generator_LLM/compiler.py: _normalize_plan_data`
   (~230 lines), `live_detection_service.py: _process_camera` (~190 lines),
   `camera_service.py: probe_and_register` (~125 lines). They work; refactoring them is a separate task,

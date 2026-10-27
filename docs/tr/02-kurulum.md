@@ -58,9 +58,9 @@ Kural açıklamalarını çözümleyen ve olay özetlerini yazan dil modeli serv
 cp .env.example .env
 ```
 
-`.env` depoya girmez. Anahtar verilmezse sistem çalışır; yalnızca kişi / nesne kuralları
-"Hazırlanamadı" görünür ve olaylar özetsiz kaydedilir. Engel / değişiklik kuralları ve olağandışı
-hareket algılama bu servise ihtiyaç duymaz.
+`.env` depoya girmez. Anahtar verilmezse sistem çalışır; yalnızca cümleyle tarif edilen kurallar
+"Hazırlanamadı" görünür ve olaylar özetsiz kaydedilir. Listeden seçilen kurallar, engel / değişiklik
+kuralları ve olağandışı hareket algılama bu servise ihtiyaç duymaz.
 
 ## Başlatma
 
@@ -110,6 +110,7 @@ setsid nohup ./WebInterface/run.sh > aegis.log 2>&1 < /dev/null &
 2. **Canlı İzleme**'de görüntülerin geldiğini doğrulayın.
 3. **Ayarlar → Algılama**'da "Olağandışı hareketleri algıla" açık olsun.
 4. İsterseniz **Kurallar**'dan bir bölge kuralı tanımlayın.
+5. Arayüzü İngilizce kullanmak için **Ayarlar → Görünüm → English** (cihaz başına).
 
 Ayrıntılar: [03 — Kullanım kılavuzu](03-kullanim-kilavuzu.md).
 
@@ -156,3 +157,4 @@ açık bir hata iletisiyle çıkar (bkz. [04 — Mimari](04-mimari.md), "Tek ör
 - Kamera keşfi, makinenin bütün etkin ağ kartlarından ayrı ayrı yapılır; kameralar farklı bir alt
   ağdaysa keşif onları bulamaz, "Elle ekle" kullanılır.
 - Bir kamera, kaydedildiği andaki IP adresiyle saklanır. Kameranın adresi değişirse silip yeniden ekleyin.
+  (Simülatör, başladığı andaki makine adresini duyurur; makinenin adresi değişirse simülatörü yeniden başlatın.)

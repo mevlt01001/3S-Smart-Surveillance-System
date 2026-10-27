@@ -4,7 +4,7 @@
 # bunu kendisi fark eder: canlı video isteyen denetimleri SKIP olarak raporlar, geri kalanını
 # (API, arayüz dosyaları, ayarlar, kurallar, olay günlüğü, canlı bildirim, kalıcılık, kapanma)
 # koşar. Tam test, simülatör ve Triton çalışan geliştirme makinesinde elle koşulur.
-# Ayrıntı: docs/10-gelistirme-ve-test.md
+# Ayrıntı: docs/10-development-and-testing.md (Türkçesi: docs/tr/10-gelistirme-ve-test.md)
 name: CI
 
 on:

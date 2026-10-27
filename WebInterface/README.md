@@ -1,7 +1,7 @@
 # AegisVision — Web Interface and Server
 
 > This is a short guide to the web layer, the part of AegisVision that operators use and that ties every
-> other component together. The full documentation is in [`docs/`](../docs/README.md) (Turkish).
+> other component together. The full documentation is in [`docs/`](../docs/README.md) (English; Turkish in [`docs/tr/`](../docs/tr/README.md)).
 
 The web layer discovers IP cameras on the network, streams them live, runs unusual-activity analysis and
 rule checks on them, and records every incident with its video, key frame and summary. It is a FastAPI
@@ -20,7 +20,7 @@ The interface opens at **http://localhost:8500** (and at the machine's address o
 | Environment variable | Default | Purpose |
 | :--- | :--- | :--- |
 | `AEGIS_DATA_DIR` | `WebInterface/backend` | Where cameras, rules, settings, events, clips and snapshots are stored. Pointing it elsewhere runs a second, fully separate instance without touching the real data; a second server can never start on the same directory. |
-| `EVREN_API_KEY`, `EVREN_BASE_URL`, `EVREN_VLM_MODEL` | key empty | The language-model service that compiles rule sentences and writes incident summaries. The key goes into `.env` at the repository root (template: `.env.example`). Without a key no external call is made: rules can still be defined from lists, sentence rules show "Hazırlanamadı", and events are recorded without summaries. |
+| `EVREN_API_KEY`, `EVREN_BASE_URL`, `EVREN_VLM_MODEL` | key empty | The language-model service that compiles rule sentences and writes incident summaries. The key goes into `.env` at the repository root (template: `.env.example`). Without a key no external call is made: rules can still be defined from lists, sentence rules show "Could not be prepared", and events are recorded without summaries. |
 
 ---
 
@@ -72,6 +72,7 @@ WebInterface/
 │   ├── css/                     base → components → layout, then one file per page
 │   └── js/
 │       ├── theme.js                         Theme of this device, applied before the first paint
+│       ├── i18n.js  i18n-en.js              Interface language (Turkish / English) and the English catalogue
 │       ├── main.js  router.js  shell.js     Entry point, page switching, always-visible parts
 │       ├── api.js                           The only module that talks to the server
 │       ├── ui.js  labels.js                 Shared components and plain-language wording
@@ -81,7 +82,7 @@ WebInterface/
 │       ├── reports.js                       Reports page
 │       └── cameras.js  settings.js
 └── tests/
-    ├── system_check.py          End-to-end system test (134 checks)
+    ├── system_check.py          End-to-end system test (137 checks)
     ├── accuracy_check.py        Accuracy measurement on labelled videos
     └── accuracy_labels.json     Labels for the accuracy measurement
 ```
@@ -96,6 +97,8 @@ Conventions that keep the code predictable:
 * Every text that comes from a user or from the server is escaped with `escapeHTML` before it reaches the page.
 * Colours are never written directly: styles use role variables (`--primary`, `--accent`, `--warn`, …)
   defined per theme in `base.css`.
+* Every interface text is written in Turkish inside `t("…")` and has an English entry in `js/i18n-en.js`;
+  the system test fails on any text without one.
 * No build step: the browser loads native ES modules. Files are served from `/ui/...` with
   `Cache-Control: no-cache`, so a browser always picks up the current version.
 
@@ -121,7 +124,7 @@ if every executed check passed.
 
 The accuracy harness plays labelled videos to a private copy of the system as real cameras and reports
 caught incidents, missed incidents, false alarms and what other thresholds would have given. Use it to
-prove that a change to detection is an improvement. Details: [docs/10](../docs/10-gelistirme-ve-test.md#doğruluk-ölçümü).
+prove that a change to detection is an improvement. Details: [docs/10](../docs/10-development-and-testing.md#accuracy-measurement).
 
 ---
 

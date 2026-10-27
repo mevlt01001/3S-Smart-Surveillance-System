@@ -7,7 +7,7 @@
 | Web sunucusu (uvicorn + FastAPI) | `WebInterface/run.sh` | Veri dizinindeki JSON dosyaları ve kanıt dosyaları |
 | Analiz sunucusu (Triton) | `Object_Detection/start_triton_docker.sh` | Yok (durumsuz) |
 | Dil modeli servisi | Dış servis | — |
-| Tarayıcı | — | Görünüm tercihleri (`localStorage`) |
+| Tarayıcı | — | Tema ve dil tercihleri (`localStorage`) |
 
 Web sunucusu tek süreçtir ve bütün iş mantığını içerir. Ölçekleme birden çok süreçle değil, süreç
 içindeki iş parçacıklarıyla yapılır; bu yüzden aynı veri dizininde ikinci bir sunucu çalıştırılamaz.
@@ -120,6 +120,11 @@ uzun ömürlü döngüler bunu görüp çıkar.
 
 **Arayüz önbelleği.** Arayüz dosyaları `/ui/` altından `Cache-Control: no-cache` ile sunulur: tarayıcı
 her açılışta sorar, değişmeyen dosya için `304` alır. Böylece yeni sürüm eski önbellekle karışmaz.
+
+**Dil istemcide.** Arayüz Türkçe yazılır ve tarayıcıda tek bir katalogdan çevrilir; sunucunun dili
+bilmesi yalnızca istek üzerine kendisinin yazdığı birkaç cümle (kural planları, çalışma saatleri) için
+gerekir ve bunu `Accept-Language` başlığından okur. Saklanan metinler çevrilmez.
+Ayrıntı: [07 — Frontend](07-frontend.md), "Arayüz dili".
 
 ## Açılış sırası
 

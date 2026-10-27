@@ -1,244 +1,255 @@
-# 05 — Sunucu modülleri
+# 05 — Server modules
 
-Dizin: `WebInterface/backend/`. Çalıştırma: `uvicorn WebInterface.backend.server:app`.
+Directory: `WebInterface/backend/`. Run with: `uvicorn WebInterface.backend.server:app`.
 
 ```
 backend/
-├── __init__.py              OpenCV ortam ayarları
-├── server.py                Uygulama: açılış, kapanış, ara katmanlar, yönlendiricilerin bağlanması
-├── paths.py                 Veri dizini, güvenli yazım, tek örnek kilidi, kapanma işareti
-├── api/                     HTTP katmanı (iş mantığı içermez)
-│   ├── schemas.py           İstek gövdeleri
+├── __init__.py              OpenCV environment options
+├── server.py                Application: start-up, shutdown, middleware, attaching the routers
+├── paths.py                 Data directory, safe writes, single-instance lock, shutdown flag
+├── api/                     HTTP layer (no business logic)
+│   ├── schemas.py           Request bodies
 │   ├── system.py            /api/health, /api/system/stats, /api/onvif/scan
-│   ├── cameras.py           /api/cameras/…  (kayıt, fotoğraf, MJPEG, WebSocket)
+│   ├── cameras.py           /api/cameras/…  (registry, snapshot, MJPEG, WebSocket)
 │   ├── live.py              /api/live/state, /api/change-detection/…
 │   ├── rules.py             /api/rules/…
-│   ├── events.py            /api/anomaly/…  (günlük, kanıt dosyaları, SSE)
+│   ├── events.py            /api/anomaly/…  (log, evidence files, SSE)
+│   ├── reports.py           /api/reports
 │   ├── settings.py          /api/settings
-│   └── frontend.py          Arayüz dosyalarının sunumu
-├── camera_service.py        Kamera kayıtları ve canlı kare kaynağı
-├── onvif_core.py            ONVIF keşfi ve cihaz sorguları
-├── onvif_auth.py            WS-Security kimlik başlığı
-├── anomaly_service.py       Anomali döngüsü; skor → olay
-├── live_detection_service.py  Kural döngüsü; tespit → ihlal
-├── change_detector.py       Engel / değişiklik bölgeleri (SSIM)
-├── rule_compilation.py      Kural açıklamalarının arka planda derlenmesi
-├── rules_service.py         Kural kayıtları
-├── settings_service.py      Ayarlar: varsayılanlar, sınırlar, kalıcılık
-├── event_journal.py         Olay günlüğü
-├── evidence_store.py        Olay videoları ve fotoğrafları
-├── event_stream.py          Canlı bildirim (SSE) yayıncısı
-└── system_stats.py          Analiz sunucusu ve ekran kartı durumu
+│   └── frontend.py          Serving the interface files
+├── camera_service.py        Camera records and the live frame source
+├── onvif_core.py            ONVIF discovery and device queries
+├── onvif_auth.py            WS-Security authentication header
+├── anomaly_service.py       Anomaly loop; score → event
+├── live_detection_service.py  Rule loop; detection → violation
+├── change_detector.py       Obstruction / change zones (SSIM)
+├── rule_compilation.py      Background compilation of rule descriptions
+├── rules_service.py         Rule records
+├── settings_service.py      Settings: defaults, limits, persistence
+├── event_journal.py         Event log
+├── evidence_store.py        Event videos and snapshots
+├── event_stream.py          Live notification (SSE) publisher
+├── reports.py               Report figures from the event log
+└── system_stats.py          Analysis server and graphics card status
 ```
 
-Bağımlılık yönü tek taraflıdır: `api/` → servisler → `paths`. Servisler `api/` altından bir şey
-içe aktarmaz.
+Dependencies point one way: `api/` → services → `paths`. Services import nothing from `api/`.
 
 ---
 
 ## `server.py`
 
-Uygulamayı kurar; uç nokta içermez.
+Builds the application; contains no endpoints.
 
-- `acquire_instance_lock()` çağrısı servis içe aktarmalarından önce gelir (sıra önemlidir).
-- `QuietPollingFilter`: arayüzün sık yaptığı başarılı sorguları erişim günlüğünden çıkarır.
-- `lifespan`: `SIGINT`/`SIGTERM` işleyicilerini sarar (önce `SHUTTING_DOWN`), kapanışta servis
-  döngülerini durdurur ve kamera işçilerini kapatır.
-- Ara katmanlar: GZip (≥ 1 KB), CORS (her kaynağa açık).
+- `acquire_instance_lock()` is called before the service imports (the order matters).
+- `QuietPollingFilter`: removes the successful requests the interface makes often from the access log.
+- `lifespan`: wraps the `SIGINT`/`SIGTERM` handlers (`SHUTTING_DOWN` first), stops the service loops
+  and closes the camera workers on shutdown.
+- Middleware: GZip (≥ 1 KB), CORS (open to every origin).
 
 ## `paths.py`
 
-| Ad | İşlev |
+| Name | Function |
 | :--- | :--- |
-| `DATA_DIR`, `data_path(*parçalar)` | Veri dizini (`AEGIS_DATA_DIR`, varsayılan bu paket dizini). |
-| `atomic_write_json(yol, nesne)` | Geçici dosya + yeniden adlandırma ile yazım. |
-| `acquire_instance_lock(wait_sec=20)` | `.aegis.lock` üzerinde `flock`; süre `AEGIS_LOCK_WAIT_SEC` ile değişir. Alamazsa `RuntimeError`. |
-| `SHUTTING_DOWN` | `threading.Event`; uzun ömürlü her döngü denetler. |
+| `DATA_DIR`, `data_path(*parts)` | Data directory (`AEGIS_DATA_DIR`, by default this package's directory). |
+| `atomic_write_json(path, obj)` | Write through a temporary file + rename. |
+| `acquire_instance_lock(wait_sec=20)` | `flock` on `.aegis.lock`; the wait is changed with `AEGIS_LOCK_WAIT_SEC`. Raises `RuntimeError` if the lock cannot be taken. |
+| `SHUTTING_DOWN` | `threading.Event`; checked by every long-lived loop. |
 
 ## `camera_service.py`
 
-İki sınıf ve tekil `camera_service` nesnesi.
+Two classes and the singleton `camera_service`.
 
 ### `CameraLiveWorker`
 
-Bir kameranın yayınını çözen iş parçacığı.
+The thread that decodes one camera's stream.
 
-| Sabit | Değer | Anlamı |
+| Constant | Value | Meaning |
 | :--- | :--- | :--- |
-| `STREAM_STALE_SEC` | 3.0 | Bu kadar süre kare gelmezse yayın "takılmış" sayılır. |
-| `WORKER_IDLE_SEC` | 120.0 | Tüketen yoksa bağlantı bu süre sonunda bırakılır. |
-| `MAX_OUTPUT_FPS` | 30.0 | Kamera başına işlenen en yüksek kare hızı. |
+| `STREAM_STALE_SEC` | 3.0 | If no frame arrives for this long, the stream counts as "stalled". |
+| `WORKER_IDLE_SEC` | 120.0 | Without consumers, the connection is released after this time. |
+| `MAX_OUTPUT_FPS` | 30.0 | Highest frame rate processed per camera. |
 
-Durumlar: `connecting` → `live` ⇄ `stalled`, kullanılmayınca `idle`. Önemli davranışlar:
+States: `connecting` → `live` ⇄ `stalled`, `idle` when unused. Important behaviour:
 
-- `is_live()` için oturumda en az iki kare gelmiş olmalıdır; ilk kare çoğu zaman çözücünün
-  tamponundan gelen eski bir karedir.
-- Okuma 4 saniyeden uzun takılırsa oturum bırakılır; çözücünün sonradan boşalttığı bayat kareler
-  "canlı" diye sunulmaz.
-- Bir adres çalışınca hatırlanır; kaydedilmiş IP'ye ulaşılamazsa aynı yol `localhost` üzerinden denenir
-  (sunucuyla aynı makinedeki yayınlar için).
-- `add_listener` / `remove_listener`: yeni karede çağrılacak işlevler (WebSocket dağıtımı bunu kullanır).
-- `get_frame_info`, `get_frame_at(ts)`, `get_clip_frames(süre)`, `get_clip_frames_range(baş, son)`,
-  `get_ai_frames(adet)`, `get_bgr_frame()`.
+- `is_live()` requires at least two frames in the session; the first frame is often an old one from the
+  decoder's buffer.
+- If a read stalls for more than 4 seconds, the session is dropped; stale frames that the decoder flushes
+  later are never served as "live".
+- An address that works is remembered; if the stored IP cannot be reached, the same path is tried through
+  `localhost` (for streams on the same machine as the server).
+- `add_listener` / `remove_listener`: functions to call on each new frame (WebSocket distribution uses this).
+- `get_frame_info`, `get_frame_at(ts)`, `get_clip_frames(seconds)`, `get_clip_frames_range(start, end)`,
+  `get_ai_frames(count)`, `get_bgr_frame()`.
 
 ### `CameraService`
 
-| Yöntem | İşlev |
+| Method | Function |
 | :--- | :--- |
-| `get_all()`, `get_by_id(id)` | Kamera kayıtları (şifre dâhil; yalnızca sunucu içinde kullanılır). |
-| `public_view(kamera)` | Şifresi çıkarılmış ve yayın durumu eklenmiş kopya; API bunu döndürür. |
-| `probe_and_register(ip, port, …)` | ONVIF ile bağlanır, cihaz ve yayın bilgisini okur, kaydeder, işçiyi başlatır. Cihaza ulaşılamasa da kayıt oluşur (`status`: `offline` / `auth_error`). |
-| `update_camera`, `delete_camera` | Ad / açıklama güncelleme; silme (işçiyi durdurur). |
+| `get_all()`, `get_by_id(id)` | Camera records (including the password; used only inside the server). |
+| `public_view(camera)` | A copy without the password and with the stream state added; the API returns this. |
+| `probe_and_register(ip, port, …)` | Connects over ONVIF, reads device and stream details, stores the record, starts the worker. The record is created even if the device cannot be reached (`status`: `offline` / `auth_error`). |
+| `update_camera`, `delete_camera` | Update name / description; delete (stops the worker). |
 | `get_stream_health(id)` | `stream_live`, `stream_connecting`, `stream_standby`, `stream_state`, `stream_fps`, `last_frame_age`. |
-| `get_camera_snapshot(id)` | Güncel JPEG ya da durum kartı ("BAĞLANIYOR", "SİNYAL YOK"). |
-| `iter_frames(id, max_fps)` | Zaman uyumsuz üreteç: her yeni karede JPEG verir; sinyal yokken saniyede bir durum kartı. |
-| `mjpeg_stream_generator(id)` | Aynı karelerin `multipart/x-mixed-replace` biçimi. |
-| `set_clip_window(sn)` | Kare tamponunun uzunluğu (anomali servisi ayarlara göre belirler). |
-| `sync_stream_status()` | Bekçi: 8 saniyedir kare gelmeyen kamerayı `offline` yapar; ilk bağlantıda 20 sn tanır. `auth_error` durumunu ezmez. |
-| `shutdown()` | Bütün işçileri durdurur. |
+| `get_camera_snapshot(id)` | The current JPEG or a status card ("BAĞLANIYOR", "SİNYAL YOK"). |
+| `iter_frames(id, max_fps)` | Async generator: yields a JPEG on every new frame; a status card once per second without signal. |
+| `mjpeg_stream_generator(id)` | The same frames as `multipart/x-mixed-replace`. |
+| `set_clip_window(sec)` | Length of the frame buffer (set by the anomaly service from the settings). |
+| `sync_stream_status()` | Watchdog: marks a camera `offline` after 8 seconds without frames; allows 20 s on first connection. Does not overwrite `auth_error`. |
+| `shutdown()` | Stops all workers. |
 
-Kamera kimliği `cam_<ip, noktalar alt çizgi>_<onvif portu>` biçimindedir; aynı adres yeniden
-eklenirse aynı kayıt güncellenir.
+The camera id has the form `cam_<ip, dots as underscores>_<onvif port>`; adding the same address again
+updates the same record.
+
+The status cards are drawn by the server as images and are in Turkish in both interface languages.
 
 ## `onvif_core.py`, `onvif_auth.py`
 
-- `run_multi_nic_ws_discovery(timeout)`: etkin her ağ kartından `239.255.255.250:3702` adresine
-  WS-Discovery sorgusu gönderir, yanıt veren cihazları döndürür.
-- `ONVIFClient`: cihaz bilgisi, profiller, yayın adresi (`GetStreamUri`), fotoğraf adresi.
-  Önce şifresiz `GetSystemDateAndTime` ile kameranın saati okunur; kimlik başlığındaki zaman damgası
-  kameranın saatine göre üretilir (saat farkı kimlik doğrulamayı bozmasın diye).
-- `generate_ws_security_header(kullanıcı, şifre, saat_farkı)`: `PasswordDigest` başlığı.
+- `run_multi_nic_ws_discovery(timeout)`: sends a WS-Discovery probe to `239.255.255.250:3702` from every
+  active network card and returns the devices that answer.
+- `ONVIFClient`: device information, profiles, stream address (`GetStreamUri`), snapshot address.
+  The camera's clock is read first with an unauthenticated `GetSystemDateAndTime`; the timestamp in the
+  authentication header is produced from the camera's clock (so that a clock difference does not break
+  authentication).
+- `generate_ws_security_header(user, password, clock_offset)`: `PasswordDigest` header.
 
 ## `anomaly_service.py`
 
-Tekil `anomaly_service`. Dosyanın başındaki sabitler:
+Singleton `anomaly_service`. Constants at the top of the file:
 
-| Sabit | Değer | Anlamı |
+| Constant | Value | Meaning |
 | :--- | :--- | :--- |
-| `CYCLE_SEC` | 0.25 | Bir tur süresi; her kamera saniyede ~4 kez puanlanır. |
-| `MAX_BATCH_SIZE` | 8 | Tek istekte en çok kamera. |
-| `SCORE_FRESH_SEC` | 10 | Bundan eski skor gösterilmez. |
-| `RULE_CLIP_SEC` | 5 | Kural ihlalinde geriye dönük video süresi. |
-| `RULE_VIOLATION_SCORE` | 75 | Kural ihlali kaydına yazılan sabit skor. |
+| `CYCLE_SEC` | 0.25 | Length of one round; each camera is scored ~4 times per second. |
+| `MAX_BATCH_SIZE` | 8 | Most cameras in one request. |
+| `SCORE_FRESH_SEC` | 10 | Scores older than this are not shown. |
+| `RULE_CLIP_SEC` | 5 | Look-back video length for a rule violation. |
+| `RULE_VIOLATION_SCORE` | 75 | Fixed score written to a rule violation record. |
 
-| Yöntem | İşlev |
+| Method | Function |
 | :--- | :--- |
-| `_run()` | Döngü: sessiz olayları kapat → analiz açık mı → sunucuya bağlan → `_score`. |
-| `_pending_clips(kameralar)` | Yeni karesi olan kameraların son 16 karesi. |
-| `_score(kameralar)` | Grupları modele gönderir; logit → sigmoid → 0–100 skor. |
-| `_apply_score` | Skoru yumuşatır (yalnızca eşiğin altında), sınıflar, `_track_incident`'e verir. |
-| `_track_incident`, `_close_incident` | Olayı açar, sürdürür, kapatır (bkz. bölüm 08). |
-| `_process_evidence` | Video kodlama ve özet iş parçacıklarını başlatır. |
-| `rule_violated(kamera, kural, başlık, ileti, önem)` | Kural döngüsünün her ihlal karesinde çağırdığı giriş noktası: olayı açar ya da açık tutar; `_close_silent_incidents` kapatır (bkz. bölüm 08, B.6). |
-| `simulate_anomaly(kamera, skor)` | Deneme olayı kaydeder (API: `/api/anomaly/simulate`). |
-| `summarize_entry(id)`, `get_entry_frames(id)` | Özeti yeniden yazdırır; videodan kare döndürür. |
-| `clear_events()` | Bütün olayları kanıtlarıyla siler. |
-| `get_fleet_summary()` | Her kameranın durumu ve sayaçlar. |
-| `get_storage_stats()`, `delete_orphan_clips()` | Disk kullanımı; hiçbir olaya bağlı olmayan dosyaların silinmesi. |
-| `reload_settings()` | Ayar değişince çağrılır; sunucu adresi değiştiyse yeniden bağlanır. |
+| `_run()` | Loop: close quiet events → is analysis on → connect to the server → `_score`. |
+| `_pending_clips(cameras)` | The last 16 frames of the cameras that have a new frame. |
+| `_score(cameras)` | Sends the batches to the model; logit → sigmoid → 0–100 score. |
+| `_apply_score` | Smooths the score (only below the threshold), classifies it, passes it to `_track_incident`. |
+| `_track_incident`, `_close_incident` | Opens, continues and closes the event (see chapter 08). |
+| `_process_evidence` | Starts the video encoding and summary threads. |
+| `rule_violated(camera, rule, title, message, severity)` | Entry point the rule loop calls on every violating frame: opens the event or keeps it open; `_close_silent_incidents` closes it (see chapter 08, B.6). |
+| `simulate_anomaly(camera, score)` | Records a test event (API: `/api/anomaly/simulate`). |
+| `summarize_entry(id)`, `get_entry_frames(id)` | Writes the summary again; returns frames from the video. |
+| `clear_events()` | Deletes every event with its evidence. |
+| `get_fleet_summary()` | Status of each camera and counters. |
+| `get_storage_stats()`, `delete_orphan_clips()` | Disk usage; deleting files that belong to no event. |
+| `reload_settings()` | Called when the settings change; reconnects if the server address changed. |
 
-`last_latency_ms` ve `last_inference_ts`, `system_stats` tarafından okunur.
+`last_latency_ms` and `last_inference_ts` are read by `system_stats`.
 
 ## `event_journal.py`
 
-Tekil `event_journal`. Olay listesini bellekte tutar; her değişikliği diske yazar ve `event_stream`
-üzerinden duyurur. Döndürdüğü kayıtlar kopyadır.
+Singleton `event_journal`. Keeps the event list in memory; writes every change to disk and announces it
+through `event_stream`. The records it returns are copies.
 
-| Yöntem | İşlev | Yayınladığı bildirim |
+| Method | Function | Notification published |
 | :--- | :--- | :--- |
-| `add(kayıt, kapasite)` | Başa ekler; kapasiteyi aşan en eski kayıtları kanıtlarıyla atar. | `new_anomaly` |
-| `update(id, **alanlar)` | Alanları değiştirir; kayıt yoksa `None`. | `update_anomaly` |
-| `set_label(id, etiket, not, operatör)` | Operatör kararı; geçersiz etikette `ValueError`. | `update_anomaly` |
-| `expire_clips(adlar)` | Videosu kotadan silinen kayıtları işaretler (`clip_expired`). | — |
-| `clear()` | Hepsini siler, silinenleri döndürür. | `journal_cleared` |
-| `get(id)`, `list(…)`, `stats()`, `referenced_files()` | Okuma. | — |
+| `add(record, capacity)` | Adds at the front; drops the oldest records beyond the capacity together with their evidence. | `new_anomaly` |
+| `update(id, **fields)` | Changes fields; `None` if the record does not exist. | `update_anomaly` |
+| `set_label(id, label, note, operator)` | Operator verdict; `ValueError` for an invalid label. | `update_anomaly` |
+| `expire_clips(names)` | Marks records whose video was deleted by the quota (`clip_expired`). | — |
+| `clear()` | Deletes everything, returns what was deleted. | `journal_cleared` |
+| `get(id)`, `list(…)`, `stats()`, `referenced_files()` | Reading. | — |
 
-Açılışta, yarıda kalmış kayıtları onarır: `is_ongoing` → kapatılır ve `interrupted` işaretlenir;
+At start-up it repairs records left half-done: `is_ongoing` → closed and marked `interrupted`;
 `ai_status: generating` → `interrupted`.
 
 ## `evidence_store.py`
 
-Durumsuz işlevler. Günlüğü tanımaz; hangi dosyaların kullanıldığını çağıran söyler.
+Stateless functions. It does not know the log; the caller says which files are in use.
 
-| İşlev | İşlev |
+| Function | Purpose |
 | :--- | :--- |
-| `save_snapshot(id, jpeg, taken_at)` | `snap_<id>.jpg`; dönen adres `?v=<zaman>` ile damgalanır. |
-| `encode_clip(id, kareler)` | JPEG'leri ffmpeg'e borulayıp `clip_<id>.mp4` üretir (H.264 baseline, `+faststart`). Kare hızı yakalama zamanlarından hesaplanır. |
-| `footage_seconds(kareler)` | Karelerin kapsadığı gerçek süre. `MIN_CLIP_SECONDS` (1 sn) altı video sayılmaz. |
-| `enforce_quota(en_çok_adet, en_çok_mb)` | En eski videoları siler; silinenlerin adlarını döndürür. |
-| `usage(kullanılan_videolar, kullanılan_fotoğraflar)` | Disk kullanımı ve sahipsiz dosya sayıları. |
-| `delete_unreferenced_clips`, `delete_unreferenced_snapshots` | Sahipsiz dosyaları siler; 120 sn'den yeni olanlara dokunmaz. |
-| `delete_files_of(kayıt)` | Bir olayın video ve fotoğrafını siler. |
+| `save_snapshot(id, jpeg, taken_at)` | `snap_<id>.jpg`; the returned address is stamped with `?v=<time>`. |
+| `encode_clip(id, frames)` | Pipes the JPEGs into ffmpeg to produce `clip_<id>.mp4` (H.264 baseline, `+faststart`). The frame rate is computed from the capture times. |
+| `footage_seconds(frames)` | The real time the frames cover. Below `MIN_CLIP_SECONDS` (1 s) no video is made. |
+| `enforce_quota(max_count, max_mb)` | Deletes the oldest videos; returns the names of those deleted. |
+| `usage(used_videos, used_snapshots)` | Disk usage and the number of orphan files. |
+| `delete_unreferenced_clips`, `delete_unreferenced_snapshots` | Deletes orphan files; leaves those newer than 120 s alone. |
+| `delete_files_of(record)` | Deletes the video and snapshot of one event. |
 
 ## `event_stream.py`
 
-Tekil `event_stream`: `subscribe()` (olay döngüsünden), `unsubscribe(kuyruk)`,
-`publish(olay)` (herhangi bir iş parçacığından). Kuyruk 256 iletiyle sınırlıdır; takılan istemci en
-eski iletisini kaybeder.
+Singleton `event_stream`: `subscribe()` (from the event loop), `unsubscribe(queue)`, `publish(event)`
+(from any thread). Each queue holds at most 256 messages; a stuck client loses its oldest message.
 
 ## `live_detection_service.py`
 
-Tekil `live_detection_service`. Döngü, etkin kuralı olan ve yeni kare getiren kameraları işler.
+Singleton `live_detection_service`. The loop processes cameras that have an active rule and bring a new
+frame.
 
-- `_ensure_detector()`: `YOLODetector`'ı Triton'a bağlar; başarısızlıkta artan aralıklarla yeniden dener.
-- `_get_plan(kural, bölge)`: saklanan planı doğrular ve `(kural, bölge, updated_at)` anahtarıyla
-  önbelleğe alır. Yalnızca "kişi" arayan planlar `coco_detector`'a yönlendirilir.
-- `_process_camera(kamera)`: bölge türüne göre `change_detector.check_frame` ya da tespit +
-  nesne takibi (`ObjectTracker`, kamera ve model başına bir tane) + `ConditionEvaluator.evaluate`.
-  Aynı karede aynı model ve sınıflar için tespit ve takip bir kez yapılır. Bir kural ancak
-  `RULE_CONFIRM_SEC` boyunca kesintisiz ihlal edildiyse alarm sayılır ve `rule_violated` çağrılır.
-- `get_detections(camera_id=None)`: son durum — `alarm`, `alarm_text`, `detections`
-  (`track_id`, `class_name`, `confidence`, `bbox_normalized`, `in_zone`, `is_violation`), `change_results`.
-- Sabitler: `MIN_CYCLE_SEC` 0.08, `IDLE_SLEEP_SEC` 0.5, `RULE_CONFIRM_SEC` 1.0, `TRACKER_IDLE_SEC` 60.
+- `_ensure_detector()`: connects `YOLODetector` to Triton; on failure retries at growing intervals.
+- `_get_plan(rule, zone)`: validates the stored plan and caches it under `(rule, zone, updated_at)`. Plans
+  that look only for "person" are routed to `coco_detector`.
+- `_process_camera(camera)`: depending on the zone type, either `change_detector.check_frame` or detection
+  + object tracking (`ObjectTracker`, one per camera and model) + `ConditionEvaluator.evaluate`. Within a
+  frame, detection and tracking run once per model and class set. A rule counts as an alarm, and
+  `rule_violated` is called, only when it has been violated without interruption for `RULE_CONFIRM_SEC`.
+- `get_detections(camera_id=None)`: the latest state — `alarm`, `alarm_text`, `detections` (`track_id`,
+  `class_name`, `confidence`, `bbox_normalized`, `in_zone`, `is_violation`), `change_results`.
+- Constants: `MIN_CYCLE_SEC` 0.08, `IDLE_SLEEP_SEC` 0.5, `RULE_CONFIRM_SEC` 1.0, `TRACKER_IDLE_SEC` 60.
+
+`alarm_text` is written in Turkish; the interface rewrites it in English mode (`alarmText()` in
+`labels.js`).
 
 ## `change_detector.py`
 
-Tekil `change_detector`. Bölgenin referans görüntüsünü `change_refs/` altında saklar.
+Singleton `change_detector`. Stores the reference picture of each zone under `change_refs/`.
 
-- `capture_reference(kamera, bölge, kare, noktalar, …)`: çokgeni maskeleyip 160×120'ye küçültür, kaydeder.
-- `check_frame(…)`: canlı kareyi aynı biçime getirip referansla SSIM hesaplar.
-  SSIM < 0,72 → `alarm`; < 0,88 → `warning` (değişen alan %10'u geçerse alarm sayılır); değilse `clear`.
+- `capture_reference(camera, zone, frame, points, …)`: masks the polygon, shrinks it to 160×120, stores it.
+- `check_frame(…)`: brings the live frame to the same form and computes SSIM against the reference.
+  SSIM < 0.72 → `alarm`; < 0.88 → `warning` (counted as an alarm if the changed area exceeds 10 %);
+  otherwise `clear`.
 - `get_zone_state`, `delete_reference`, `delete_camera_references`.
 
 ## `rule_compilation.py`
 
-`Rule_Generator_LLM.compiler.RuleCompiler` ile HTTP katmanı arasındaki köprü.
+The bridge between `Rule_Generator_LLM.compiler.RuleCompiler` and the HTTP layer.
 
-| İşlev | İşlev |
+| Function | Purpose |
 | :--- | :--- |
-| `is_available()` | Derleyici kurulabildi mi (anahtar ve bağımlılıklar var mı). |
-| `start(kural_id)` | Planı eksik bölgeleri arka planda derler. Kural bu sırada değiştiyse sonuç atılır. |
-| `recompile(bölgeler)` | Bütün bölgeleri yeniden derler (engelleyen çağrı). |
-| `keep_unchanged_plans(eski, yeni)` | Açıklaması değişmeyen bölgenin planını korur. |
-| `apply_manual_plans(bölgeler)` | Listeden tanımlanan (`manual`) bölgelerin planını hemen kurar; geçersiz seçimde `ValueError`. |
-| `compiled_changes(kural, bölgeler, planlar)` | Derleme sonrası saklanacaklar: bölgeler ve (kullanıcı formdan saat vermediyse) cümleden okunan çalışma saatleri. |
-| `status_of(kural)` | `compiling`, `error`, `unsupported`, `not_required`, `compiled`, `fallback`, `pending`, `unavailable`. |
-| `rule_view(kural, slim)` | API gösterimi (`schedule_text`, `active_now` dahil); `slim` planın yerine kısa `plan_summary` koyar. |
+| `is_available()` | Whether the compiler could be set up (key and dependencies present). |
+| `start(rule_id)` | Compiles the zones without a plan in the background. If the rule changed meanwhile, the result is discarded. |
+| `recompile(zones)` | Compiles every zone again (blocking call). |
+| `keep_unchanged_plans(old, new)` | Keeps the plan of a zone whose description did not change. |
+| `apply_manual_plans(zones)` | Builds the plan of zones defined from lists (`manual`) immediately; `ValueError` for an invalid choice. |
+| `compiled_changes(rule, zones, plans)` | What to store after compilation: the zones and (if the user gave no hours in the form) the working hours read from the sentence. |
+| `status_of(rule)` | `compiling`, `error`, `unsupported`, `not_required`, `compiled`, `fallback`, `pending`, `unavailable`. |
+| `rule_view(rule, slim, lang)` | API view (including `schedule_text`, `active_now`); `slim` puts a short `plan_summary` in place of the plan. `lang` (`"tr"` / `"en"`) is the language of the plan sentences and the working-hours text. |
 
 ## `reports.py`
 
-`build_report(olaylar, gün, now, capacity)`: olay günlüğünden rapor sayılarını hesaplayan saf işlev
-(durum, dosya ya da servis içe aktarması yok; bu yüzden çalışan sistem olmadan sınanabilir). Uç
-noktası `api/reports.py`. Alanlar bölüm 06'dadır.
+`build_report(events, days, now, capacity)`: a pure function that computes the report figures from the
+event log (no state, files or service imports, so it can be tested without a running system). Its
+endpoint is `api/reports.py`. The fields are in chapter 06.
 
 ## `rules_service.py`, `settings_service.py`
 
 - `rules_service`: `get_all(camera_id)`, `get_by_id`, `create_rule`, `update_rule`, `delete_rule`,
-  `delete_rules_for_camera`. Dosya dışarıdan değiştirilirse (`mtime`) yeniden yükler.
-- `settings_service`: `get_all()`, `get_section(ad)`, `update(değişiklikler)`, `reset_defaults()`.
-  `_sanitize()` her değeri izin verilen aralığa çeker; aralıklar bölüm 09'dadır.
+  `delete_rules_for_camera`. Reloads if the file is changed from outside (`mtime`).
+- `settings_service`: `get_all()`, `get_section(name)`, `update(changes)`, `reset_defaults()`.
+  `_sanitize()` pulls every value into its allowed range; the ranges are in chapter 09.
 
 ## `system_stats.py`
 
-`get_system_telemetry()`: Triton'un hazır olup olmadığı ve hazır modeller, son 15 saniyede **ölçülmüş**
-analiz süreleri (yoksa `null`), `nvidia-smi` ile ekran kartı adı, bellek, yük ve sıcaklık. Sonuç 2
-saniye önbelleklenir.
+`get_system_telemetry()`: whether Triton is ready and which models are ready, analysis times **measured**
+in the last 15 seconds (`null` otherwise), and graphics card name, memory, load and temperature from
+`nvidia-smi`. The result is cached for 2 seconds.
 
-## `api/` katmanı
+## The `api/` layer
 
-Her modül bir `APIRouter` tanımlar; `api/__init__.py` bunları `routers` listesinde toplar. Kurallar:
+Each module defines an `APIRouter`; `api/__init__.py` collects them in the `routers` list. Rules:
 
-- Yönlendirici doğrulama yapar, servisi çağırır, yanıtı biçimler; iş mantığı yazmaz.
-- Bulunamayan kaynak `404`, geçersiz girdi `422`, çakışma `409`, erişilemeyen servis `503`.
-  Hata iletileri Türkçedir ve arayüzde olduğu gibi gösterilir (`detail` alanı).
-- Engelleyen çağrılar `asyncio.to_thread` ile yapılır.
+- A router validates, calls the service and shapes the response; it contains no business logic.
+- A missing resource is `404`, invalid input `422`, a conflict `409`, an unreachable service `503`.
+  Error messages are in Turkish (the `detail` field); the interface shows them as they are, or through
+  its catalogue in English mode.
+- The rule endpoints read the `Accept-Language` header (`_language()`: `en…` → English, otherwise
+  Turkish) and pass it to `rule_view`.
+- Blocking calls are made through `asyncio.to_thread`.

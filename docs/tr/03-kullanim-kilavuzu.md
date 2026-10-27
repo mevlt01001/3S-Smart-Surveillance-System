@@ -1,6 +1,6 @@
 # 03 — Kullanım kılavuzu
 
-Arayüzün beş sayfası soldaki menüdedir. Sol alttaki satır sistemin durumunu söyler:
+Arayüzün altı sayfası soldaki menüdedir (telefonda ekranın altında). Menünün altındaki satır sistemin durumunu söyler:
 
 | Gösterge | Anlamı |
 | :--- | :--- |
@@ -9,6 +9,8 @@ Arayüzün beş sayfası soldaki menüdedir. Sol alttaki satır sistemin durumun
 | ● Bağlantı yok | Tarayıcı sunucuya ulaşamıyor. Ekranın üstünde kırmızı şerit de çıkar; ekrandaki bilgiler eskimiş olabilir. |
 
 "Olaylar"ın yanındaki sayı, henüz incelenmemiş olay sayısıdır.
+
+Arayüz varsayılan olarak Türkçedir; İngilizce **Ayarlar → Görünüm**'den seçilir.
 
 ---
 
@@ -89,7 +91,8 @@ Karta tıklayınca açılır.
 - **Bilgiler.** Kamera, saat aralığı ve süre; kural ihlalinde kuralın ne gördüğü, olağandışı
   harekette hareket seviyesi.
 - **Olay özeti.** Tek cümlelik başlık, en fazla iki ayrıntı ve bir öneri. Özet olay bittikten
-  birkaç saniye sonra kendiliğinden gelir. **Yeniden oluştur** özeti baştan yazdırır.
+  birkaç saniye sonra kendiliğinden gelir. **Yeniden oluştur** özeti baştan yazdırır. Özetler, arayüz
+  dili ne olursa olsun Türkçe yazılır.
 - **Bu alarm doğru muydu?** Doğru alarm / Hatalı alarm.
 - **Bu kamerayı canlı izle.** Canlı İzleme'de o kameranın tek kamera görünümünü açar.
 
@@ -108,6 +111,7 @@ Liste; her kuralın adını, ne aradığını, hangi kamerada geçerli olduğunu
 | Hazır değil / Hazırlanamadı | Kural şu an çalışmıyor. **Yeniden dene**'ye basın; düzelmezse sol alttaki duruma bakın. |
 | Yapılamıyor | İsteğiniz kameradan anlaşılabilecek bir şey değil (örneğin ses ya da plaka okuma gerektiriyor). Rozetin üstüne gelince nedeni ve ne isteyebileceğiniz yazar. Kural çalışmaz; açıklamayı değiştirin. |
 | Kamerası yok | Kuralın kamerası silinmiş. Düzenleyip başka bir kameraya taşıyın. |
+| Saat dışında | Kural açık ama çalışma saatlerinin dışında; şu an denetlenmiyor. |
 
 Bölgenin altında turuncu bir not varsa kural çalışıyordur ama **istediğinizden farklı** çalışıyordur.
 Sistem yapamadığı bir şey istendiğinde amaca en yakın kuralı kurar ve farkı size söyler. Örneğin
@@ -222,14 +226,18 @@ hemen uygular; sunucuyu yeniden başlatmak gerekmez. Kaydetmeden sayfadan çıkm
 
 ### Görünüm
 
-Üç tema vardır; seçim **yalnızca o cihazda** geçerlidir (telefon açık, kontrol odasındaki ekran koyu
-olabilir) ve anında uygulanır, kaydetmek gerekmez.
+Tema ve dil **yalnızca o cihazda** geçerlidir (telefon açık ve İngilizce, kontrol odasındaki ekran koyu
+ve Türkçe olabilir) ve anında uygulanır, kaydetmek gerekmez.
 
 | Tema | Nasıl görünür |
 | :--- | :--- |
 | Açık (varsayılan) | Açık zemin, lacivert menü; düğmeler mavi, vurgular açık turuncu. |
 | Lacivert | Koyu lacivert zemin; düğmeler ve vurgular açık turuncu. |
 | Koyu | Nötr koyu gri zemin, turuncu vurgu. |
+
+**Dil:** Türkçe (varsayılan) ya da English. Sayfa her şeyi seçilen dilde yeniden çizmek için bir kez
+yenilenir. Bir kez yazılıp saklanan metinler — olay özetleri, kural derleyicinin notları, sizin
+yazdığınız adlar — yazıldıkları dilde kalır.
 
 ### Algılama
 

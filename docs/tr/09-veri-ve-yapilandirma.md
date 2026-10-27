@@ -38,6 +38,9 @@ betikten) başlatıldığında `EVREN_*` değerlerini oradan alır. `AEGIS_*` de
 - **Yedekleme:** sunucuyu durdurup dizini kopyalamak yeterlidir.
 - **Sıfırlama:** sunucuyu durdurup ilgili dosyayı silin.
 
+Tema ve arayüz dili burada saklanmaz; her tarayıcı kendisininkini tutar (bkz. bölüm 07, "Tarayıcıda
+saklananlar").
+
 ### `cameras_db.json`
 
 Kamera kimliğinden kayda sözlük.
@@ -99,12 +102,15 @@ kanıtlarıyla silinir.
 | `snapshot_url`, `clip_url` | Kanıt adresleri; video yoksa `clip_url` `null`. |
 | `clip_expired` | Video disk kotası nedeniyle silindi. |
 | `ai_status` | `none`, `generating`, `completed`, `fallback`, `error`, `interrupted`. |
-| `ai_summary`, `ai_headline` | Özet metni ve başlığı. |
+| `ai_summary`, `ai_headline` | Özet metni ve başlığı (Türkçe). |
 | `ai_verdict` | Özetin görüntü hakkındaki kararı: `confirmed`, `normal`, `unclear` ya da `null`. Yalnızca bilgidir. |
 | `operator_label` | `correct`, `false_positive`, `unlabeled`; alan yoksa incelenmemiştir. |
 | `operator_notes`, `operator_name`, `operator_labeled_at` | Kararın ayrıntıları. |
 | `interrupted` | Olay sürerken sunucu yeniden başladı. |
 | `message` | Tek satırlık metin (aramada kullanılır). |
+
+Bu kayıtlardaki metinler bir kez, Türkçe yazılır ve çevrilmez: arayüz bildiği sabit metinleri
+(`anomaly_type`, `label`) ve alarm cümlelerini çevirir, gerisini saklandığı gibi gösterir.
 
 ## Ayarlar (`settings.json`)
 
@@ -167,5 +173,5 @@ varsa kaydırıcı o değeri gösterecek kadar genişler.
 | `.conda/`, `venv/`, `__pycache__/`, `.text_feat_cache/` | Ortamlar ve önbellekler. |
 | `*.log`, `Camera_System_Simulator/recordings/` | Günlükler ve simülatör çıktısı. |
 
-`*.png` / `*.jpg` kuralı belgelere görsel eklemeyi de engeller; eklemek gerekirse o dosya için
-istisna yazın (`!docs/**/*.png`).
+`*.png` / `*.jpg` kuralı belgelerdeki görselleri de engeller; ekran görüntüleri için istisna
+`!docs/images/*`'dır. Başka yerdeki görseller kendi istisnalarını ister.

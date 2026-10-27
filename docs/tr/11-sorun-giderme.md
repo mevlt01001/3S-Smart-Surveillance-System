@@ -1,6 +1,6 @@
 # 11 — Sorun giderme
 
-Önce sol alttaki durum satırına ve sunucunun terminal çıktısına bakın. Hızlı durum sorguları:
+Önce menünün altındaki durum satırına ve sunucunun terminal çıktısına bakın. Hızlı durum sorguları:
 
 ```bash
 curl -s localhost:8500/api/system/stats | python3 -m json.tool
@@ -26,6 +26,8 @@ curl -s localhost:8500/api/anomaly/status | python3 -m json.tool
 | Üstte kırmızı "Sunucu bağlantısı koptu" şeridi | Tarayıcı sunucuya ulaşamıyor. | Sunucu çalışıyor mu, ağ erişimi var mı denetleyin; bağlantı gelince şerit kendiliğinden kalkar. |
 | "Analiz durdu" | Triton'a ulaşılamıyor. | `docker ps` ile `triton_yoloe_server` çalışıyor mu bakın; Ayarlar → Gelişmiş'teki adresi denetleyin. |
 | Sayfa açık ama görüntü akmıyor | Sekme arka planda. | Görünmeyen sekmede video bilerek durdurulur; sekmeye dönünce başlar. |
+| İngilizce kipte bazı metinler Türkçe | Saklanan metinler (özetler, kural notları, adlar) ya da sunucunun çizdiği "sinyal yok" kartı. | Beklenen davranış; bkz. "Bilinen sınırlar". Başka bir Türkçe metin eksik bir katalog karşılığıdır: sistem testi (bölüm 14) adını verir. |
+| Dil ya da tema kendiliğinden sıfırlandı | Tarayıcı site verisini tutmuyor (gizli pencere, silinmiş depolama). | Ayarlar → Görünüm'den yeniden seçin; seçim tarayıcı başınadır. |
 
 ## Kameralar
 
@@ -42,7 +44,7 @@ curl -s localhost:8500/api/anomaly/status | python3 -m json.tool
 
 | Belirti | Neden | Çözüm |
 | :--- | :--- | :--- |
-| Hiç olay oluşmuyor | Algılama kapalı, analiz sunucusu kapalı ya da eşik yüksek. | Ayarlar → Algılama; sol alttaki durum; uyarı seviyesini düşürün. |
+| Hiç olay oluşmuyor | Algılama kapalı, analiz sunucusu kapalı ya da eşik yüksek. | Ayarlar → Algılama; menünün altındaki durum; uyarı seviyesini düşürün. |
 | Çok fazla olay | Eşik sahneye göre düşük. | Uyarı seviyesini yükseltin; "Olay birleştirme süresi"ni artırın. |
 | Olayın videosu yok | Kayıt kapalı; kamera yeni bağlanmıştı (< 1 sn görüntü); video kotadan silindi. | Ayarlar → Kayıt; kota için "Kayıtlar için ayrılan alan". |
 | Video yavaş ya da hızlı oynuyor | — | Kare hızı yakalama zamanlarından hesaplanır; sürüyorsa hata olarak bildirin. |
@@ -53,9 +55,9 @@ curl -s localhost:8500/api/anomaly/status | python3 -m json.tool
 
 | Belirti | Neden | Çözüm |
 | :--- | :--- | :--- |
-| "Hazırlanamadı" | Dil modeli servisine ulaşılamıyor ya da anahtar yok. | Anahtarı ve ağ erişimini denetleyin; "Yeniden dene". |
+| "Hazırlanamadı" | Dil modeli servisine ulaşılamıyor ya da anahtar yok. | Anahtarı ve ağ erişimini denetleyin; "Yeniden dene". Ya da bölgeyi servis gerektirmeyen listelerden tanımlayın. |
 | "Genel ayarla çalışıyor" | Açıklama plana çevrilemedi. | Tek koşullu, somut bir cümle yazın (bkz. kullanım kılavuzu). |
-| Kural hazır ama alarm vermiyor | Kural kapalı; nesne modelin tanıdığı bir sınıf değil; nesne bölgenin dışında. | Canlı İzleme'de "Tespitler"i açıp kutuların çizilip çizilmediğine bakın. Planı görmek için: `GET /api/rules/{id}/plan`. |
+| Kural hazır ama alarm vermiyor | Kural kapalı ya da çalışma saati dışında; nesne modelin tanıdığı bir sınıf değil; nesne bölgenin dışında. | Canlı İzleme'de "Tespitler"i açıp kutuların çizilip çizilmediğine bakın. Planı görmek için: `GET /api/rules/{id}/plan`. |
 | Sürekli alarm veriyor | Koşul sahnede hep sağlanıyor (ör. bölgede zaten biri çalışıyor). | Bölgeyi daraltın ya da açıklamayı kesinleştirin. |
 | Engel bölgesi "referans bekleniyor" | Referans alınmamış. | Bölge boşken Canlı İzleme → "Referans al". |
 | Engel bölgesi sürekli alarmda | Işık ya da kamera açısı kalıcı değişti. | Referansı yeniden alın. |
@@ -84,8 +86,8 @@ Denetim: `journalctl -k | grep -i "out of memory"`.
 | Erişim anahtarı | Eski anahtar git geçmişinde duruyor; yenilenmeli. |
 | Ölçek | Tek süreç, tek makine; veriler JSON dosyalarında. 9 kamerayla sınandı. |
 | Kayıt | Sürekli kayıt yok; yalnızca olay videoları. |
-| Nesne takibi | Yok; bekleme ve terk koşulları kişiyi değil sınıfı izler. |
+| Nesne takibi | Tek kamera içinde ve yalnızca kutu konumuna göre; yön, çizgi geçişi ve giren-çıkan sayımı yok. |
 | Kişi tanıma | Yok. |
 | Tarayıcı | Chromium tabanlı tarayıcılarda sınandı; Firefox sınanmadı. |
 | Donanım | Gerçek kameralarla değil, simülatörle sınandı. |
-| Dil | Arayüz yalnızca Türkçe. |
+| Dil | Arayüz Türkçe ve İngilizce. Olay özetleri, kural derleyicinin notları ve sunucunun çizdiği durum kartları yalnızca Türkçe; kural açıklamaları Türkçe anlaşılır (İngilizce çoğunlukla çalışır). |

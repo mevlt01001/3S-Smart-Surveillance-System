@@ -1,32 +1,39 @@
-# 06 — API başvurusu
+# 06 — API reference
 
-Taban adres: `http://<sunucu>:8500`. Bütün gövdeler JSON'dur. Etkileşimli belge (Swagger) sunucu
-çalışırken `/docs` adresindedir.
+Base address: `http://<server>:8500`. All bodies are JSON. The interactive documentation (Swagger) is at
+`/docs` while the server is running.
 
-**Kimlik doğrulama yoktur.** API'ye ulaşabilen herkes her işlemi yapabilir.
+**There is no authentication.** Anyone who can reach the API can do anything.
 
-## Genel kurallar
+## General rules
 
-- Başarılı yanıtlar çoğunlukla `"success": true` içerir.
-- Hata yanıtı: `{"detail": "<Türkçe açıklama>"}`. Arayüz bu metni olduğu gibi gösterir.
+- Successful responses usually contain `"success": true`.
+- Error response: `{"detail": "<explanation in Turkish>"}`. The interface shows this text as it is (in
+  English mode, through its catalogue).
+- Language: the rule endpoints read the `Accept-Language` header. `en…` returns the plan sentences
+  (`plan_summary.text`) and the working-hours text (`schedule_text`) in English; anything else returns
+  Turkish. All other fields, and stored texts such as summaries and rule notes, do not depend on it.
+  The interface sends the header on every request.
 
-| Kod | Anlamı |
+| Code | Meaning |
 | :--- | :--- |
-| 404 | Kamera, kural, olay ya da dosya bulunamadı. |
-| 409 | Kural, hazırlanırken değiştirildi. |
-| 422 | Geçersiz girdi (IP, port, etiket, boş başlık, canlı görüntü yok…). |
-| 400 | Özet başlatılamadı (servis kapalı ya da olay yok). |
-| 503 | Kural hazırlama servisine ulaşılamıyor. |
+| 404 | Camera, rule, event or file not found. |
+| 409 | The rule was changed while it was being prepared. |
+| 422 | Invalid input (IP, port, label, empty title, no live picture…). |
+| 400 | The summary could not be started (service off or no event). |
+| 503 | The rule preparation service cannot be reached. |
+
+The example values below are real server output, so their texts are in Turkish.
 
 ---
 
-## Sistem
+## System
 
 ### `GET /api/health`
-Canlılık denetimi. `{"ok": true, "time": 1791525513.68}`
+Liveness check. `{"ok": true, "time": 1791525513.68}`
 
 ### `GET /api/system/stats`
-Analiz sunucusu ve ekran kartı durumu. 2 saniye önbelleklidir.
+Analysis server and graphics card status. Cached for 2 seconds.
 
 ```json
 {
@@ -43,11 +50,12 @@ Analiz sunucusu ve ekran kartı durumu. 2 saniye önbelleklidir.
 }
 ```
 
-Süreler son 15 saniyede **ölçülmüşse** sayı, değilse `null` olur (o model o an çalışmıyordur).
-`status` hazır değilken `"OFFLINE"` benzeri bir değer alır; arayüz yalnızca `"READY"` olup olmadığına bakar.
+Times are numbers if they were **measured** in the last 15 seconds, `null` otherwise (that model is not
+running at the moment). While not ready, `status` takes a value such as `"OFFLINE"`; the interface only
+checks whether it is `"READY"`.
 
 ### `POST /api/onvif/scan?timeout=3.0`
-Ağdaki ONVIF cihazlarını arar (WS-Discovery).
+Searches the network for ONVIF devices (WS-Discovery).
 
 ```json
 {"success": true, "count": 2, "devices": [
@@ -57,7 +65,7 @@ Ağdaki ONVIF cihazlarını arar (WS-Discovery).
 
 ---
 
-## Kameralar
+## Cameras
 
 ### `GET /api/cameras`
 ```json
@@ -75,44 +83,46 @@ Ağdaki ONVIF cihazlarını arar (WS-Discovery).
 }]}
 ```
 
-- `status`: `online` | `offline` | `auth_error` — cihazla son iletişimin sonucu.
-- `stream_state`: `live` | `connecting` | `stalled` | `idle` — yayının anlık durumu.
-- Şifre yanıtta **yer almaz**; `stream_uri` ise kimlik bilgisini içerir (arayüz gösterirken maskeler).
+- `status`: `online` | `offline` | `auth_error` — the result of the last contact with the device.
+- `stream_state`: `live` | `connecting` | `stalled` | `idle` — the current state of the stream.
+- The password is **not** in the response; `stream_uri`, however, contains the credentials (the interface
+  masks them when it shows the address).
 
 ### `POST /api/cameras/add`
 ```json
 {"ip": "192.168.1.150", "port": 80, "username": "admin", "password": "…", "name": "", "rtsp_port": 554}
 ```
-Yalnızca `ip` zorunludur. Kameraya bağlanılamasa da kayıt oluşur; sonucu `camera.status` söyler.
-Aynı `ip:port` yeniden gönderilirse var olan kayıt güncellenir. Yanıt: `{"success": true, "camera": {…}}`.
-En fazla 45 saniye sürebilir. Hatalar: `422` (IP ya da port geçersiz).
+Only `ip` is required. The record is created even if the camera cannot be reached; `camera.status` gives
+the result. Sending the same `ip:port` again updates the existing record. Response:
+`{"success": true, "camera": {…}}`. May take up to 45 seconds. Errors: `422` (invalid IP or port).
 
 ### `PUT /api/cameras/{id}`
-`{"name": "Yeni ad", "description": "Bu kamera …"}` — verilen alanlar değişir.
+`{"name": "New name", "description": "This camera …"}` — the fields given are changed.
 
 ### `DELETE /api/cameras/{id}`
-Kamerayı, kurallarını ve referans görüntülerini siler. `{"success": true, "removed_rules": 2}`
+Deletes the camera, its rules and its reference pictures. `{"success": true, "removed_rules": 2}`
 
 ### `POST /api/cameras/{id}/reconnect`
-Kamerayı kayıtlı bilgilerle yeniden yoklar. Yanıt `add` ile aynıdır.
+Probes the camera again with the stored details. The response is the same as for `add`.
 
 ### `GET /api/cameras/{id}/snapshot`
-Güncel kare (JPEG). Sinyal yoksa durum kartı döner; **her zaman 200**. Önbelleklenmez. `HEAD` desteklenir.
+The current frame (JPEG). Without a signal a status card is returned; **always 200**. Not cached. `HEAD`
+is supported.
 
 ### `GET /api/cameras/{id}/stream`
-MJPEG (`multipart/x-mixed-replace; boundary=frame`). WebSocket kullanamayan istemciler içindir.
+MJPEG (`multipart/x-mixed-replace; boundary=frame`). For clients that cannot use WebSocket.
 
 ### `WS /api/cameras/{id}/ws?fps=0`
-İkili iletiler; her ileti bir JPEG karesidir. Yeni kare çözüldüğü anda gönderilir. `fps` > 0 ise
-hız o değerle sınırlanır (en çok 60). Kamera yoksa bağlantı `1008` koduyla kapatılır. Sinyal
-kesikken saniyede bir durum kartı gönderilir.
+Binary messages; each message is one JPEG frame, sent as soon as a new frame is decoded. If `fps` > 0 the
+rate is limited to that value (at most 60). If the camera does not exist, the connection is closed with
+code `1008`. While the signal is lost, a status card is sent once per second.
 
 ---
 
-## Canlı durum
+## Live state
 
 ### `GET /api/live/state`
-Canlı duvarın tek sorgusu.
+The single request behind the live wall.
 
 ```json
 {
@@ -146,33 +156,35 @@ Canlı duvarın tek sorgusu.
 }
 ```
 
-- `fleet.cameras[].tier`: `normal` | `warning` | `critical` | `offline`. Liste en acilden başlar.
-- `analyzed`: kameranın 10 saniyeden taze bir skoru var mı.
-- `thresholds.normal` uyarı seviyesi, `thresholds.warning` kritik seviyesidir.
-- `bbox_normalized`: `[x1, y1, x2, y2]`, 0–1 aralığında.
-- `track_id`: nesnenin bu kameradaki kimliği; aynı nesne kareler boyunca aynı numarayı taşır.
-- `alarm`: bir kural en az 1 saniyedir kesintisiz ihlal ediliyor.
+- `fleet.cameras[].tier`: `normal` | `warning` | `critical` | `offline`. The list starts with the most
+  urgent.
+- `analyzed`: whether the camera has a score fresher than 10 seconds.
+- `thresholds.normal` is the warning level, `thresholds.warning` the critical level.
+- `bbox_normalized`: `[x1, y1, x2, y2]`, between 0 and 1.
+- `track_id`: the object's id on this camera; the same object keeps the same number across frames.
+- `alarm`: a rule has been violated without interruption for at least 1 second.
+- `alarm_text` is in Turkish; the interface rewrites it in English mode.
 
 ### `GET /api/anomaly/status`
-Yalnızca `fleet` bölümü.
+Only the `fleet` section.
 
 ### `GET /api/cameras/{id}/live-detections`
-Yalnızca o kameranın `detections` kaydı: `{"success": true, "data": {…}}`
+Only that camera's `detections` record: `{"success": true, "data": {…}}`
 
-### `GET /api/change-detection/{kamera}/{bölge}`
-Bölgenin durumu: `has_reference`, `reference_ts`, `last_ssim`, `alarm`, `alarm_level`, `alarm_since`,
-`last_check_ts`. Referans yoksa `404`.
+### `GET /api/change-detection/{camera}/{zone}`
+State of the zone: `has_reference`, `reference_ts`, `last_ssim`, `alarm`, `alarm_level`, `alarm_since`,
+`last_check_ts`. `404` if there is no reference.
 
-### `POST /api/change-detection/{kamera}/{bölge}/capture-reference`
-O anki canlı kareyi bölgenin "boş" referansı olarak kaydeder. Hatalar: `404` (kamera ya da bölge
-yok), `422` (canlı görüntü yok, bölge çok küçük).
+### `POST /api/change-detection/{camera}/{zone}/capture-reference`
+Stores the current live frame as the zone's "empty" reference. Errors: `404` (no camera or zone), `422`
+(no live picture, zone too small).
 
-### `DELETE /api/change-detection/{kamera}/{bölge}/reference`
-Referansı siler; yenisi alınana kadar bölge değerlendirilmez.
+### `DELETE /api/change-detection/{camera}/{zone}/reference`
+Deletes the reference; the zone is not evaluated until a new one is taken.
 
 ---
 
-## Kurallar
+## Rules
 
 ### `GET /api/rules?camera_id=&full=false`
 ```json
@@ -196,14 +208,17 @@ Referansı siler; yenisi alınana kadar bölge değerlendirilmez.
 }]}
 ```
 
-- `scope`: `camera` (tek kamera) | `system` (bütün kameralar; `camera_id` `null`).
-- `zone_type`: `detection` (kişi / nesne kuralı) | `change_detection` (engel / değişiklik).
-- `compile_status`: `compiling` | `compiled` | `fallback` | `pending` | `unavailable` | `error` | `unsupported` | `not_required`.
-- `compile_note`: yalnızca `unsupported` durumunda, isteğin neden kurala çevrilemediği (operatör için yazılmış cümle).
-- `plan_summary.note`: kural istenenin yalnızca en yakını ise, neyin yapılamadığı ve kuralın bunun yerine ne yaptığı; değilse `null`.
-- `camera_missing`: kuralın kamerası silinmiş.
-- `full=true`, `plan_summary` yerine planın tamamını (`detection_plan`, `compile_logs`,
-  `raw_llm_response`) döndürür.
+- `scope`: `camera` (single camera) | `system` (all cameras; `camera_id` is `null`).
+- `zone_type`: `detection` (person / object rule) | `change_detection` (obstruction / change).
+- `compile_status`: `compiling` | `compiled` | `fallback` | `pending` | `unavailable` | `error` |
+  `unsupported` | `not_required`.
+- `compile_note`: only with `unsupported`; why the request could not be turned into a rule (a sentence
+  written for the operator).
+- `plan_summary.note`: if the rule is only the closest thing to what was asked, what could not be done and
+  what the rule does instead; otherwise `null`.
+- `camera_missing`: the rule's camera has been deleted.
+- `full=true` returns the whole plan (`detection_plan`, `compile_logs`, `raw_llm_response`) instead of
+  `plan_summary`.
 
 ### `POST /api/rules`
 ```json
@@ -211,49 +226,51 @@ Referansı siler; yenisi alınana kadar bölge değerlendirilmez.
  "zones": [{"id": "zone_1", "name": "Depo girişi", "description": "Baret takmayan biri girerse haber ver.",
             "zone_type": "detection", "points": [{"x": 0.2, "y": 0.2}, {"x": 0.8, "y": 0.2}, {"x": 0.8, "y": 0.8}]}]}
 ```
-Kuralı kaydeder ve bölge açıklamalarını **arka planda** derlemeye başlar; yanıt hemen döner ve
-`compile_status` `compiling` olur. Sonucu görmek için listeyi yeniden isteyin. Hatalar: `422`
-(başlık boş, kamera yok, listeden tanımlanan bölgede eksik ya da geçersiz seçim).
+Stores the rule and starts compiling the zone descriptions **in the background**; the response returns
+at once with `compile_status` `compiling`. Request the list again to see the result. Errors: `422` (empty
+title, no camera, a missing or invalid choice in a zone defined from lists).
 
-İsteğe bağlı alanlar:
+Optional fields:
 
-- Bölgede `"manual": {"subject": "person", "condition": "waiting", "value": 20}`: bölge cümleyle
-  değil seçimle tanımlanır; planı sunucu hemen kurar (dil modeli kullanılmaz), `description`'ı da
-  sunucu yazar. `subject`: `person`, `vehicle`, `no_hardhat`, `no_vest`, `forklift`, `bag`.
-  `condition`: `presence`, `waiting` (saniye), `absence` (saniye), `more_than` (sayı), `fewer_than` (sayı).
-- Kuralda `"schedule": {"start": "22:00", "end": "06:00", "days": [0, 1, 2, 3, 4]}`: çalışma
-  saatleri (`days`: 0 Pazartesi … 6 Pazar; bitiş başlangıçtan önceyse gece yarısını geçer).
-  Verilmezse saatler bölge cümlelerinden okunur, orada da yoksa kural her zaman çalışır.
+- `"manual": {"subject": "person", "condition": "waiting", "value": 20}` on a zone: the zone is defined
+  by choices instead of a sentence; the server builds the plan immediately (no language model) and writes
+  the `description` itself. `subject`: `person`, `vehicle`, `no_hardhat`, `no_vest`, `forklift`, `bag`.
+  `condition`: `presence`, `waiting` (seconds), `absence` (seconds), `more_than` (count), `fewer_than`
+  (count).
+- `"schedule": {"start": "22:00", "end": "06:00", "days": [0, 1, 2, 3, 4]}` on the rule: working hours
+  (`days`: 0 Monday … 6 Sunday; if the end is before the start, the window runs past midnight). If not
+  given, the hours are read from the zone sentences; if they have none either, the rule always runs.
 
-Yanıttaki kuralda ayrıca `schedule_text` ("22:00–06:00 · Hafta içi", saat yoksa boş), `active_now`
-(açık **ve** çalışma saati içinde mi) ve her bölgenin `plan_summary.text` alanı (planın ne yaptığı,
-tek cümle) bulunur.
+The returned rule also carries `schedule_text` ("22:00–06:00 · Weekdays", empty without hours),
+`active_now` (on **and** within its working hours) and, for each zone, `plan_summary.text` (what the plan
+does, in one sentence). These two texts follow `Accept-Language`.
 
 ### `GET /api/rules/{id}`
-Tek kural, planlarıyla birlikte.
+One rule, with its plans.
 
 ### `PUT /api/rules/{id}`
-Verilen alanları değiştirir: `title`, `enabled`, `scope`, `camera_id`, `camera_name`, `zones`, `description`.
-`zones` gönderilirse açıklaması değişmeyen bölgelerin planı korunur; yalnızca yeni ya da değişen
-bölgeler derlenir.
+Changes the fields given: `title`, `enabled`, `scope`, `camera_id`, `camera_name`, `zones`, `description`.
+If `zones` is sent, zones whose description did not change keep their plan; only new or changed zones are
+compiled.
 
 ### `DELETE /api/rules/{id}`
-Kuralı ve engel bölgelerinin referanslarını siler.
+Deletes the rule and the references of its obstruction zones.
 
 ### `POST /api/rules/{id}/compile`
-Bütün bölgeleri yeniden derler ve **bitene kadar bekler** (birkaç saniye). `{"success": true, "plans_count": 1}`.
-Hatalar: `503`, `409`.
+Compiles every zone again and **waits until done** (a few seconds). `{"success": true, "plans_count": 1}`.
+Errors: `503`, `409`.
 
 ### `GET /api/rules/{id}/plan`
-Tanılama: her bölgenin derlenmiş planı, derleme günlüğü ve modelin ham yanıtı.
+Diagnostics: each zone's compiled plan, the compile log and the model's raw response.
 `{"compile_status", "compile_error", "plans": [{"zone_id", "zone_name", "detection_plan", "compile_logs", "compile_meta", "raw_llm_response"}]}`
 
 ---
 
-## Raporlar
+## Reports
 
 ### `GET /api/reports/summary?days=7`
-Son `days` takvim gününün (1–90; 1 = bugün gece yarısından beri) özeti. Deneme olayları (`sim_…`) sayılmaz.
+Summary of the last `days` calendar days (1–90; 1 = since midnight today). Test events (`sim_…`) are not
+counted.
 
 ```json
 {"success": true, "report": {
@@ -268,20 +285,22 @@ Son `days` takvim gününün (1–90; 1 = bugün gece yarısından beri) özeti.
   "incomplete": false}}
 ```
 
-- `buckets`: `days` 1 ise saat başına (24 tane), değilse gün başına bir satır.
-- `false_alarm_pct`: `false_positive / (correct + false_positive)`; incelenen olay yoksa `null`.
-- `total_sec`: ihlallerin toplam süresi (süren ihlal şu ana kadar sayılır).
-- `summary_verdict`: operatör kararı olan ve özeti `confirmed` / `normal` diyen olaylarda ikisinin örtüşme sayısı.
-- `incomplete`: olay günlüğü dolu ve en eski olay dönemin içinde, yani daha eskileri silinmiş olabilir.
+- `buckets`: one row per hour (24 rows) if `days` is 1, otherwise one per day.
+- `false_alarm_pct`: `false_positive / (correct + false_positive)`; `null` if no event has been reviewed.
+- `total_sec`: total duration of the violations (an ongoing violation counts up to now).
+- `summary_verdict`: among events that have an operator verdict and whose summary says `confirmed` /
+  `normal`, how many times the two agree.
+- `incomplete`: the event log is full and its oldest event lies inside the period, so older ones may have
+  been deleted.
 
 ---
 
-## Olaylar
+## Events
 
-Uç noktalar tarihsel nedenle `/api/anomaly/` altındadır; kural ihlallerini de kapsar.
+For historical reasons the endpoints live under `/api/anomaly/`; they cover rule violations too.
 
 ### `GET /api/anomaly/journal?camera_id=&tier=&operator_label=&limit=250`
-En yeniden eskiye olaylar ve sayaçlar. `limit` en çok 2000.
+Events from newest to oldest, with counters. `limit` is at most 2000.
 
 ```json
 {"success": true, "count": 1,
@@ -306,44 +325,46 @@ En yeniden eskiye olaylar ve sayaçlar. `limit` en çok 2000.
  }]}
 ```
 
-Operatör karar verdiğinde kayda `operator_label` (`correct` / `false_positive`) eklenir; alan yoksa
-olay incelenmemiştir. Alanların tam açıklaması [09 — Veri ve yapılandırma](09-veri-ve-yapilandirma.md) bölümündedir.
+When the operator gives a verdict, `operator_label` (`correct` / `false_positive`) is added to the
+record; without it, the event has not been reviewed. The full description of the fields is in
+[09 — Data and configuration](09-data-and-configuration.md).
 
 ### `GET /api/anomaly/stats`
-Yalnızca sayaçlar: `{"success": true, "stats": {…}}`
+Counters only: `{"success": true, "stats": {…}}`
 
 ### `GET /api/anomaly/events-stream`
-Server-Sent Events. Bağlanınca `{"type": "connected"}`, sonra:
+Server-Sent Events. `{"type": "connected"}` on connection, then:
 
-| `type` | Ne zaman | Gövde |
+| `type` | When | Body |
 | :--- | :--- | :--- |
-| `new_anomaly` | Olay açıldı | `entry`: olayın tamamı |
-| `update_anomaly` | Olay kapandı, özeti geldi, işaretlendi, videosu yazılamadı | `entry`: güncel hâli |
-| `journal_cleared` | Bütün olaylar silindi | — |
+| `new_anomaly` | An event opened | `entry`: the whole event |
+| `update_anomaly` | An event closed, its summary arrived, it was marked, its video could not be written | `entry`: its current state |
+| `journal_cleared` | All events were deleted | — |
 
-15 saniye sessizlikte `: keep-alive` yorumu gönderilir.
+After 15 seconds of silence a `: keep-alive` comment is sent.
 
 ### `POST /api/anomaly/{id}/label`
-`{"label": "correct"}` — `correct` | `false_positive` | `unlabeled`. İsteğe bağlı `notes`, `operator_name`.
-Yanıt: `{"success": true, "entry": {…}}`. Hatalar: `422` (etiket geçersiz), `404`.
+`{"label": "correct"}` — `correct` | `false_positive` | `unlabeled`. Optional `notes`, `operator_name`.
+Response: `{"success": true, "entry": {…}}`. Errors: `422` (invalid label), `404`.
 
 ### `POST /api/anomaly/{id}/summarize`
-Özeti yeniden yazdırır. Hemen döner (`{"success": true, "status": "generating"}`); sonuç
-`update_anomaly` bildirimiyle gelir. Hata: `400`.
+Writes the summary again. Returns at once (`{"success": true, "status": "generating"}`); the result
+arrives with an `update_anomaly` notification. Error: `400`.
 
 ### `GET /api/anomaly/{id}/frames`
-Olay videosundan eşit aralıklı en çok 8 kare.
+Up to 8 evenly spaced frames from the event video.
 `{"success": true, "duration_sec": 6.8, "timestamps": [0.0, 0.85, …], "frames": ["<base64 JPEG>", …]}`
 
 ### `POST /api/anomaly/clear`
-Bütün olayları videoları ve fotoğraflarıyla siler. Geri alınamaz.
+Deletes every event with its videos and snapshots. Cannot be undone.
 
 ### `POST /api/anomaly/simulate`
-`{"camera_id": "cam_…", "score": 55}` — o skorla bir deneme olayı kaydeder (gösterim ve test için).
+`{"camera_id": "cam_…", "score": 55}` — records a test event with that score (for demonstrations and
+tests).
 
-### `GET /api/anomaly/clips/{dosya}` · `GET /api/anomaly/snapshots/{dosya}`
-Olay videosu (MP4, aralık istekleri desteklenir) ve olay fotoğrafı (JPEG, 7 gün önbelleklenebilir).
-Video hâlâ kodlanıyorsa 3 saniyeye kadar beklenir. Yoksa `404`.
+### `GET /api/anomaly/clips/{file}` · `GET /api/anomaly/snapshots/{file}`
+Event video (MP4, range requests supported) and event snapshot (JPEG, cacheable for 7 days). If the video
+is still being encoded, the server waits up to 3 seconds. `404` if missing.
 
 ### `GET /api/anomaly/storage`
 ```json
@@ -351,33 +372,34 @@ Video hâlâ kodlanıyorsa 3 saniyeye kadar beklenir. Yoksa `404`.
  "snapshot_count": 1, "snapshot_mb": 0.01, "orphan_snapshot_count": 0,
  "journal_entries": 1, "max_storage_mb": 1000, "max_stored_clips": 500}
 ```
-`orphan_*`: hiçbir olayın işaret etmediği dosyalar.
+`orphan_*`: files no event points to.
 
 ### `POST /api/anomaly/storage/cleanup-orphans`
-Sahipsiz video ve fotoğrafları siler (120 saniyeden yeni olanlar hariç).
+Deletes orphan videos and snapshots (except those newer than 120 seconds).
 `{"success": true, "deleted_count": 3, "deleted_snapshots": 1, "freed_mb": 12.4}`
 
 ---
 
-## Ayarlar
+## Settings
 
 ### `GET /api/settings`
-`{"success": true, "settings": {"anomaly": {…}, "recording": {…}, "live_wall": {…}}}` — alanlar bölüm 09'da.
+`{"success": true, "settings": {"anomaly": {…}, "recording": {…}, "live_wall": {…}}}` — the fields are in
+chapter 09.
 
 ### `POST /api/settings`
-Gövde: ayarların tamamı ya da bir bölümü. Değerler izin verilen aralığa çekilir, kaydedilir ve
-çalışan servislere **hemen** uygulanır. Yanıt, uygulanan ayarların tamamıdır.
+Body: all of the settings or a section of them. Values are pulled into their allowed range, stored and
+applied to the running services **immediately**. The response is the full set of applied settings.
 
 ### `POST /api/settings/reset`
-Varsayılanlara döner.
+Returns to the defaults.
 
 ---
 
-## Arayüz dosyaları
+## Interface files
 
-| Yol | İçerik |
+| Path | Content |
 | :--- | :--- |
 | `/` | `index.html` |
-| `/ui/css/*`, `/ui/js/*` | Arayüz dosyaları (`Cache-Control: no-cache`) |
-| `/static/js/*.js` | Eski sürümden kalma önbellekli sayfalar için tek seferlik yenileme betiği |
-| `/docs`, `/openapi.json` | FastAPI'nin ürettiği API belgesi |
+| `/ui/css/*`, `/ui/js/*` | Interface files (`Cache-Control: no-cache`) |
+| `/static/js/*.js` | One-time reload script for cached pages left from an old version |
+| `/docs`, `/openapi.json` | API documentation generated by FastAPI |
