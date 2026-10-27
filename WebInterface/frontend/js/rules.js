@@ -108,7 +108,7 @@ function renderList() {
   }
   setHTML($("#rules-list"), `
     <div class="table-wrap"><table class="table">
-      <thead><tr><th>${t("Kural")}</th><th>${t("Kamera")}</th><th>${t("Açık")}</th><th></th></tr></thead>
+      <thead><tr><th>${t("Kural")}</th><th>${t("Kamera")}</th><th>${t("Etkin")}</th><th></th></tr></thead>
       <tbody>${rules.map(rowHTML).join("")}</tbody>
     </table></div>`);
 }
