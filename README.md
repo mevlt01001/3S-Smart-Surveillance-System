@@ -32,22 +32,22 @@ needs their attention, and every alarm arrives with the evidence needed to act o
 
 | Live monitoring | Events |
 | --- | --- |
-| ![Live monitoring wall](docs/images/canli-izleme.jpg) | ![Event list](docs/images/olaylar.jpg) |
+| ![Live monitoring wall](docs/images/live-view.jpg) | ![Event list](docs/images/events.jpg) |
 | The camera wall; layout, zones and detection overlays are toggled from the top bar. | Recorded events with search, filters and one-tap true / false review. |
 
 | Event window | Rule editor |
 | --- | --- |
-| ![Event window](docs/images/olay-penceresi.jpg) | ![Rule editor](docs/images/kural-duzenleyici.jpg) |
-| The incident video, its short written summary and the operator's verdict. | Draw a zone on the camera picture and describe in plain language what should trigger an alert. |
+| ![Event window](docs/images/event-window.jpg) | ![Rule editor](docs/images/rule-editor.jpg) |
+| The incident video, its details, its short written summary and the operator's verdict. | Draw a zone on the camera picture and describe in plain language what should trigger an alert. |
 
 | Cameras | Settings |
 | --- | --- |
-| ![Cameras](docs/images/kameralar.jpg) | ![Settings](docs/images/ayarlar.jpg) |
+| ![Cameras](docs/images/cameras.jpg) | ![Settings](docs/images/settings.jpg) |
 | Network discovery, manual addition, live status and editing. | Detection sensitivity, recording length, storage and appearance. |
 
 The interface is in Turkish (default) and English, chosen per device under Settings → Appearance. It
 works on phones as well as desktops and offers a light theme (default), a navy theme and a dark theme.
-Screenshots show test footage played through the camera simulator.
+Screenshots show the English interface on test footage played through the camera simulator.
 
 ---
 
