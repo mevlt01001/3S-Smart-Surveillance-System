@@ -11,6 +11,9 @@ Conventional camera systems record everything and understand nothing; someone ha
 or search hours of footage after the fact. The system does the watching. Operators look only at what
 needs their attention, and every alarm arrives with the evidence needed to act on it.
 
+
+https://github.com/user-attachments/assets/26fd0af8-41af-4361-a75c-6d048673c8b0
+
 ---
 
 ## Why it matters
